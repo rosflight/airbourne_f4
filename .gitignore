@@ -2,3 +2,5 @@
 /.idea/
 *.o
 /examples/*/obj/
+/examples/*/processor/
+/examples/*/src/
