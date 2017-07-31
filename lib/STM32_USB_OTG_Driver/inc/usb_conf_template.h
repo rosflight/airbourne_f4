@@ -24,7 +24,7 @@
 #define __USB_CONF__H__
 
 /* Includes ------------------------------------------------------------------*/
-#include "stm32f4xx.h"
+#include "stm32f2xx.h"
 
 
 /** @addtogroup USB_OTG_DRIVER
@@ -50,15 +50,15 @@
 #endif /* USE_USB_OTG_FS */
 
 #ifndef USE_USB_OTG_HS
- #define USE_USB_OTG_HS
+ //#define USE_USB_OTG_HS
 #endif /* USE_USB_OTG_HS */
 
 #ifndef USE_ULPI_PHY
- #define USE_ULPI_PHY
+ //#define USE_ULPI_PHY
 #endif /* USE_ULPI_PHY */
 
 #ifndef USE_EMBEDDED_PHY
- //#define USE_EMBEDDED_PHY`
+ //#define USE_EMBEDDED_PHY
 #endif /* USE_EMBEDDED_PHY */
 
 #ifndef USE_I2C_PHY

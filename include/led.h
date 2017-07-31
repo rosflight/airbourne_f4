@@ -1,5 +1,5 @@
 /*
- * gpio.h - Class for abstracting GPIO functionality on the STM32
+ * led.h - Class abstracting LED functionality on the Naze32
  * Copyright (c) 2016 James Jackson
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -21,46 +21,24 @@
  * SOFTWARE.
  */
 
-#ifndef GPIO_H
-#define GPIO_H
+#ifndef LED_H
+#define LED_H
 
-#include "system.h"
+#include "gpio.h"
+#include "board.h"
 
-class GPIO
+class LED
 {
 public:
-  enum
-  {
-    HIGH,
-    LOW
-  };
-
-  enum
-  {
-    INPUT,
-    OUTPUT,
-    PERIPH_OUT,
-    PERIPH_IN,
-    PERIPH_IN_OUT,
-    ANALOG,
-    EXTERNAL_INTERRUPT
-  };
-
-
-  GPIO();
-  GPIO(GPIO_TypeDef *BasePort, uint16_t pin, uint8_t mode);
-
-  void init(GPIO_TypeDef* BasePort, uint16_t pin, uint8_t mode);
-  void write(uint8_t state);
-  void toggle(void);
-  void set_mode(uint8_t mode);
-  bool read();
+  LED();
+  LED(GPIO_TypeDef *port, uint16_t pin);
+  void toggle();
+  void turn_on();
+  void turn_off();
+  void blink(uint32_t ms_delay);
 
 private:
-  uint16_t pin_;
-  GPIO_TypeDef* port_;
-  uint8_t mode_;
-
+  GPIO gpio_;
 };
 
-#endif // GPIO_H
+#endif // LED_H

@@ -51,26 +51,25 @@ A2L=arm-none-eabi-addr2line
 #################################
 # Working directories
 #################################
-AIRBOURNE_DIR 	= ../../../
+AIRBOURNE_DIR 	= ../../
 ROOT		 	= .
 SRC_DIR		 	= $(ROOT)
-PROCESSOR_DIR	= $(AIRBOURNE_DIR)/f4
 CMSIS_DIR	 	= $(AIRBOURNE_DIR)/lib/CMSIS
 MATH_DIR	 	= $(AIRBOURNE_DIR)/lib/math
 STDPERIPH_DIR	= $(AIRBOURNE_DIR)/lib/STM32F4xx_StdPeriph_Driver
 USBCORE_DIR	= $(AIRBOURNE_DIR)/lib/STM32_USB_Device_Library/Core
 USBOTG_DIR	= $(AIRBOURNE_DIR)/lib/STM32_USB_OTG_Driver
 USBCDC_DIR	= $(AIRBOURNE_DIR)/lib/STM32_USB_Device_Library/Class/cdc
-VCP_DIR		= $(AIRBOURNE_DIR)/f4/vcpf4
+VCP_DIR		= $(AIRBOURNE_DIR)/lib/vcp
 OBJECT_DIR	= obj
 BIN_DIR	 	= obj
 
 #################################
 # Source Files
 #################################
-VPATH := $(VPATH):$(PROCESSOR_DIR)
-LDSCRIPT = $(PROCESSOR_DIR)/stm32_flash_f405_1024k.ld
-ASOURCES = $(PROCESSOR_DIR)/startup_stm32f40_41xxx.s
+VPATH := $(VPATH):$(AIRBOURNE_DIR)
+LDSCRIPT = $(AIRBOURNE_DIR)/processor/stm32_flash_f405_1024k.ld
+ASOURCES = $(AIRBOURNE_DIR)/processor/startup_stm32f40_41xxx.s
 
 VPATH		:= $(SRC_DIR):$(SRC_DIR)/startups
 
@@ -107,8 +106,8 @@ VPATH := $(VPATH):$(VCP_DIR)
 VCP_SRC = $(notdir $(wildcard $(VCP_DIR)/*.c))
 
 # Add processor-specific files
-VPATH := $(VPATH):$(PROCESSOR_DIR)/src
-PROCESSOR_SRC = $(notdir $(wildcard $(PROCESSOR_DIR)/src/*.c))
+VPATH := $(VPATH):$(AIRBOURNE_DIR)/src
+PROCESSOR_SRC = $(notdir $(wildcard $(AIRBOURNE_DIR)/src/*.c))
 
 EXCLUDES	= usb_bsp_template.c \
 			  usb_conf_template.c \
@@ -135,13 +134,12 @@ CSOURCES =  $(CMSIS_SRC) \
                 $(ROOT)/main.cpp
 
 
-CXXSOURCES = $(PROCESSOR_DIR)/src/gpio.cpp \
-             $(PROCESSOR_DIR)/src/VCP.cpp \
-             $(PROCESSOR_DIR)/src/spi.cpp \
+CXXSOURCES = $(AIRBOURNE_DIR)/src/gpio.cpp \
+             $(AIRBOURNE_DIR)/src/VCP.cpp \
+             $(AIRBOURNE_DIR)/src/spi.cpp \
 
 INCLUDE_DIRS	 = 	$(SRC_DIR) \
 					$(AIRBOURNE_DIR)/include \
-					$(PROCESSOR_DIR)/include \
 		   			$(MATH_DIR) \
 		   			$(STDPERIPH_DIR)/inc \
 		   			$(USBOTG_DIR)/inc \

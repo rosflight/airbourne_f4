@@ -60,9 +60,6 @@
 #endif /* USE_USB_OTG_HS */
 
 #define APP_FOPS                        VCP_fops
-
-//added by @len0rd:
-#define USE_USB_OTG_HS  
 /**
   * @}
   */
