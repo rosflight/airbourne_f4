@@ -4,3 +4,4 @@
 /examples/*/obj/
 /examples/*/processor/
 /examples/*/src/
+*.creator
