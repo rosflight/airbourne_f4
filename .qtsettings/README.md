@@ -1,0 +1,1 @@
+These files belong in the ~/.config/QtProject/qtcreator folder of your newly installed QtCreator instance. You will probably have to go through a configuration settings and fix file paths, as well as enable BareMetal. 

@@ -52,10 +52,10 @@ A2L=arm-none-eabi-addr2line
 # Working directories
 #################################
 AIRBOURNE_DIR 	= ../../
-ROOT		 	= .
-SRC_DIR		 	= $(ROOT)
-CMSIS_DIR	 	= $(AIRBOURNE_DIR)/lib/CMSIS
-MATH_DIR	 	= $(AIRBOURNE_DIR)/lib/math
+ROOT		= .
+SRC_DIR		= $(ROOT)
+CMSIS_DIR	= $(AIRBOURNE_DIR)/lib/CMSIS
+MATH_DIR	= $(AIRBOURNE_DIR)/lib/math
 STDPERIPH_DIR	= $(AIRBOURNE_DIR)/lib/STM32F4xx_StdPeriph_Driver
 USBCORE_DIR	= $(AIRBOURNE_DIR)/lib/STM32_USB_Device_Library/Core
 USBOTG_DIR	= $(AIRBOURNE_DIR)/lib/STM32_USB_OTG_Driver
@@ -76,7 +76,7 @@ VPATH		:= $(SRC_DIR):$(SRC_DIR)/startups
 # Search path and source files for the CMSIS sources
 VPATH		:= 	$(VPATH):$(CMSIS_DIR)/CM4/CoreSupport:$(CMSIS_DIR)/CM4/DeviceSupport/ST/STM32F4xx
 CMSIS_SRC	 = 	$(notdir $(wildcard $(CMSIS_DIR)/CM4/CoreSupport/*.c \
-				$(CMSIS_DIR)/CM4/DeviceSupport/ST/STM32F4xx/*.c))
+                        $(CMSIS_DIR)/CM4/DeviceSupport/ST/STM32F4xx/*.c))
 
 # Search path and source files for the ST stdperiph library and exclude files we don't need
 VPATH		:= $(VPATH):$(STDPERIPH_DIR)/src
@@ -96,10 +96,10 @@ STDPERIPH_SRC := $(filter-out ${EXCLUDES}, $(STDPERIPH_SRC))
 
 
 # Search path and source files for the USB libraries
-VPATH		:= $(VPATH):$(USBCORE_DIR)/src:$(USBOTG_DIR)/src:$(USBCDC_DIR)/src
+VPATH       := $(VPATH):$(USBCORE_DIR)/src:$(USBOTG_DIR)/src:$(USBCDC_DIR)/src
 USBCORE_SRC = $(notdir $(wildcard $(USBCORE_DIR)/src/*.c))
-USBOTG_SRC = $(notdir $(wildcard $(USBOTG_DIR)/src/*.c))
-USBCDC_SRC = $(notdir $(wildcard $(USBCDC_DIR)/src/*.c))
+USBOTG_SRC  = $(notdir $(wildcard $(USBOTG_DIR)/src/*.c))
+USBCDC_SRC  = $(notdir $(wildcard $(USBCDC_DIR)/src/*.c))
 
 # Add VCP source files
 VPATH := $(VPATH):$(VCP_DIR)
@@ -109,12 +109,12 @@ VCP_SRC = $(notdir $(wildcard $(VCP_DIR)/*.c))
 VPATH := $(VPATH):$(AIRBOURNE_DIR)/src
 PROCESSOR_SRC = $(notdir $(wildcard $(AIRBOURNE_DIR)/src/*.c))
 
-EXCLUDES	= usb_bsp_template.c \
-		usb_conf_template.c \
-		usb_hcd_int.c \
-		usb_hcd.c \
-		usb_otg.c \
-		usbd_cdc_if_template.c
+EXCLUDES =  usb_bsp_template.c \
+            usb_conf_template.c \
+            usb_hcd_int.c \
+            usb_hcd.c \
+            usb_otg.c \
+            usbd_cdc_if_template.c
 USBCDC_SRC := $(filter-out ${EXCLUDES}, $(USBCDC_SRC))
 USBOTG_SRC := $(filter-out ${EXCLUDES}, $(USBOTG_SRC))
 
@@ -125,26 +125,26 @@ MATH_SRC	 = $(notdir $(wildcard $(MATH_DIR)/*.cpp))
 
 # Make a list of source files and includes
 CSOURCES =  $(CMSIS_SRC) \
-	    	$(STDPERIPH_SRC) \
-	    	$(USBCORE_SRC) \
-	    	$(USBOTG_SRC) \
-	    	$(USBCDC_SRC) \
-	    	$(PROCESSOR_SRC)
+            $(STDPERIPH_SRC) \
+            $(USBCORE_SRC) \
+            $(USBOTG_SRC) \
+            $(USBCDC_SRC) \
+            $(PROCESSOR_SRC)
 
-CXXSOURCES = 	$(ROOT)/main.cpp \
-				$(AIRBOURNE_DIR)/src/gpio.cpp
+CXXSOURCES = $(ROOT)/main.cpp \
+             $(AIRBOURNE_DIR)/src/gpio.cpp
 
-INCLUDE_DIRS	 = 	$(SRC_DIR) \
-					$(AIRBOURNE_DIR)/include \
-		   			$(MATH_DIR) \
-		   			$(STDPERIPH_DIR)/inc \
-		   			$(USBOTG_DIR)/inc \
-		   			$(USBCORE_DIR)/inc \
-		   			$(USBCDC_DIR)/inc \
-		   			$(CMSIS_DIR)/CM4/CoreSupport \
-		   			$(CMSIS_DIR)/CM4/DeviceSupport/ST/STM32F4xx \
-		   			$(CMSIS_DIR)/CM4/DeviceSupport/ST/STM32F4xx/Include \
-		   			$(VCP_DIR)
+INCLUDE_DIRS =  $(SRC_DIR) \
+                $(AIRBOURNE_DIR)/include \
+                $(MATH_DIR) \
+                $(STDPERIPH_DIR)/inc \
+                $(USBOTG_DIR)/inc \
+                $(USBCORE_DIR)/inc \
+                $(USBCDC_DIR)/inc \
+                $(CMSIS_DIR)/CM4/CoreSupport \
+                $(CMSIS_DIR)/CM4/DeviceSupport/ST/STM32F4xx \
+                $(CMSIS_DIR)/CM4/DeviceSupport/ST/STM32F4xx/Include \
+                $(VCP_DIR)
 
 
 
@@ -165,13 +165,14 @@ TARGET_HEX=$(BIN_DIR)/$(TARGET).hex
 #################################
 # Debug Config
 #################################
-ifeq ($(DEBUG), GDB)
-DEBUG_FLAGS = -ggdb3
+#ifeq ($(DEBUG), GDB)
+DEBUG_FLAGS = -ggdb
 OPTIMIZE = -Og
-else
-OPTIMIZE = -Os
-LTO_FLAGS = -flto -fuse-linker-plugin $(OPTIMIZE)
-endif
+$(info ***** Building with Debug Symbols *****)
+#else
+#OPTIMIZE = -Os
+#LTO_FLAGS = -flto -fuse-linker-plugin $(OPTIMIZE)
+#endif
 
 #################################
 # Flags

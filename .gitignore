@@ -5,3 +5,4 @@
 /examples/*/processor/
 /examples/*/src/
 *.creator
+/*.config
