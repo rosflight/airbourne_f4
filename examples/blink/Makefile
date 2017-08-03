@@ -166,7 +166,7 @@ TARGET_HEX=$(BIN_DIR)/$(TARGET).hex
 # Debug Config
 #################################
 #ifeq ($(DEBUG), GDB)
-DEBUG_FLAGS = -ggdb
+DEBUG_FLAGS = -ggdb3
 OPTIMIZE = -Og
 $(info ***** Building with Debug Symbols *****)
 #else

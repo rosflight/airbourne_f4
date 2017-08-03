@@ -47,8 +47,8 @@ int main()
 
   while(1)
   {
-//    uint8_t hello_string[] = "hello world!\n";
-//    vcp.write(hello_string, 13);
+    uint8_t hello_string[] = "hello world!\n";
+    vcp.write(hello_string, 13);
     delay(200);
   }
 }
