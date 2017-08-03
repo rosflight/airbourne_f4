@@ -206,3 +206,7 @@ src/system.c
 src/system_stm32f4xx.c
 src/VCP.cpp
 examples/blink/Makefile
+examples/blink/main.cpp
+examples/spi/main.cpp
+examples/vcp_printf/main.cpp
+examples/vcp_printf/Makefile

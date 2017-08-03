@@ -14,3 +14,5 @@ lib/STM32F4xx_StdPeriph_Driver/inc
 lib/vcp
 examples/blink
 .
+examples/spi
+examples/vcp_printf
