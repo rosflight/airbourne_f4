@@ -6,3 +6,6 @@
 /examples/*/src/
 *.creator
 /*.config
+/*.files
+/*.includes
+*.creator.*
