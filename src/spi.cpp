@@ -15,14 +15,15 @@ SPI::SPI(spi_configuration_t config)
   {
     using_nss = false;
   }
-  sck_.init(config.GPIO, config.sck_pin, GPIO::PERIPH_IN_OUT);
-  miso_.init(config.GPIO, config.miso_pin, GPIO::PERIPH_IN_OUT);
-  mosi_.init(config.GPIO, config.mosi_pin, GPIO::PERIPH_IN_OUT);
 
   // This may, or may not be necessary
   GPIO_PinAFConfig(GPIOA, GPIO_PinSource5, GPIO_AF_SPI1);
   GPIO_PinAFConfig(GPIOA, GPIO_PinSource6, GPIO_AF_SPI1);
   GPIO_PinAFConfig(GPIOA, GPIO_PinSource7, GPIO_AF_SPI1);
+  //GPIO_InitTypeDef == GPIO_InitStruct
+  sck_.init(config.GPIO, config.sck_pin, GPIO::PERIPH_IN_OUT);
+  miso_.init(config.GPIO, config.miso_pin, GPIO::PERIPH_IN_OUT);
+  mosi_.init(config.GPIO, config.mosi_pin, GPIO::PERIPH_IN_OUT);
 
   dev = config.dev;
   leading_edge = config.leading_edge;
@@ -33,8 +34,10 @@ SPI::SPI(spi_configuration_t config)
   SPI_StructInit(&spi_init_struct);
   spi_init_struct.SPI_Mode = SPI_Mode_Master;
   spi_init_struct.SPI_Direction = SPI_Direction_2Lines_FullDuplex;
-  spi_init_struct.SPI_DataSize = SPI_DataSize_8b;
-  spi_init_struct.SPI_NSS = SPI_NSS_Soft;
+  //8b is already the default from SPI_StructInit
+  //spi_init_struct.SPI_DataSize = SPI_DataSize_8b;
+  //I think this should be SPI_NSS_Hard(which is default from init)
+  //spi_init_struct.SPI_NSS = SPI_NSS_Soft;
   spi_init_struct.SPI_FirstBit = SPI_FirstBit_MSB;
   spi_init_struct.SPI_CRCPolynomial = 7;
   spi_init_struct.SPI_BaudRatePrescaler = SPI_BaudRatePrescaler_2;
@@ -42,10 +45,10 @@ SPI::SPI(spi_configuration_t config)
   SPI_Init(dev, &spi_init_struct);
   SPI_Cmd(dev, ENABLE);
 
-  if (using_nss)
+  /*if (using_nss)
   {
     nss_.write(GPIO::HIGH);
-  }
+  }*/
 }
 
 void SPI::set_divisor(uint16_t divisor)
