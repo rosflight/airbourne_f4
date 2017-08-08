@@ -14,13 +14,13 @@ SPI::SPI(spi_configuration_t config)
     //we transfer stuff
     using_nss = true;
     GPIO_InitTypeDef nss_init_struct;
-    nss_init_struct.GPIO_PIN   = config.nss_pin;
+    nss_init_struct.GPIO_Pin   = config.nss_pin;
     nss_init_struct.GPIO_Mode  = GPIO_Mode_OUT;
     nss_init_struct.GPIO_Speed = GPIO_Low_Speed;
     nss_init_struct.GPIO_OType = GPIO_OType_OD; //open drain
     nss_init_struct.GPIO_PuPd  = GPIO_PuPd_NOPULL; //nss pin connected to pu resistor external to chip
     //nss_init_struct.GPIO_PuPd  = GPIO_PuPd_UP;
-    GPIO_Init(config.GPIO, nss_init_struct);
+    GPIO_Init(config.GPIO, &nss_init_struct);
   }
   else {
     using_nss = false;//true;  
@@ -33,12 +33,12 @@ SPI::SPI(spi_configuration_t config)
   
   //gpio config
   GPIO_InitTypeDef gpio_init_struct;
-  gpio_init_struct.GPIO_PIN   = config.sck_pin|config.miso_pin|config.mosi_pin;
+  gpio_init_struct.GPIO_Pin   = config.sck_pin|config.miso_pin|config.mosi_pin;
   gpio_init_struct.GPIO_Mode  = GPIO_Mode_AF;
   gpio_init_struct.GPIO_Speed = GPIO_Low_Speed; //2Mhz
   gpio_init_struct.GPIO_OType = GPIO_OType_PP; 
   gpio_init_struct.GPIO_PuPd  = GPIO_PuPd_UP;
-  GPIO_Init(config.GPIO, gpio_init_struct);
+  GPIO_Init(config.GPIO, &gpio_init_struct);
 
   //spi config
   dev = config.dev;
@@ -56,7 +56,7 @@ SPI::SPI(spi_configuration_t config)
   //I think this should be SPI_NSS_Hard(which is default from struct init)
   //spi_init_struct.SPI_NSS = SPI_NSS_Hard;
   //CPOL Low, CPHA 1 edge (ie clk held low, sampled at rising edge)
-  spi_init_struct.SPI_BaudRatePrescaler = SPI_BaudRatePrescaler_2;
+  spi_init_struct.SPI_BaudRatePrescaler = SPI_BaudRatePrescaler_2; //still not sure what to set this to
   spi_init_struct.SPI_FirstBit = SPI_FirstBit_MSB;
   spi_init_struct.SPI_CRCPolynomial = 7;
   
