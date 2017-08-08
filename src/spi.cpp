@@ -2,29 +2,45 @@
 
 SPI::SPI(spi_configuration_t config)
 {
-  // Turn on the RCC for the SPI peripheral
+  // RCC for the SPI peripheral
   RCC_APB2PeriphClockCmd(RCC_APB2Periph_SPI1, ENABLE);
+  // RCC for GPIOA
+  RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOA, ENABLE);
 
-  // Initialize the GPIO Pins
   if (config.nss_pin)
   {
+    //by default on STM32 the nss pin toggles between bytes, which isnt ideal
+    //get around this be setting it up as an output and manually toggling it whenever
+    //we transfer stuff
     using_nss = true;
-    nss_.init(config.GPIO, config.nss_pin, GPIO::OUTPUT);
+    GPIO_InitTypeDef nss_init_struct;
+    nss_init_struct.GPIO_PIN   = config.nss_pin;
+    nss_init_struct.GPIO_Mode  = GPIO_Mode_OUT;
+    nss_init_struct.GPIO_Speed = GPIO_Low_Speed;
+    nss_init_struct.GPIO_OType = GPIO_OType_OD; //open drain
+    nss_init_struct.GPIO_PuPd  = GPIO_PuPd_NOPULL; //nss pin connected to pu resistor external to chip
+    //nss_init_struct.GPIO_PuPd  = GPIO_PuPd_UP;
+    GPIO_Init(config.GPIO, nss_init_struct);
   }
-  else
-  {
-    using_nss = false;
+  else {
+    using_nss = false;//true;  
   }
-
-  // This may, or may not be necessary
+  
+  //if these pin sources could work with config struct, that'd be nice
   GPIO_PinAFConfig(GPIOA, GPIO_PinSource5, GPIO_AF_SPI1);
   GPIO_PinAFConfig(GPIOA, GPIO_PinSource6, GPIO_AF_SPI1);
   GPIO_PinAFConfig(GPIOA, GPIO_PinSource7, GPIO_AF_SPI1);
-  //GPIO_InitTypeDef == GPIO_InitStruct
-  sck_.init(config.GPIO, config.sck_pin, GPIO::PERIPH_IN_OUT);
-  miso_.init(config.GPIO, config.miso_pin, GPIO::PERIPH_IN_OUT);
-  mosi_.init(config.GPIO, config.mosi_pin, GPIO::PERIPH_IN_OUT);
+  
+  //gpio config
+  GPIO_InitTypeDef gpio_init_struct;
+  gpio_init_struct.GPIO_PIN   = config.sck_pin|config.miso_pin|config.mosi_pin;
+  gpio_init_struct.GPIO_Mode  = GPIO_Mode_AF;
+  gpio_init_struct.GPIO_Speed = GPIO_Low_Speed; //2Mhz
+  gpio_init_struct.GPIO_OType = GPIO_OType_PP; 
+  gpio_init_struct.GPIO_PuPd  = GPIO_PuPd_UP;
+  GPIO_Init(config.GPIO, gpio_init_struct);
 
+  //spi config
   dev = config.dev;
   leading_edge = config.leading_edge;
 
@@ -32,23 +48,21 @@ SPI::SPI(spi_configuration_t config)
 
   SPI_InitTypeDef spi_init_struct;
   SPI_StructInit(&spi_init_struct);
-  spi_init_struct.SPI_Mode = SPI_Mode_Master;
   spi_init_struct.SPI_Direction = SPI_Direction_2Lines_FullDuplex;
+  spi_init_struct.SPI_Mode = SPI_Mode_Master;
+  
   //8b is already the default from SPI_StructInit
   //spi_init_struct.SPI_DataSize = SPI_DataSize_8b;
-  //I think this should be SPI_NSS_Hard(which is default from init)
-  //spi_init_struct.SPI_NSS = SPI_NSS_Soft;
+  //I think this should be SPI_NSS_Hard(which is default from struct init)
+  //spi_init_struct.SPI_NSS = SPI_NSS_Hard;
+  //CPOL Low, CPHA 1 edge (ie clk held low, sampled at rising edge)
+  spi_init_struct.SPI_BaudRatePrescaler = SPI_BaudRatePrescaler_2;
   spi_init_struct.SPI_FirstBit = SPI_FirstBit_MSB;
   spi_init_struct.SPI_CRCPolynomial = 7;
-  spi_init_struct.SPI_BaudRatePrescaler = SPI_BaudRatePrescaler_2;
+  
 
   SPI_Init(dev, &spi_init_struct);
   SPI_Cmd(dev, ENABLE);
-
-  /*if (using_nss)
-  {
-    nss_.write(GPIO::HIGH);
-  }*/
 }
 
 void SPI::set_divisor(uint16_t divisor)
