@@ -49,6 +49,7 @@ public:
 
   GPIO();
   GPIO(GPIO_TypeDef *BasePort, uint16_t pin, uint8_t mode);
+  GPIO(GPIO_TypeDef *BasePort, GPIO_InitTypeDef *InitStruct, uint8_t mode);
 
   void init(GPIO_TypeDef* BasePort, uint16_t pin, uint8_t mode);
   void write(uint8_t state);

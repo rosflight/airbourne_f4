@@ -16,26 +16,27 @@ SPI::SPI(spi_configuration_t config)
     GPIO_InitTypeDef nss_init_struct;
     nss_init_struct.GPIO_Pin   = config.nss_pin;
     nss_init_struct.GPIO_Mode  = GPIO_Mode_OUT;
-    nss_init_struct.GPIO_Speed = GPIO_Low_Speed;
-    nss_init_struct.GPIO_OType = GPIO_OType_OD; //open drain
-    nss_init_struct.GPIO_PuPd  = GPIO_PuPd_NOPULL; //nss pin connected to pu resistor external to chip
-    //nss_init_struct.GPIO_PuPd  = GPIO_PuPd_UP;
-    GPIO_Init(config.GPIO, &nss_init_struct);
+    nss_init_struct.GPIO_Speed = GPIO_Medium_Speed;
+    nss_init_struct.GPIO_OType = GPIO_OType_PP; 
+    nss_init_struct.GPIO_PuPd  = GPIO_PuPd_UP; //nss pin connected to pu resistor external to chip
+
+    nss_ = GPIO(config.GPIO, &nss_init_struct, GPIO::OUTPUT);
+    nss_.write(GPIO::HIGH);
   }
   else {
-    using_nss = false;//true;  
+    using_nss = false;
   }
   
   //if these pin sources could work with config struct, that'd be nice
-  GPIO_PinAFConfig(GPIOA, GPIO_PinSource5, GPIO_AF_SPI1);
-  GPIO_PinAFConfig(GPIOA, GPIO_PinSource6, GPIO_AF_SPI1);
-  GPIO_PinAFConfig(GPIOA, GPIO_PinSource7, GPIO_AF_SPI1);
+  GPIO_PinAFConfig(config.GPIO, GPIO_PinSource5, GPIO_AF_SPI1);
+  GPIO_PinAFConfig(config.GPIO, GPIO_PinSource6, GPIO_AF_SPI1);
+  GPIO_PinAFConfig(config.GPIO, GPIO_PinSource7, GPIO_AF_SPI1);
   
   //gpio config
   GPIO_InitTypeDef gpio_init_struct;
   gpio_init_struct.GPIO_Pin   = config.sck_pin|config.miso_pin|config.mosi_pin;
   gpio_init_struct.GPIO_Mode  = GPIO_Mode_AF;
-  gpio_init_struct.GPIO_Speed = GPIO_Low_Speed; //2Mhz
+  gpio_init_struct.GPIO_Speed = GPIO_Medium_Speed; //2Mhz, still much faster than spi clk
   gpio_init_struct.GPIO_OType = GPIO_OType_PP; 
   gpio_init_struct.GPIO_PuPd  = GPIO_PuPd_UP;
   GPIO_Init(config.GPIO, &gpio_init_struct);
@@ -152,11 +153,13 @@ bool SPI::transfer(uint8_t *out, uint32_t len, uint8_t *in)
 
 void SPI::set_ss_low()
 {
-  nss_.write(GPIO::LOW);
+  if (using_nss)
+    nss_.write(GPIO::LOW);
 }
 
 void SPI::set_ss_high()
 {
-  nss_.write(GPIO::HIGH);
+  if (using_nss)
+    nss_.write(GPIO::HIGH);
 }
 

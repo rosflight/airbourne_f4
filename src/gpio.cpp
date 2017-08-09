@@ -28,6 +28,13 @@ GPIO::GPIO(GPIO_TypeDef* BasePort, uint16_t pin, uint8_t mode)
 {
     init(BasePort, pin, mode);
 }
+GPIO::GPIO(GPIO_TypeDef* BasePort, GPIO_InitTypeDef* InitStruct, uint8_t mode)
+{
+  pin_  = InitStruct->GPIO_Pin;
+  port_ = BasePort;
+  mode_ = mode;
+  GPIO_Init(port_, InitStruct);
+}
 
 void GPIO::init(GPIO_TypeDef* BasePort, uint16_t pin, uint8_t mode)
 {
@@ -108,7 +115,7 @@ void GPIO::set_mode(uint8_t mode)
     }
 
     // Who cares about power usage?  Go as fast as possible.
-    GPIO_InitStruct.GPIO_Speed = GPIO_Speed_100MHz;
+    GPIO_InitStruct.GPIO_Speed = GPIO_High_Speed;
 
     // Initialize the GPIO
     GPIO_Init(port_, &GPIO_InitStruct);

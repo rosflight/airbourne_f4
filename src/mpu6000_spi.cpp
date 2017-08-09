@@ -46,7 +46,7 @@ MPU6000_SPI::MPU6000_SPI(SPI* spi_dev_ptr)
   write_register(MPU_RA_INT_PIN_CFG, BIT_INT_ANYRD_2CLEAR);
   delayMicroseconds(15);
 
-  spi->set_divisor(SPI::FAST);
+  spi->set_divisor(SPI::SLOW);
   delayMicroseconds(1);
 
   accel_scale_ = ((float)8 * 9.80665f) / ((float)0x7FFF);
@@ -89,20 +89,24 @@ void MPU6000_SPI::register_new_data_callback(void (*CB)())
 
 bool MPU6000_SPI::write_register(uint8_t reg, uint8_t data)
 {
-  spi->set_ss_low();
   uint8_t to_send = reg | 0x80;
+  
+  spi->set_ss_low();
   spi->transfer(&to_send, 1, (uint8_t*)NULL);
   spi->transfer(&data, 1, NULL);
   spi->set_ss_high();
+
   return true;
 }
 
 bool MPU6000_SPI::read_register(uint8_t reg, uint8_t len, uint8_t *data)
 {
-  spi->set_ss_low();
   uint8_t to_send = reg | 0x80;
+  
+  spi->set_ss_low();
   spi->transfer(&to_send, 1, NULL);
   spi->transfer(NULL, len, data);
   spi->set_ss_high();
+  
   return true;
 }

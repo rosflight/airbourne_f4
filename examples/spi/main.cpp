@@ -45,20 +45,35 @@ int main()
 
   VCP vcp(serial_config[VCP_INDEX]);
   vcpPtr = &vcp;
-  vcp.register_rx_callback(&rx_callback);
+  //vcp.register_rx_callback(&rx_callback);
 
   SPI spi(spi_config[0]);
 
   MPU6000_SPI imu(&spi);
-
   vector3 acc, gyro;
   float temp;
-  while(1)
+
+  //uint8_t *value;
+  uint8_t test[] = "waddup\n";
+  while(1) {
+      /*acc.zero();
+      gyro.zero();
+      temp = 0;
+      imu.read_all(&acc, &gyro, &temp);*/
+      vcp.write(test, 8);
+  }
+  /*while(1)
   {
     acc.zero();
     gyro.zero();
     temp = 0;
     imu.read_all(&acc, &gyro, &temp);
+    value = (uint8_t*)(&acc.x);
+    vcp.write(value, 4);
+    value = (uint8_t*)(&acc.y);
+    vcpPtr->write(value, 4);
+    value = (uint8_t*)(&acc.z);
+    vcpPtr->write(value, 4);
     delay(200);
-  }
+  }*/
 }

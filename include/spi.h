@@ -28,9 +28,6 @@ public:
 
 private:
   GPIO nss_;
-  /*GPIO sck_;
-  GPIO miso_;
-  GPIO mosi_;*/
 
   SPI_TypeDef* dev;
 
