@@ -25,6 +25,8 @@ public:
   void set_divisor(uint16_t divisor);
   void set_ss_low();
   void set_ss_high();
+  void send(uint8_t address, uint8_t data);
+  void receive(uint8_t start_address, uint8_t length, uint8_t *data_out);
 
 private:
   GPIO nss_;
@@ -33,7 +35,6 @@ private:
 
   bool leading_edge;
   bool using_nss;
-  uint16_t divisor;
   uint32_t error_count;
 };
 

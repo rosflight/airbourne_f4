@@ -7,6 +7,8 @@ SPI::SPI(spi_configuration_t config)
   // RCC for GPIOA
   RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOA, ENABLE);
 
+  GPIO_DeInit(config.GPIO);
+
   if (config.nss_pin)
   {
     //by default on STM32 the nss pin toggles between bytes, which isnt ideal
@@ -16,7 +18,7 @@ SPI::SPI(spi_configuration_t config)
     GPIO_InitTypeDef nss_init_struct;
     nss_init_struct.GPIO_Pin   = config.nss_pin;
     nss_init_struct.GPIO_Mode  = GPIO_Mode_OUT;
-    nss_init_struct.GPIO_Speed = GPIO_Medium_Speed;
+    nss_init_struct.GPIO_Speed = GPIO_Fast_Speed;
     nss_init_struct.GPIO_OType = GPIO_OType_PP; 
     nss_init_struct.GPIO_PuPd  = GPIO_PuPd_UP; //nss pin connected to pu resistor external to chip
 
@@ -34,11 +36,18 @@ SPI::SPI(spi_configuration_t config)
   
   //gpio config
   GPIO_InitTypeDef gpio_init_struct;
-  gpio_init_struct.GPIO_Pin   = config.sck_pin|config.miso_pin|config.mosi_pin;
   gpio_init_struct.GPIO_Mode  = GPIO_Mode_AF;
-  gpio_init_struct.GPIO_Speed = GPIO_Medium_Speed; //2Mhz, still much faster than spi clk
+  gpio_init_struct.GPIO_Speed = GPIO_Fast_Speed;
   gpio_init_struct.GPIO_OType = GPIO_OType_PP; 
-  gpio_init_struct.GPIO_PuPd  = GPIO_PuPd_UP;
+  gpio_init_struct.GPIO_PuPd  = GPIO_PuPd_NOPULL;
+
+  gpio_init_struct.GPIO_Pin   = config.sck_pin;
+  GPIO_Init(config.GPIO, &gpio_init_struct);
+
+  gpio_init_struct.GPIO_Pin   = config.miso_pin;
+  GPIO_Init(config.GPIO, &gpio_init_struct);
+
+  gpio_init_struct.GPIO_Pin   = config.mosi_pin;
   GPIO_Init(config.GPIO, &gpio_init_struct);
 
   //spi config
@@ -51,18 +60,18 @@ SPI::SPI(spi_configuration_t config)
   SPI_StructInit(&spi_init_struct);
   spi_init_struct.SPI_Direction = SPI_Direction_2Lines_FullDuplex;
   spi_init_struct.SPI_Mode = SPI_Mode_Master;
-  
-  //8b is already the default from SPI_StructInit
-  //spi_init_struct.SPI_DataSize = SPI_DataSize_8b;
-  //I think this should be SPI_NSS_Hard(which is default from struct init)
-  //spi_init_struct.SPI_NSS = SPI_NSS_Hard;
-  //CPOL Low, CPHA 1 edge (ie clk held low, sampled at rising edge)
-  spi_init_struct.SPI_BaudRatePrescaler = SPI_BaudRatePrescaler_2; //still not sure what to set this to
+  spi_init_struct.SPI_DataSize = SPI_DataSize_8b;
+  spi_init_struct.SPI_CPOL = SPI_CPOL_Low;
+  spi_init_struct.SPI_CPHA = SPI_CPHA_2Edge;
+  spi_init_struct.SPI_NSS = SPI_NSS_Soft;
+  spi_init_struct.SPI_BaudRatePrescaler = SPI_BaudRatePrescaler_256;
   spi_init_struct.SPI_FirstBit = SPI_FirstBit_MSB;
-  spi_init_struct.SPI_CRCPolynomial = 7;
+  //spi_init_struct.SPI_CRCPolynomial = 7;
   
 
   SPI_Init(dev, &spi_init_struct);
+
+  //delayMicroseconds(100);
   SPI_Cmd(dev, ENABLE);
 }
 
@@ -115,17 +124,59 @@ bool SPI::is_busy()
          SPI_I2S_GetFlagStatus(dev, SPI_I2S_FLAG_BSY) == SET;
 }
 
+void SPI::send(uint8_t address, uint8_t data){
+  set_ss_low();
+
+  //uint16_t to_send = ((uint16_t)address << 8) | data;
+  while(!SPI_I2S_GetFlagStatus(dev, SPI_I2S_FLAG_TXE));
+  SPI_I2S_SendData(dev, address);
+  delayMicroseconds(10);
+  while(!SPI_I2S_GetFlagStatus(dev, SPI_I2S_FLAG_RXNE));
+  SPI_I2S_ReceiveData(dev);//receive to clear the rxne flag
+
+  //while(!(dev->SR & SPI_I2S_FLAG_TXE));
+  while(!SPI_I2S_GetFlagStatus(dev, SPI_I2S_FLAG_TXE));
+  SPI_I2S_SendData(dev, data);
+  while(!SPI_I2S_GetFlagStatus(dev, SPI_I2S_FLAG_RXNE));
+  SPI_I2S_ReceiveData(dev);//receive to clear the rxne flag
+
+  set_ss_high();
+}
+
+void SPI::receive(uint8_t start_address, uint8_t length, uint8_t *data_out) {
+  set_ss_low();
+  start_address = 0x80 | start_address;//setting msb to 1 indicates read op
+
+  for (uint8_t i = 0; i < length; ++i)
+  {
+    uint8_t request_address = start_address + i;
+    while(!SPI_I2S_GetFlagStatus(dev, SPI_I2S_FLAG_TXE)); 
+    SPI_I2S_SendData(dev, request_address);
+    while(!SPI_I2S_GetFlagStatus(dev, SPI_I2S_FLAG_RXNE));
+    delayMicroseconds(10);
+    SPI_I2S_ReceiveData(dev);
+
+    while(!SPI_I2S_GetFlagStatus(dev, SPI_I2S_FLAG_TXE));
+    SPI_I2S_SendData(dev, 0x00); //Dummy byte to generate clock
+    while(!SPI_I2S_GetFlagStatus(dev, SPI_I2S_FLAG_RXNE));
+    delayMicroseconds(10);
+    data_out[i] = SPI_I2S_ReceiveData(dev); //Clear RXNE bit
+  }
+
+  set_ss_high();
+}
+
 bool SPI::transfer(uint8_t *out, uint32_t len, uint8_t *in)
 {
   uint16_t timeout;
   for(int i = 0; i < len; i++)
   {
-    timeout = 1000;
+    //timeout = 1000;
     // Wait for any sends to finish
     while(SPI_I2S_GetFlagStatus(dev, SPI_I2S_FLAG_TXE) == RESET)
     {
-      if (--timeout == 0)
-        return false;
+      //if (--timeout == 0)//how do we know each of these would be a ms?
+      //  return false;
     }
 
     if(out)
@@ -134,14 +185,14 @@ bool SPI::transfer(uint8_t *out, uint32_t len, uint8_t *in)
       SPI_I2S_SendData(dev, out[i]);
     }
 
-    timeout = 1000;
+    //timeout = 1000;
 
     // Wait for any reads to finish
-    while(SPI_I2S_GetFlagStatus(dev, SPI_I2S_FLAG_RXNE) == RESET)
+    /*while(SPI_I2S_GetFlagStatus(dev, SPI_I2S_FLAG_RXNE) == RESET)
     {
-      if (--timeout == 0)
-        return false;
-    }
+      //if (--timeout == 0)
+      //  return false;
+    }*/
     uint8_t b = SPI_I2S_ReceiveData(dev);
     if(in)
     {

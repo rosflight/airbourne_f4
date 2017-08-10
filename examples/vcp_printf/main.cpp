@@ -35,9 +35,6 @@ void rx_callback(uint8_t byte)
 {
   vcpPtr->put_byte(byte);
   vcpPtr->flush();
-  uint8_t newline = '\n';
-  vcpPtr->put_byte(newline);
-  vcpPtr->flush();
 }
 
 int main()
