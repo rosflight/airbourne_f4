@@ -1,30 +1,11 @@
-###############################################################################
-# Generic Makefile Template for C/C++ for use with STM32 Microcontrollers
+############
+# SPI example make file
 #
-# Copyright (c) 2016 - James Jackson
-# All rights reserved.
-
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions are met:
-#    * Redistributions of source code must retain the above copyright
-#      notice, this list of conditions and the following disclaimer.
-#    * Redistributions in binary form must reproduce the above copyright
-#      notice, this list of conditions and the following disclaimer in the
-#      documentation and/or other materials provided with the distribution.
-#    * Neither the name of the <organization> nor the
-#      names of its contributors may be used to endorse or promote products
-#      derived from this software without specific prior written permission.
-
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
-# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-# WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-# DISCLAIMED. IN NO EVENT SHALL <COPYRIGHT HOLDER> BE LIABLE FOR ANY
-# DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-# (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
-# ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# Adapted from @superjax's Generic Makefile Template:
+# https://github.com/superjax/airbourne/blob/f4/f4/examples/spi/Makefile
+#
+# @author len0rd
+# @since 2017-08-14
 
 TARGET = spi
 
@@ -40,127 +21,84 @@ SERIAL_DEVICE ?= /dev/ttyUSB0
 CC=arm-none-eabi-gcc
 CXX=arm-none-eabi-g++
 LD=arm-none-eabi-ld
-AR=arm-none-eabi-ar
-AS=arm-none-eabi-as
 CP=arm-none-eabi-objcopy
-OD=arm-none-eabi-objdump
-NM=arm-none-eabi-nm
 SIZE=arm-none-eabi-size
-A2L=arm-none-eabi-addr2line
 
 #################################
 # Working directories
 #################################
-AIRBOURNE_DIR 	= ../../
-ROOT		 	= .
-SRC_DIR		 	= $(ROOT)
-CMSIS_DIR	 	= $(AIRBOURNE_DIR)/lib/CMSIS
-MATH_DIR	 	= $(AIRBOURNE_DIR)/lib/math
-STDPERIPH_DIR	= $(AIRBOURNE_DIR)/lib/STM32F4xx_StdPeriph_Driver
-USBCORE_DIR	= $(AIRBOURNE_DIR)/lib/STM32_USB_Device_Library/Core
-USBOTG_DIR	= $(AIRBOURNE_DIR)/lib/STM32_USB_OTG_Driver
-USBCDC_DIR	= $(AIRBOURNE_DIR)/lib/STM32_USB_Device_Library/Class/cdc
-VCP_DIR		= $(AIRBOURNE_DIR)/lib/vcp
-OBJECT_DIR	= obj
-BIN_DIR	 	= obj
+ROOT			= ../..
+SRC_DIR		 	= $(ROOT)/src
+CMSIS_DIR	 	= $(ROOT)/lib/CMSIS
+STDPERIPH_DIR	= $(ROOT)/lib/STM32F4xx_StdPeriph_Driver
+USBCORE_DIR		= $(ROOT)/lib/STM32_USB_Device_Library/Core
+USBOTG_DIR		= $(ROOT)/lib/STM32_USB_OTG_Driver
+USBCDC_DIR		= $(ROOT)/lib/STM32_USB_Device_Library/Class/cdc
+STARTUP_DIR		= $(ROOT)/lib/startup
+BIN_DIR	 		= obj
 
 #################################
 # Source Files
 #################################
-VPATH := $(VPATH):$(AIRBOURNE_DIR)
-LDSCRIPT = $(AIRBOURNE_DIR)processor/stm32_flash_f405_1024k.ld
-ASOURCES = $(AIRBOURNE_DIR)processor/startup_stm32f40_41xxx.s
+VPATH 	 := $(VPATH):$(ROOT)
+LDSCRIPT := $(STARTUP_DIR)/stm32_flash_f405_1024k.ld
+ASOURCES := $(STARTUP_DIR)/startup_stm32f40_41xxx.s
 
-VPATH		:= $(SRC_DIR):$(SRC_DIR)/startups
+VPATH	 := $(VAPTH):$(STDPERIPH_DIR)/src
+VPATH 	 := $(VPATH):$(SRC_DIR)
+VPATH 	 := $(VPATH):$(SRC_DIR)/vcp
+VPATH	 := $(VPATH):$(USBCORE_DIR)/src:$(USBOTG_DIR)/src:$(USBCDC_DIR)/src
+VPATH	 := $(VPATH):$(CMSIS_DIR)/CM4/CoreSupport:$(CMSIS_DIR)/CM4/DeviceSupport/ST/STM32F4xx
 
-# Search path and source files for the CMSIS sources
-VPATH		:= 	$(VPATH):$(CMSIS_DIR)/CM4/CoreSupport:$(CMSIS_DIR)/CM4/DeviceSupport/ST/STM32F4xx
-CMSIS_SRC	 = 	$(notdir $(wildcard $(CMSIS_DIR)/CM4/CoreSupport/*.c \
-				$(CMSIS_DIR)/CM4/DeviceSupport/ST/STM32F4xx/*.c))
+CMSIS_SRC	 	= $(notdir $(wildcard $(CMSIS_DIR)/CM4/CoreSupport/*.c \
+				  $(CMSIS_DIR)/CM4/DeviceSupport/ST/STM32F4xx/*.c))
+STDPERIPH_SRC	= $(notdir $(wildcard $(STDPERIPH_DIR)/src/*.c))
+USBCORE_SRC 	= $(notdir $(wildcard $(USBCORE_DIR)/src/*.c))
+USBOTG_SRC 		= $(notdir $(wildcard $(USBOTG_DIR)/src/*.c))
+USBCDC_SRC 		= $(notdir $(wildcard $(USBCDC_DIR)/src/*.c))
+VCP_SRC 		= $(notdir $(wildcard $(SRC_DIR)/vcp/*.c))
+PROCESSOR_SRC 	= $(notdir $(wildcard $(SRC_DIR)/*.c))
 
-# Search path and source files for the ST stdperiph library and exclude files we don't need
-VPATH		:= $(VPATH):$(STDPERIPH_DIR)/src
-STDPERIPH_SRC	 = $(notdir $(wildcard $(STDPERIPH_DIR)/src/*.c))
-EXCLUDES = stm32f4xx_crc.c \
-		stm32f4xx_can.c \
-		stm32f4xx_fmc.c \
-		stm32f4xx_fsmc.c \
-		stm32f4xx_sai.c \
-		stm32f4xx_cec.c \
-		stm32f4xx_dsi.c \
-		stm32f4xx_flash_ramfunc.c \
-		stm32f4xx_fmpi2c.c \
-		stm32f4xx_lptim.c \
-		stm32f4xx_qspi.c
-STDPERIPH_SRC := $(filter-out ${EXCLUDES}, $(STDPERIPH_SRC))
-
-
-# Search path and source files for the USB libraries
-VPATH		:= $(VPATH):$(USBCORE_DIR)/src:$(USBOTG_DIR)/src:$(USBCDC_DIR)/src
-USBCORE_SRC = $(notdir $(wildcard $(USBCORE_DIR)/src/*.c))
-USBOTG_SRC = $(notdir $(wildcard $(USBOTG_DIR)/src/*.c))
-USBCDC_SRC = $(notdir $(wildcard $(USBCDC_DIR)/src/*.c))
-
-# Add VCP source files
-VPATH := $(VPATH):$(VCP_DIR)
-VCP_SRC = $(notdir $(wildcard $(VCP_DIR)/*.c))
-
-# Add processor-specific files
-VPATH := $(VPATH):$(AIRBOURNE_DIR)/src
-PROCESSOR_SRC = $(notdir $(wildcard $(AIRBOURNE_DIR)/src/*.c))
-
-EXCLUDES	= usb_bsp_template.c \
-			  usb_conf_template.c \
-			  usb_hcd_int.c \
-			  usb_hcd.c \
-			  usb_otg.c \
-			  usbd_cdc_if_template.c
+EXCLUDES = usb_bsp_template.c \
+		   usb_conf_template.c \
+		   usb_hcd_int.c \
+		   usb_hcd.c \
+		   usb_otg.c \
+		   usbd_cdc_if_template.c
 USBCDC_SRC := $(filter-out ${EXCLUDES}, $(USBCDC_SRC))
 USBOTG_SRC := $(filter-out ${EXCLUDES}, $(USBOTG_SRC))
 
-# Search path and source files for the math library
-VPATH		:= $(VPATH):$(MATH_DIR)
-MATH_SRC	 = $(notdir $(wildcard $(MATH_DIR)/*.cpp))
 
-
-# Make a list of source files and includes
 CSOURCES =  $(CMSIS_SRC) \
-	    	$(STDPERIPH_SRC) \
-	    	$(USBCORE_SRC) \
-	    	$(USBOTG_SRC) \
-	    	$(USBCDC_SRC) \
-                $(PROCESSOR_SRC) \
-                $(VCP_SRC) \
-                $(ROOT)/main.cpp
+			$(STDPERIPH_SRC) \
+			$(USBCORE_SRC) \
+			$(USBOTG_SRC) \
+			$(USBCDC_SRC) \
+			$(VCP_SRC) \
+			$(PROCESSOR_SRC) \
+			main.cpp
 
+CXXSOURCES  = 	$(SRC_DIR)/drv_spi.cpp \
+				$(SRC_DIR)/drv_led.cpp \
+				$(SRC_DIR)/mpu6000.cpp
 
-CXXSOURCES = $(AIRBOURNE_DIR)/src/gpio.cpp \
-             $(AIRBOURNE_DIR)/src/VCP.cpp \
-             $(AIRBOURNE_DIR)/src/spi.cpp \
-             $(AIRBOURNE_DIR)/src/mpu6000_spi.cpp \
-             $(MATH_SRC)
-
-INCLUDE_DIRS	 = 	$(SRC_DIR) \
-					$(AIRBOURNE_DIR)/include \
-		   			$(MATH_DIR) \
-		   			$(STDPERIPH_DIR)/inc \
-		   			$(USBOTG_DIR)/inc \
-		   			$(USBCORE_DIR)/inc \
-		   			$(USBCDC_DIR)/inc \
-		   			$(CMSIS_DIR)/CM4/CoreSupport \
-		   			$(CMSIS_DIR)/CM4/DeviceSupport/ST/STM32F4xx \
-		   			$(CMSIS_DIR)/CM4/DeviceSupport/ST/STM32F4xx/Include \
-		   			$(VCP_DIR)
-
-
-
+INCLUDE_DIRS = 	$(SRC_DIR) \
+				$(ROOT)/inc \
+	   			$(STDPERIPH_DIR)/inc \
+	   			$(USBOTG_DIR)/inc \
+	   			$(USBCORE_DIR)/inc \
+	   			$(USBCDC_DIR)/inc \
+	   			$(CMSIS_DIR)/CM4/CoreSupport \
+	   			$(CMSIS_DIR)/CM4/DeviceSupport/ST/STM32F4xx \
+	   			$(CMSIS_DIR)/CM4/DeviceSupport/ST/STM32F4xx/Include \
+	   			$(SRC_DIR)/vcp
 
 #################################
 # Object List
 #################################
-OBJECTS=$(addsuffix .o,$(addprefix $(OBJECT_DIR)/$(TARGET)/,$(basename $(ASOURCES))))
-OBJECTS+=$(addsuffix .o,$(addprefix $(OBJECT_DIR)/$(TARGET)/,$(basename $(CSOURCES))))
-OBJECTS+=$(addsuffix .o,$(addprefix $(OBJECT_DIR)/$(TARGET)/,$(basename $(CXXSOURCES))))
+OBJECTS	=$(addsuffix .o,$(addprefix $(BIN_DIR)/$(TARGET)/,$(basename $(ASOURCES))))
+OBJECTS+=$(addsuffix .o,$(addprefix $(BIN_DIR)/$(TARGET)/,$(basename $(CSOURCES))))
+OBJECTS+=$(addsuffix .o,$(addprefix $(BIN_DIR)/$(TARGET)/,$(basename $(CXXSOURCES))))
 
 #################################
 # Target Output Files
@@ -171,13 +109,8 @@ TARGET_HEX=$(BIN_DIR)/$(TARGET).hex
 #################################
 # Debug Config
 #################################
-# ifeq ($(DEBUG), GDB)
 DEBUG_FLAGS = -ggdb3
-OPTIMIZE = -Og
-# else
-# OPTIMIZE = -Os
-# LTO_FLAGS = -flto -fuse-linker-plugin $(OPTIMIZE)
-# endif
+OPTIMIZE 	= -Og
 
 #################################
 # Flags
@@ -199,26 +132,26 @@ $(TARGET_ELF): $(OBJECTS)
 	$(CXX) -o $@ $^ $(LDFLAGS)
 	$(SIZE) $(TARGET_ELF)
 
-$(OBJECT_DIR)/$(TARGET)/%.o: %.cpp
+$(BIN_DIR)/$(TARGET)/%.o: %.cpp
 	@mkdir -p $(dir $@)
 	@echo %% $(notdir $<)
 	@$(CXX) -c -o $@ $(CXXFLAGS) $<
 
-$(OBJECT_DIR)/$(TARGET)/%.o: %.c
+$(BIN_DIR)/$(TARGET)/%.o: %.c
 	@mkdir -p $(dir $@)
 	@echo %% $(notdir $<)
 	@$(CC) -c -o $@ $(CFLAGS) $<
 
-$(OBJECT_DIR)/$(TARGET)/%.o: %.s
+$(BIN_DIR)/$(TARGET)/%.o: %.s
 	@mkdir -p $(dir $@)
 	@echo %% $(notdir $<)
 	@$(CC) -c -o $@ $(CFLAGS) $<
 
 
-#################################
+##################################
 # Recipes
 #################################
-.PHONY: all flash clean
+.PHONY: flash clean
 
 clean:
 	rm -f $(OBJECTS) $(TARGET_ELF) $(TARGET_HEX) $(BIN_DIR)/output.map
@@ -226,6 +159,3 @@ clean:
 flash: $(TARGET_HEX)
 	stty -F $(SERIAL_DEVICE) raw speed 921600 -crtscts cs8 -parenb -cstopb -ixon
 	stm32flash -w $(TARGET_HEX) -v -g 0x0 -b 921600 $(SERIAL_DEVICE)
-
-
-

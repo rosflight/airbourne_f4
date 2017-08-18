@@ -14,14 +14,7 @@
  * You should have received a copy of the GNU General Public License
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
-
-#include <string.h>
-#include <stdbool.h>
-#include <stdint.h>
-#include <stdlib.h>
-
 #include "system.h"
-#include "stm32f4xx.h"
 
 
 // cycles per microsecond
@@ -68,6 +61,9 @@ void systemInit(void)
     RCC_AHB2PeriphClockCmd( RCC_AHB2Periph_OTG_FS, DISABLE);
 
     RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOB, ENABLE);
+
+    RCC_APB2PeriphClockCmd(RCC_APB2Periph_SPI1, ENABLE);
+    RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOA, ENABLE);
 
     // Init cycle counter
     cycleCounterInit();

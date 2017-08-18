@@ -1,54 +1,30 @@
-/**
-*****************************************************************************
-**
-**  File        : main.c
-**
-**  Abstract    : main function.
-**
-**  Functions   : main
-**
-**  Environment : Atollic TrueSTUDIO(R)
-**                STMicroelectronics STM32F4xx Standard Peripherals Library
-**
-**  Distribution: The file is distributed “as is,” without any warranty
-**                of any kind.
-**
-**  (c)Copyright Atollic AB.
-**  You may use this file as-is or modify it according to the needs of your
-**  project. Distribution of this file (unmodified or modified) is not
-**  permitted. Atollic AB permit registered Atollic TrueSTUDIO(R) users the
-**  rights to distribute the assembled, compiled & linked contents of this
-**  file as part of an application binary file, provided that it is built
-**  using the Atollic TrueSTUDIO(R) toolchain.
-**
-**
-*****************************************************************************
-*/
-
-/* Includes */
 #include "system.h"
-#include "VCP.h"
-#include "spi.h"
-#include "mpu6000_spi.h"
+#include "drv_spi.h"
+#include "mpu6000.h"
+#include "drv_led.h"
 
-VCP* vcpPtr = NULL;
+int main() {
 
-int main()
-{
-  systemInit();
+	systemInit();
 
-  //logic analyzer debug=1, mpu6000 = 0
-  SPI spi(spi_config[0]);
+    LED warn(LED1_GPIO, LED1_PIN);
+    LED info(LED2_GPIO, LED2_PIN);
 
-  MPU6000_SPI imu(&spi);
-  vector3 acc, gyro;
-  float temp;
-  while(1)
-  {
-    acc.zero();
-    gyro.zero();
-    temp = 0;
-    imu.read_all(&acc, &gyro, &temp);
-    delay(200);
-  }
+	SPI mpu_spi(MPU6000_SPI);
+
+	MPU6000 imu(&mpu_spi);
+	int16_t temp;
+    int16_t acc[3];
+    int16_t gyro[3];
+    while(1) {
+        info.toggle();
+        imu.read_sensors(acc, gyro, &temp);
+        if (acc[0] == 0xFFFF || acc[0] == 0x0000) {
+            warn.on();
+        }
+        else {
+        	warn.off();
+        }
+		delay(200);
+	}
 }
