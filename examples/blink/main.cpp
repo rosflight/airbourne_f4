@@ -1,17 +1,18 @@
-
-#include "stm32f4xx.h"
 #include "system.h"
-#include "gpio.h"
+#include "drv_led.h"
 
 int main()
 {
   systemInit();
 
-  GPIO LED(led_config[0].GPIO, led_config[0].pin, GPIO::OUTPUT);
+  LED warn(LED1_GPIO, LED1_PIN);
+  LED info(LED2_GPIO, LED2_PIN);
 
+  warn.on();
   while(1)
   {
     delay(200);
-    LED.toggle();
+    warn.toggle();
+    info.toggle();
   }
 }

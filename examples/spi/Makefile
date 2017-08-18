@@ -109,6 +109,7 @@ TARGET_HEX=$(BIN_DIR)/$(TARGET).hex
 #################################
 # Debug Config
 #################################
+#$(info ***** Building with Debug Symbols *****)
 DEBUG_FLAGS = -ggdb3
 OPTIMIZE 	= -Og
 
