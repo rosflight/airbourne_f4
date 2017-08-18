@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    usbd_cdc_core.c
   * @author  MCD Application Team
-  * @version V1.0.0
-  * @date    22-July-2011
+  * @version V1.1.0
+  * @date    19-March-2012
   * @brief   This file provides the high layer firmware functions to manage the 
   *          following functionalities of the USB CDC Class:
   *           - Initialization and Configuration of high and low layer
@@ -43,17 +43,23 @@
   *      
   *  @endverbatim
   *                                  
-  ******************************************************************************               
+  ******************************************************************************
   * @attention
   *
-  * THE PRESENT FIRMWARE WHICH IS FOR GUIDANCE ONLY AIMS AT PROVIDING CUSTOMERS
-  * WITH CODING INFORMATION REGARDING THEIR PRODUCTS IN ORDER FOR THEM TO SAVE
-  * TIME. AS A RESULT, STMICROELECTRONICS SHALL NOT BE HELD LIABLE FOR ANY
-  * DIRECT, INDIRECT OR CONSEQUENTIAL DAMAGES WITH RESPECT TO ANY CLAIMS ARISING
-  * FROM THE CONTENT OF SUCH FIRMWARE AND/OR THE USE MADE BY CUSTOMERS OF THE
-  * CODING INFORMATION CONTAINED HEREIN IN CONNECTION WITH THEIR PRODUCTS.
+  * <h2><center>&copy; COPYRIGHT 2012 STMicroelectronics</center></h2>
   *
-  * <h2><center>&copy; COPYRIGHT 2011 STMicroelectronics</center></h2>
+  * Licensed under MCD-ST Liberty SW License Agreement V2, (the "License");
+  * You may not use this file except in compliance with the License.
+  * You may obtain a copy of the License at:
+  *
+  *        http://www.st.com/software_license_agreement_liberty_v2
+  *
+  * Unless required by applicable law or agreed to in writing, software 
+  * distributed under the License is distributed on an "AS IS" BASIS, 
+  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  * See the License for the specific language governing permissions and
+  * limitations under the License.
+  *
   ******************************************************************************
   */ 
 
@@ -163,7 +169,7 @@ __ALIGN_BEGIN uint8_t USB_Rx_Buffer   [CDC_DATA_MAX_PACKET_SIZE] __ALIGN_END ;
     #pragma data_alignment=4   
   #endif
 #endif /* USB_OTG_HS_INTERNAL_DMA_ENABLED */
-__ALIGN_BEGIN uint8_t APP_Rx_Buffer   [APP_RX_DATA_SIZE] __ALIGN_END ;
+__ALIGN_BEGIN uint8_t APP_Rx_Buffer   [APP_RX_DATA_SIZE] __ALIGN_END ; 
 
 
 #ifdef USB_OTG_HS_INTERNAL_DMA_ENABLED
@@ -177,7 +183,7 @@ uint32_t APP_Rx_ptr_in  = 0;
 uint32_t APP_Rx_ptr_out = 0;
 uint32_t APP_Rx_length  = 0;
 
-volatile uint8_t  USB_Tx_State = 0;
+uint8_t  USB_Tx_State = 0;
 
 static uint32_t cdcCmd = 0xFF;
 static uint32_t cdcLen = 0;
@@ -218,7 +224,7 @@ __ALIGN_BEGIN uint8_t usbd_cdc_CfgDesc[USB_CDC_CONFIG_DESC_SIZ]  __ALIGN_END =
   0x01,   /* bConfigurationValue: Configuration value */
   0x00,   /* iConfiguration: Index of string descriptor describing the configuration */
   0xC0,   /* bmAttributes: self powered */
-  0xfa,   /* MaxPower 500 mA */
+  0x32,   /* MaxPower 0 mA */
   
   /*---------------------------------------------------------------------------*/
   
@@ -425,8 +431,6 @@ static uint8_t  usbd_cdc_Init (void  *pdev,
 {
   uint8_t *pbuf;
 
-  (void)pdev;
-  (void)cfgidx;
   /* Open EP IN */
   DCD_EP_Open(pdev,
               CDC_IN_EP,
@@ -471,8 +475,6 @@ static uint8_t  usbd_cdc_Init (void  *pdev,
 static uint8_t  usbd_cdc_DeInit (void  *pdev, 
                                  uint8_t cfgidx)
 {
-	  (void)pdev;
-	  (void)cfgidx;
   /* Open EP IN */
   DCD_EP_Close(pdev,
               CDC_IN_EP);
@@ -501,8 +503,8 @@ static uint8_t  usbd_cdc_DeInit (void  *pdev,
 static uint8_t  usbd_cdc_Setup (void  *pdev, 
                                 USB_SETUP_REQ *req)
 {
-  uint16_t len;
-  uint8_t  *pbuf;
+  uint16_t len=USB_CDC_DESC_SIZ;
+  uint8_t  *pbuf=usbd_cdc_CfgDesc + 9;
   
   switch (req->bmRequest & USB_REQ_TYPE_MASK)
   {
@@ -600,7 +602,6 @@ static uint8_t  usbd_cdc_Setup (void  *pdev,
   */
 static uint8_t  usbd_cdc_EP0_RxReady (void  *pdev)
 { 
-	(void)pdev;
   if (cdcCmd != NO_CMD)
   {
     /* Process the data */
@@ -622,8 +623,6 @@ static uint8_t  usbd_cdc_EP0_RxReady (void  *pdev)
   */
 static uint8_t  usbd_cdc_DataIn (void *pdev, uint8_t epnum)
 {
-	(void)pdev;
-	(void)epnum;
   uint16_t USB_Tx_ptr;
   uint16_t USB_Tx_length;
 
@@ -631,7 +630,13 @@ static uint8_t  usbd_cdc_DataIn (void *pdev, uint8_t epnum)
   {
     if (APP_Rx_length == 0) 
     {
-      USB_Tx_State = 0;
+// AKA      USB_Tx_State = 0;                                                                 // AKA corrected for below
+     if (((USB_OTG_CORE_HANDLE*)pdev)->dev.in_ep[epnum].xfer_len != CDC_DATA_IN_PACKET_SIZE)  // HJI Patch from STM Forum, Tags: stm32 usb library cdc device !bug
+     {                                                                                        // HJI Patch from STM Forum, Tags: stm32 usb library cdc device !bug
+       USB_Tx_State = 0;                                                                      // HJI Patch from STM Forum, Tags: stm32 usb library cdc device !bug
+       return USBD_OK;                                                                        // HJI Patch from STM Forum, Tags: stm32 usb library cdc device !bug
+     }                                                                                        // HJI Patch from STM Forum, Tags: stm32 usb library cdc device !bug
+     USB_Tx_length = 0;                                                                       // HJI Patch from STM Forum, Tags: stm32 usb library cdc device !bug
     }
     else 
     {
@@ -650,20 +655,20 @@ static uint8_t  usbd_cdc_DataIn (void *pdev, uint8_t epnum)
         APP_Rx_ptr_out += APP_Rx_length;
         APP_Rx_length = 0;
       }
-      
+    } // AKA                                                                                  // AKA corrected with above
       /* Prepare the available data buffer to be sent on IN endpoint */
       DCD_EP_Tx (pdev,
                  CDC_IN_EP,
                  (uint8_t*)&APP_Rx_Buffer[USB_Tx_ptr],
                  USB_Tx_length);
-    }
+// AKA    }                                                                                   // AKA corrected with above
   }  
   
   return USBD_OK;
 }
 
 /**
-  * @brief  usbd_audio_DataOut
+  * @brief  usbd_cdc_DataOut
   *         Data received on non-control Out endpoint
   * @param  pdev: device instance
   * @param  epnum: endpoint number
@@ -730,19 +735,21 @@ static void Handle_USBAsynchXfer (void *pdev)
       APP_Rx_ptr_out = 0;
     }
     
-    if(APP_Rx_ptr_out == APP_Rx_ptr_in)
+    if(APP_Rx_ptr_out == APP_Rx_ptr_in) 
     {
-      USB_Tx_State = 0;
+      USB_Tx_State = 0; 
       return;
     }
     
     if(APP_Rx_ptr_out > APP_Rx_ptr_in) /* rollback */
     { 
       APP_Rx_length = APP_RX_DATA_SIZE - APP_Rx_ptr_out;
+    
     }
     else 
     {
       APP_Rx_length = APP_Rx_ptr_in - APP_Rx_ptr_out;
+     
     }
 #ifdef USB_OTG_HS_INTERNAL_DMA_ENABLED
      APP_Rx_length &= ~0x03;
@@ -783,7 +790,6 @@ static void Handle_USBAsynchXfer (void *pdev)
   */
 static uint8_t  *USBD_cdc_GetCfgDesc (uint8_t speed, uint16_t *length)
 {
-	(void)speed;
   *length = sizeof (usbd_cdc_CfgDesc);
   return usbd_cdc_CfgDesc;
 }
@@ -814,4 +820,4 @@ static uint8_t  *USBD_cdc_GetOtherCfgDesc (uint8_t speed, uint16_t *length)
   * @}
   */ 
 
-/******************* (C) COPYRIGHT 2011 STMicroelectronics *****END OF FILE****/
+/************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

@@ -1,3 +1,4 @@
+
 /*
  * This file is part of Cleanflight.
  *
@@ -14,67 +15,44 @@
  * You should have received a copy of the GNU General Public License
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
-
-
-#include <stdint.h>
 #pragma once
+
+#define ARM_MATH_CM4
+
+#include <stdbool.h>
+#include <stdlib.h>
+#include <stdint.h>
+#include <math.h>
+#include <ctype.h>
+#include <string.h>
+#include <stdio.h>
+#include <stdarg.h>
+#include <errno.h>
+
+////////////////////////////////////////////////////////////////
+
+#include "stm32f4xx.h"
+#include "arm_math.h"
+#include "usbd_cdc_core.h"
+#include "usbd_cdc.h"
+#include "usbd_usr.h"
+#include "usbd_desc.h"
+
+////////////////////////////////////////////////////////////////
+
+//YOUR BOARD-SPECIFC FILE GOES HERE
+#include "revo_f4.h"
+
+////////////////////////////////////////////////////////////////
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#include "stm32f4xx.h"
-#include "stm32f4xx_conf.h"
-
 #ifdef __cplusplus
 }
 #endif
 
-#ifndef TARGET_REVO
-#define TARGET_REVO
-#endif
-
-#ifdef TARGET_REVO
-#include "revo_f4.h"
-#endif
-
-#include <stdbool.h>
-
-
-// Define the hardware configuration structs.  (These are instantiated in the board-specific c-file)
-typedef struct
-{
-  GPIO_TypeDef* GPIO;
-  uint16_t pin;
-} LED_configuration_t;
-extern LED_configuration_t led_config[NUM_LED];
-
-#define VCP_INDEX 0
-typedef struct
-{
-  uint8_t serial_type;
-  GPIO_TypeDef* GPIO;
-  uint16_t rx_pin;
-  uint16_t tx_pin;
-} serial_configuration_t;
-extern serial_configuration_t serial_config[NUM_SERIAL_CONNECTIONS];
-
-typedef struct
-{
-  SPI_TypeDef* dev;
-  GPIO_TypeDef* GPIO;
-  uint16_t nss_pin;
-  uint16_t sck_pin;
-  uint16_t miso_pin;
-  uint16_t mosi_pin;
-  uint32_t rcc;
-  DMA_TypeDef* dma_id;
-  uint32_t dma_channel;
-  IRQn_Type dma_rx_irqn;
-  IRQn_Type dma_tx_irqn;
-  bool leading_edge;
-} spi_configuration_t;
-extern spi_configuration_t spi_config[NUM_SPI_CONNECTIONS];
 
 
 #ifdef __cplusplus

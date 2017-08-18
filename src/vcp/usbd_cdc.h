@@ -1,10 +1,10 @@
 /**
   ******************************************************************************
-  * @file    GPIO/IOToggle/stm32f4xx_it.h
+  * @file    usbd_cdc_vcp.h
   * @author  MCD Application Team
   * @version V1.0.0
-  * @date    19-September-2011
-  * @brief   This file contains the headers of the interrupt handlers.
+  * @date    22-July-2011
+  * @brief   Header for usbd_cdc_vcp.c file.
   ******************************************************************************
   * @attention
   *
@@ -20,37 +20,39 @@
   */
 
 /* Define to prevent recursive inclusion -------------------------------------*/
-#ifndef __STM32F4xx_IT_H
-#define __STM32F4xx_IT_H
-
-#ifdef __cplusplus
- extern "C" {
-#endif
+#ifndef __USBD_CDC_H
+#define __USBD_CDC_H
 
 /* Includes ------------------------------------------------------------------*/
 #include "stm32f4xx.h"
 
-/* Exported types ------------------------------------------------------------*/
-/* Exported constants --------------------------------------------------------*/
+#include "usbd_cdc_core.h"
+#include "usbd_conf.h"
+
+
+#define DEFAULT_CONFIG                  0
+#define OTHER_CONFIG                    1
+
+
 /* Exported macro ------------------------------------------------------------*/
+
 /* Exported functions ------------------------------------------------------- */
 
+extern uint16_t cdc_DataTx (uint8_t* Buf, uint32_t Len);
 
-void OTG_FS_IRQHandler(void);
-void NMI_Handler(void);
-void HardFault_Handler(void);
-void MemManage_Handler(void);
-void BusFault_Handler(void);
-void UsageFault_Handler(void);
-void SVC_Handler(void);
-void DebugMon_Handler(void);
-void PendSV_Handler(void);
-void SysTick_Handler(void);
+/// cdc_RX_IsCharReady() returns (-1) if chars in Rx_Buf else (0) :
+char	cdc_RX_IsCharReady(void);
 
-#ifdef __cplusplus
-}
-#endif
+/// cdc_RX_ChkChar() returns (char) if chars in Rx_Buf else (0) but no Inc BufIdx :
+char	cdc_RX_ChkChar(void);
 
-#endif /* __STM32F4xx_IT_H */
+/// cdc_RX_GetChar() returns (char) if chars in Rx_Buf else (0) and Incs BufIdx :
+char	cdc_RX_GetChar(void);
+
+/// Waits until Char in RX buf then returns the char and Inc Buf Idx :
+char	cdc_RX_GetWaitChar();
+
+
+#endif /* __USBD_CDC_VCP_H */
 
 /******************* (C) COPYRIGHT 2011 STMicroelectronics *****END OF FILE****/

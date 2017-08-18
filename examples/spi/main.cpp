@@ -33,20 +33,11 @@
 
 VCP* vcpPtr = NULL;
 
-/*void rx_callback(uint8_t byte)
-{
-  vcpPtr->put_byte(byte);
-  vcpPtr->flush();
-}*/
-
 int main()
 {
   systemInit();
 
-  //VCP vcp(serial_config[VCP_INDEX]);
-  //vcpPtr = &vcp;
-  //vcp.register_rx_callback(&rx_callback);
-
+  //logic analyzer debug=1, mpu6000 = 0
   SPI spi(spi_config[0]);
 
   MPU6000_SPI imu(&spi);
