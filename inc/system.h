@@ -49,15 +49,14 @@
 extern "C" {
 #endif
 
-#ifdef __cplusplus
-}
-#endif
-
-
-
-#ifdef __cplusplus
-extern "C" {
-#endif
+typedef struct {
+	GPIO_TypeDef* gpio;
+	uint16_t gpio_pin;
+	uint8_t gpio_pin_source;
+	TIM_TypeDef* tim;
+	uint8_t tim_channel;
+	uint8_t tim_af_config;
+} pwm_hardware_struct_t;
 
 void systemInit(void);
 void delayMicroseconds(uint32_t us);
@@ -69,9 +68,6 @@ uint32_t millis(void);
 // bootloader/IAP
 void systemReset(void);
 void systemResetToBootloader(void);
-
-
-
 
 #ifdef __cplusplus
 }
