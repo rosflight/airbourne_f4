@@ -20,8 +20,16 @@ void PWM_OUT::init(const pwm_hardware_struct_t* pwm_init, uint16_t frequency, ui
 	GPIO_Init(port_, &gpio_init_struct);
 
 	//disable();
+	TIM_TypeDef* TIMPtr = pwm_init->tim;
+	const uint16_t prescaler_default = 42;
 
-	uint32_t timer_prescaler = 42; //This is dependent on how fast the SystemCoreClock is. Not sure what to set to...
+    uint32_t timer_prescaler = prescaler_default * 2;//This is dependent on how fast the SystemCoreClock is. (ie will change between stm32fX models)
+	if (TIMPtr == TIM9 || TIMPtr == TIM10 || TIMPtr == TIM11)
+	{
+		//For F4's (possibly others) TIM9-11 have a max timer clk double that of all the other TIMs
+		//How the math works out below requires us to use the normal prescaler instead of double
+		timer_prescaler = prescaler_default; 
+	}
 	uint32_t timer_freq_hz = SystemCoreClock / timer_prescaler;
 
 	uint16_t cycles_per_us = timer_freq_hz / 1000000;//E^6
@@ -32,7 +40,7 @@ void PWM_OUT::init(const pwm_hardware_struct_t* pwm_init, uint16_t frequency, ui
 
 	TIM_TimeBaseStructInit(&tim_init_struct);
 	tim_init_struct.TIM_Period 		  = period_cyc - 1; // 0 indexed
-	tim_init_struct.TIM_Prescaler 	  = timer_prescaler - 1; //0 indexed
+    tim_init_struct.TIM_Prescaler 	  = prescaler_default - 1; //0-indexed. Magic prescaler constant that works based on speed of stm32f4xx clock
 	tim_init_struct.TIM_ClockDivision = TIM_CKD_DIV1; //0x0000
 	tim_init_struct.TIM_CounterMode   = TIM_CounterMode_Up;
 	TIM_TimeBaseInit(pwm_init->tim, &tim_init_struct);
@@ -44,8 +52,6 @@ void PWM_OUT::init(const pwm_hardware_struct_t* pwm_init, uint16_t frequency, ui
 	tim_oc_init_struct.TIM_Pulse 		= min_cyc_ - 1;
 	tim_oc_init_struct.TIM_OCPolarity 	= TIM_OCPolarity_Low;
 	tim_oc_init_struct.TIM_OCIdleState 	= TIM_OCIdleState_Set;
-
-	TIM_TypeDef* TIMPtr = pwm_init->tim;
 
   	switch (pwm_init->tim_channel) {
 		case TIM_Channel_1:
