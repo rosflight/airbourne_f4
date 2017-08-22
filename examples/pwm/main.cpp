@@ -6,16 +6,15 @@
 int main() {
 	systemInit();
 
-	LED warn(LED1_GPIO, LED1_PIN);
 	LED info(LED2_GPIO, LED2_PIN);
 
 	PWM_OUT esc_out[NUM_PWM_OUTPUTS];
 	for (int i = 0; i < NUM_PWM_OUTPUTS; ++i)
 	{
-		esc_out[i].init(&pwm_hardware[i], 490, 2000, 1000);
+        esc_out[i].init(&pwm_hardware[i], 50, 2000, 1000);
 	}
 
-	float throttle = 0.0;
+    float throttle = 0.0;
 	while(1) {
 		for (int i = 0; i < NUM_PWM_OUTPUTS; ++i)
 		{
@@ -25,9 +24,8 @@ int main() {
 		if (throttle > 1.0)
 		{
 			throttle = 0.0;
-			warn.toggle();
+            info.toggle();
 		}
 		delay(2);
-		info.toggle();
 	}
 }

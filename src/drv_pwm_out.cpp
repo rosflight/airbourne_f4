@@ -21,32 +21,34 @@ void PWM_OUT::init(const pwm_hardware_struct_t* pwm_init, uint16_t frequency, ui
 
 	//disable();
 	TIM_TypeDef* TIMPtr = pwm_init->tim;
-	const uint16_t prescaler_default = 42;
+    const uint16_t prescaler_default = 42;
 
     uint32_t timer_prescaler = prescaler_default * 2;//This is dependent on how fast the SystemCoreClock is. (ie will change between stm32fX models)
+    uint32_t period_base = 2000000;
 	if (TIMPtr == TIM9 || TIMPtr == TIM10 || TIMPtr == TIM11)
 	{
 		//For F4's (possibly others) TIM9-11 have a max timer clk double that of all the other TIMs
 		//How the math works out below requires us to use the normal prescaler instead of double
-		timer_prescaler = prescaler_default; 
+        timer_prescaler = prescaler_default;
+        if (frequency > 61) {//this fixes tim9 for all frequencies > 61Hz...
+            period_base = period_base * 2;
+        }
 	}
-	uint32_t timer_freq_hz = SystemCoreClock / timer_prescaler;
+    uint32_t timer_freq_hz = SystemCoreClock / timer_prescaler;
 
-	uint16_t cycles_per_us = timer_freq_hz / 1000000;//E^6
+    uint16_t cycles_per_us = timer_freq_hz / 1000000;//E^6
 	max_cyc_ = max_us * cycles_per_us;
-	min_cyc_ = min_us * cycles_per_us;
-
-	uint16_t period_cyc = timer_freq_hz / frequency;
+    min_cyc_ = min_us * cycles_per_us;
 
 	TIM_TimeBaseStructInit(&tim_init_struct);
-	tim_init_struct.TIM_Period 		  = period_cyc - 1; // 0 indexed
-    tim_init_struct.TIM_Prescaler 	  = prescaler_default - 1; //0-indexed. Magic prescaler constant that works based on speed of stm32f4xx clock
-	tim_init_struct.TIM_ClockDivision = TIM_CKD_DIV1; //0x0000
+    tim_init_struct.TIM_Period 		  = (period_base / frequency) - 1; // 0 indexed
+    tim_init_struct.TIM_Prescaler 	  = 42 - 1; //0-indexed. Magic prescaler constant that works based on speed of stm32f4xx clock
+    tim_init_struct.TIM_ClockDivision = TIM_CKD_DIV1; //0x0000
 	tim_init_struct.TIM_CounterMode   = TIM_CounterMode_Up;
 	TIM_TimeBaseInit(pwm_init->tim, &tim_init_struct);
 
 	TIM_OCStructInit(&tim_oc_init_struct);
-	tim_oc_init_struct.TIM_OCMode 		= TIM_OCMode_PWM2;
+    tim_oc_init_struct.TIM_OCMode 		= TIM_OCMode_PWM2;
 	tim_oc_init_struct.TIM_OutputState 	= TIM_OutputState_Enable;
 	tim_oc_init_struct.TIM_OutputNState = TIM_OutputNState_Disable;
 	tim_oc_init_struct.TIM_Pulse 		= min_cyc_ - 1;
@@ -76,6 +78,7 @@ void PWM_OUT::init(const pwm_hardware_struct_t* pwm_init, uint16_t frequency, ui
 			break;
 	}
 
+	TIM_ARRPreloadConfig(TIMPtr, ENABLE);
 	TIM_Cmd(TIMPtr, ENABLE);
 }
 
