@@ -1,4 +1,5 @@
 #include "system.h"
+#include "revo_f4.h"
 #include "drv_pwm_out.h"
 #include "drv_led.h"
 
@@ -11,7 +12,7 @@ int main() {
 	PWM_OUT esc_out[NUM_PWM_OUTPUTS];
 	for (int i = 0; i < NUM_PWM_OUTPUTS; ++i)
 	{
-		esc_out[i] = PWM_OUT(pwm_hardware[i], 490, 2000, 1000);
+		esc_out[i].init(&pwm_hardware[i], 490, 2000, 1000);
 	}
 
 	float throttle = 0.0;
@@ -26,7 +27,7 @@ int main() {
 			throttle = 0.0;
 			warn.toggle();
 		}
-		delay(1);
+		delay(2);
 		info.toggle();
 	}
 }

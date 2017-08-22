@@ -15,7 +15,8 @@
  * You should have received a copy of the GNU General Public License
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
-#pragma once
+#ifndef SYSTEM_H
+#define SYSTEM_H
 
 #define ARM_MATH_CM4
 
@@ -27,7 +28,6 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdarg.h>
-#include <errno.h>
 
 ////////////////////////////////////////////////////////////////
 
@@ -40,15 +40,6 @@
 
 ////////////////////////////////////////////////////////////////
 
-//YOUR BOARD-SPECIFC FILE GOES HERE
-#include "revo_f4.h"
-
-////////////////////////////////////////////////////////////////
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 typedef struct {
 	GPIO_TypeDef* gpio;
 	uint16_t gpio_pin;
@@ -57,6 +48,15 @@ typedef struct {
 	uint8_t tim_channel;
 	uint8_t tim_af_config;
 } pwm_hardware_struct_t;
+
+//YOUR BOARD-SPECIFC FILE GOES HERE
+//#include "revo_f4.h"
+
+////////////////////////////////////////////////////////////////
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 void systemInit(void);
 void delayMicroseconds(uint32_t us);
@@ -72,3 +72,5 @@ void systemResetToBootloader(void);
 #ifdef __cplusplus
 }
 #endif
+
+#endif //SYSTEM_H

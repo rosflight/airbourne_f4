@@ -1,5 +1,5 @@
 ############
-# SPI example make file
+# PWM example make file
 #
 # Adapted from @superjax's Generic Makefile Template:
 # https://github.com/superjax/airbourne/blob/f4/f4/examples/spi/Makefile

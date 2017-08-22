@@ -1,16 +1,18 @@
 #include "drv_pwm_out.h"
 
-PWM_OUT::PWM_OUT(pwm_hardware_struct_t* pwm_init, uint16_t frequency, uint32_t max_us, uint32_t min_us) {
+PWM_OUT::PWM_OUT(){}
+
+void PWM_OUT::init(const pwm_hardware_struct_t* pwm_init, uint16_t frequency, uint32_t max_us, uint32_t min_us) {
 	GPIO_InitTypeDef 		gpio_init_struct;
 	TIM_TimeBaseInitTypeDef tim_init_struct;
 	TIM_OCInitTypeDef 		tim_oc_init_struct;
 
 	port_ = pwm_init->gpio;
-	pin_  = pwm_init->pin;
+	pin_  = pwm_init->gpio_pin;
 
 	GPIO_PinAFConfig(port_, pwm_init->gpio_pin_source, pwm_init->tim_af_config);
 
-	gpio_init_struct.GPIO_Pin = pin_;
+	gpio_init_struct.GPIO_Pin 	= pin_;
 	gpio_init_struct.GPIO_Mode 	= GPIO_Mode_AF;
 	gpio_init_struct.GPIO_Speed	= GPIO_Speed_50MHz;
 	gpio_init_struct.GPIO_OType = GPIO_OType_PP;
@@ -32,7 +34,7 @@ PWM_OUT::PWM_OUT(pwm_hardware_struct_t* pwm_init, uint16_t frequency, uint32_t m
 	tim_init_struct.TIM_Period 		  = period_cyc - 1; // 0 indexed
 	tim_init_struct.TIM_Prescaler 	  = timer_prescaler - 1; //0 indexed
 	tim_init_struct.TIM_ClockDivision = TIM_CKD_DIV1; //0x0000
-	tim_init_struct.TIM_Counter_Mode  = TIM_CounterMode_Up;
+	tim_init_struct.TIM_CounterMode   = TIM_CounterMode_Up;
 	TIM_TimeBaseInit(pwm_init->tim, &tim_init_struct);
 
 	TIM_OCStructInit(&tim_oc_init_struct);
@@ -45,7 +47,7 @@ PWM_OUT::PWM_OUT(pwm_hardware_struct_t* pwm_init, uint16_t frequency, uint32_t m
 
 	TIM_TypeDef* TIMPtr = pwm_init->tim;
 
-  	switch (channel) {
+  	switch (pwm_init->tim_channel) {
 		case TIM_Channel_1:
 			TIM_OC1Init(TIMPtr, &tim_oc_init_struct);
 			TIM_OC1PreloadConfig(TIMPtr, TIM_OCPreload_Enable);
