@@ -50,7 +50,7 @@ typedef struct {
 } pwm_hardware_struct_t;
 
 //YOUR BOARD-SPECIFC FILE GOES HERE
-//#include "revo_f4.h"
+#include "revo_f4.h"
 
 ////////////////////////////////////////////////////////////////
 
