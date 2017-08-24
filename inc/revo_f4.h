@@ -34,12 +34,18 @@ const pwm_hardware_struct_t pwm_hardware[PWM_NUM_OUTPUTS] =
 	{GPIOA, GPIO_Pin_0, GPIO_PinSource0, TIM5, TIM_Channel_1, GPIO_AF_TIM5}
 };
 
-#define I2C1_GPIO		GPIOB
-#define I2C1_SCL_PIN	GPIO_Pin_8
-#define I2C1_SDA_PIN	GPIO_Pin_9
+#define I2C_TIMEOUT_US		30000
 
-#define I2C2_GPIO		GPIOB
-#define I2C2_SCL_PIN	GPIO_Pin_10
-#define I2C2_SDA_PIN	GPIO_Pin_11
+#define I2C1_GPIO			GPIOB
+#define I2C1_SCL_PIN		GPIO_Pin_8
+#define I2C1_SCL_PIN_SOURCE GPIO_PinSource8
+#define I2C1_SDA_PIN		GPIO_Pin_9
+#define I2C1_SDA_PIN_SOURCE GPIO_PinSource9
+
+#define I2C2_GPIO			GPIOB
+#define I2C2_SCL_PIN		GPIO_Pin_10
+#define I2C2_SCL_PIN_SOURCE GPIO_PinSource10
+#define I2C2_SDA_PIN		GPIO_Pin_11
+#define I2C2_SDA_PIN_SOURCE GPIO_PinSource11
 
 #endif // REVO_F4_H
