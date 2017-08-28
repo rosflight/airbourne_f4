@@ -59,6 +59,8 @@ void systemInit(void)
     extern void *isr_vector_table_base;
     NVIC_SetVectorTable((uint32_t)&isr_vector_table_base, 0x0);
 
+    NVIC_PriorityGroupConfig(NVIC_PriorityGroup_2); //2 bit preemption, 2 bit sub priority
+
     //TODO: Should these be abstracted with the board-specific (ie revo_f4.h) file?
     RCC_AHB2PeriphClockCmd(RCC_AHB2Periph_OTG_FS, DISABLE);
     RCC_APB2PeriphClockCmd(RCC_APB2Periph_SPI1, ENABLE);
@@ -73,6 +75,8 @@ void systemInit(void)
 
     // Init cycle counter
     cycleCounterInit();
+
+    NVIC_SetPriority(SysTick_IRQn, 0);
 
 }
 
