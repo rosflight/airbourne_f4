@@ -6,7 +6,7 @@ MPU6000::MPU6000(SPI* spi_drv) {
 
 	spi->enable();
     spi->transfer(MPU_RA_PWR_MGMT_1); // Device Reset
-    spi->transfer(BIT_H_RESET);
+    spi->transfer(MPU_BIT_H_RESET);
     spi->disable();
 
     delay(150);
@@ -20,7 +20,7 @@ MPU6000::MPU6000(SPI* spi_drv) {
 
     spi->enable();
     spi->transfer(MPU_RA_USER_CTRL); // Disable Primary I2C Interface
-    spi->transfer(BIT_I2C_IF_DIS);
+    spi->transfer(MPU_BIT_I2C_IF_DIS);
     spi->disable();
 
     delayMicroseconds(1);
@@ -41,21 +41,21 @@ MPU6000::MPU6000(SPI* spi_drv) {
 
     spi->enable();
     spi->transfer(MPU_RA_CONFIG); // Accel and Gyro DLPF Setting
-    spi->transfer(BITS_DLPF_CFG_98HZ);
+    spi->transfer(MPU_BITS_DLPF_CFG_98HZ);
     spi->disable();
 
     delayMicroseconds(1);
 
     spi->enable();
     spi->transfer(MPU_RA_ACCEL_CONFIG); // Accel +/- 4 G Full Scale
-    spi->transfer(BITS_FS_4G);
+    spi->transfer(MPU_BITS_FS_4G);
     spi->disable();
 
     delayMicroseconds(1);
 
     spi->enable();
     spi->transfer(MPU_RA_GYRO_CONFIG); // Gyro +/- 1000 DPS Full Scale
-    spi->transfer(BITS_FS_1000DPS);
+    spi->transfer(MPU_BITS_FS_1000DPS);
     spi->disable();
 
     ///////////////////////////////////

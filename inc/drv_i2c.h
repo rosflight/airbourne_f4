@@ -1,3 +1,11 @@
+/**
+ * STM32F4xx I2C driver for OpenPilot REVO
+ *
+ * Adapted from https://github.com/jihlein/AQ32Plus/blob/master/src/drv/drv_i2c.h
+ * 			and https://github.com/superjax/airbourne/blob/master/include/i2c.h
+ * @author len0rd
+ * @since 2017-08-23
+ */
 #pragma once
 
 #include "system.h"

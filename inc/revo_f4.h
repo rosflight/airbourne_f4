@@ -4,6 +4,8 @@
 
 #include "system.h"
 
+
+/////////////////////// SPI CONFIG ///////////////////////
 #define MPU6000_SPI SPI1
 
 #define SPI1_GPIO			 GPIOA
@@ -16,11 +18,13 @@
 #define SPI1_MOSI_PIN        GPIO_Pin_7
 #define SPI1_MOSI_PIN_SOURCE GPIO_PinSource7
 
+/////////////////////// LED CONFIG ///////////////////////
 #define LED1_GPIO	GPIOB
 #define LED1_PIN	GPIO_Pin_4
 #define LED2_GPIO	GPIOB
 #define LED2_PIN	GPIO_Pin_5
 
+/////////////////////// PWM CONFIG ///////////////////////
 #define PWM_MAX_US		2000
 #define PWM_MIN_US		1000
 #define PWM_NUM_OUTPUTS 6
@@ -34,6 +38,8 @@ const pwm_hardware_struct_t pwm_hardware[PWM_NUM_OUTPUTS] =
 	{GPIOA, GPIO_Pin_0, GPIO_PinSource0, TIM5, TIM_Channel_1, GPIO_AF_TIM5}
 };
 
+/////////////////////// I2C CONFIG ///////////////////////
+#define HMC5883L_I2C		I2C1
 #define I2C_TIMEOUT_US		30000
 
 #define I2C1_GPIO			GPIOB

@@ -1,5 +1,12 @@
-#ifndef DRV_SPI_H
-#define DRV_SPI_H
+/**
+ * STM32F4xx SPI driver for OpenPilot REVO
+ *
+ * Adapted from https://github.com/jihlein/AQ32Plus/blob/master/src/drv/drv_spi.h
+ * 			and https://github.com/superjax/airbourne/blob/f4/f4/src/spi.cpp
+ * @author len0rd
+ * @since 2017-08-04
+ */
+#pragma once
 
 #include "system.h"
 
@@ -17,6 +24,3 @@ private:
 	uint16_t		nss_pin; 
 	SPI_TypeDef*	dev;
 };
-
-
-#endif // DRV_SPI_H
