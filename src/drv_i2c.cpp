@@ -1,5 +1,9 @@
 #include "drv_i2c.h"
 
+//global i2c ptrs used by the event interrupts
+I2C* I2CDev_1Ptr;
+I2C* I2CDev_2Ptr;
+
 I2C::I2C(I2C_TypeDef *I2C) {
 	dev = I2C;
 	//enable peripheral clocks as we need them
@@ -49,7 +53,7 @@ void I2C::init(void) {
 		i2c_init_struct.I2C_ClockSpeed 			= 400000;
 		i2c_init_struct.I2C_Mode 				= I2C_Mode_I2C;
 		i2c_init_struct.I2C_DutyCycle 			= I2C_DutyCycle_2;
-		i2c_init_struct.I2C_OwnAddress1 		= 0; 					//The first device own address
+		i2c_init_struct.I2C_OwnAddress1 		= 0; 					//The first device address
 		i2c_init_struct.I2C_Ack 				= I2C_Ack_Disable;
 		i2c_init_struct.I2C_AcknowledgedAddress = I2C_AcknowledgedAddress_7bit;
 
@@ -248,7 +252,7 @@ void I2C::handle_event() {
 	uint8_t sr1 = dev->SR1;
 
 
-	if (sr1 & I2C_SR1_SB) {			// EV5 (in ref manual) - Start just sent
+	if (sr1 & I2C_SR1_SB) {					// EV5 (in ref manual) - Start just sent
 		dev->CR1 &= ~I2C_CR1_POS;			// Reset the POS bit so ACK/NACK applied to the current byte
         I2C_AcknowledgeConfig(dev, ENABLE);	// Make sure ACK is on
 

@@ -1,13 +1,13 @@
 ############
-# SPI example make file
+# I2C example make file
 #
 # Adapted from @superjax's Generic Makefile Template:
 # https://github.com/superjax/airbourne/blob/f4/f4/examples/spi/Makefile
 #
 # @author len0rd
-# @since 2017-08-14
+# @since 2017-08-29
 
-TARGET = spi
+TARGET = i2c
 
 BOARD ?= REVO
 
