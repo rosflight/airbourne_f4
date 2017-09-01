@@ -76,7 +76,8 @@ void MPU6000::read_sensors(int16_t (&accel_data)[3], int16_t (&gyro_data)[3], in
 
 	spi->enable();
 	spi->transfer(MPU_RA_ACCEL_XOUT_H | 0x80);
-	for (int i = 0; i < 14; ++i) {
+    //the mpu6000 will continue to send the next register's data while you transfer a blank
+	for (int i = 0; i < 14; ++i) { 
 		raw[i] = spi->transfer(0x00);
 	}
 	spi->disable();

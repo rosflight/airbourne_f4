@@ -19,7 +19,7 @@ public:
 	bool read(uint8_t addr, uint8_t reg, uint8_t len, uint8_t *data);
 
 	bool write(uint8_t addr, uint8_t reg, uint8_t data);
-	bool read(uint8_t addr, uint8_t reg, uint8_t data);
+	bool read(uint8_t addr, uint8_t reg, uint8_t *data);
 
 	//interrupt handlers
 	void handle_error();

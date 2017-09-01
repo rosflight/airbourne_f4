@@ -7,7 +7,7 @@
 # @author len0rd
 # @since 2017-08-29
 
-TARGET = i2c
+TARGET = i2c_mag
 
 BOARD ?= REVO
 
@@ -79,6 +79,7 @@ CSOURCES =  $(CMSIS_SRC) \
 			main.cpp
 
 CXXSOURCES  = 	$(SRC_DIR)/drv_i2c.cpp \
+				$(SRC_DIR)/hmc5883l.cpp \
 				$(SRC_DIR)/drv_led.cpp
 
 INCLUDE_DIRS = 	$(SRC_DIR) \

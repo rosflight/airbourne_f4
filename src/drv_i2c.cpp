@@ -207,8 +207,8 @@ bool I2C::write(uint8_t addr, uint8_t reg, uint8_t len, uint8_t *data) {
 	return true;
 }
 
-bool I2C::read(uint8_t addr, uint8_t reg, uint8_t data) {
-	return read(addr, reg, 1, &data);
+bool I2C::read(uint8_t addr, uint8_t reg, uint8_t *data) {
+	return read(addr, reg, 1, data);
 }
 
 bool I2C::write(uint8_t addr, uint8_t reg, uint8_t data) {
