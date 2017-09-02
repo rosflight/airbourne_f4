@@ -27,26 +27,28 @@ void I2C::init(void) {
 
   if (dev == I2C1)
   {
-    unstick(); //unstick will properly initialize pins
-
     //configure the gpio pins
     GPIO_PinAFConfig(I2C1_GPIO, I2C1_SCL_PIN_SOURCE, GPIO_AF_I2C1);
     GPIO_PinAFConfig(I2C1_GPIO, I2C1_SDA_PIN_SOURCE, GPIO_AF_I2C1);
+    sda_.init(I2C1_GPIO, I2C1_SDA_PIN, GPIO::PERIPH_IN_OUT);
+    scl_.init(I2C1_GPIO, I2C1_SCL_PIN, GPIO::PERIPH_IN_OUT);
     er_irq = I2C1_ER_IRQn;
     ev_irq = I2C1_EV_IRQn;
     I2CDev_1Ptr = this;
   }
   else if (dev == I2C2)
   {
-    unstick(); //unstick will properly initialize pins
-
     //configure the gpio pins
     GPIO_PinAFConfig(I2C2_GPIO, I2C2_SCL_PIN_SOURCE, GPIO_AF_I2C2);
     GPIO_PinAFConfig(I2C2_GPIO, I2C2_SDA_PIN_SOURCE, GPIO_AF_I2C2);
+    sda_.init(I2C2_GPIO, I2C2_SDA_PIN, GPIO::PERIPH_IN_OUT);
+    scl_.init(I2C2_GPIO, I2C2_SCL_PIN, GPIO::PERIPH_IN_OUT);
     er_irq = I2C2_ER_IRQn;
     ev_irq = I2C2_EV_IRQn;
     I2CDev_2Ptr = this;
   }
+
+  unstick(); //unstick will properly initialize pins
 
 
   if (dev == I2C1 || dev == I2C2)
@@ -66,82 +68,57 @@ void I2C::init(void) {
     I2C_Cmd(dev, ENABLE);
 
     //initialize the interrupts
-    nvic_init_struct.NVIC_IRQChannelPreemptionPriority  = 2;
-    nvic_init_struct.NVIC_IRQChannelSubPriority			= 1;
-    nvic_init_struct.NVIC_IRQChannelCmd					= ENABLE;
+    nvic_init_struct.NVIC_IRQChannelPreemptionPriority = 2;
+    nvic_init_struct.NVIC_IRQChannelSubPriority = 1;
+    nvic_init_struct.NVIC_IRQChannelCmd	= ENABLE;
 
-    nvic_init_struct.NVIC_IRQChannel 					= er_irq;
+    nvic_init_struct.NVIC_IRQChannel = er_irq;
     NVIC_Init(&nvic_init_struct);
 
     //I2C Event Interrupt
-    nvic_init_struct.NVIC_IRQChannel 					= ev_irq;
+    nvic_init_struct.NVIC_IRQChannel = ev_irq;
     NVIC_Init(&nvic_init_struct);
 
   }
 }
 
-void I2C::unstick() {
-  if (dev == I2C1)
-  {
-    unstick_by_dev(I2C1_GPIO, I2C1_SCL_PIN, I2C1_SDA_PIN);
-  }
-  else if (dev == I2C2)
-  {
-    unstick_by_dev(I2C2_GPIO, I2C2_SCL_PIN, I2C2_SDA_PIN);
-  }
-}
+void I2C::unstick()
+{
+  scl_.set_mode(GPIO::OUTPUT);
+  sda_.set_mode(GPIO::OUTPUT);
 
-void I2C::unstick_by_dev(GPIO_TypeDef *port_, uint16_t scl_pin_, uint16_t sda_pin_) {
-  GPIO_InitTypeDef gpio_init_struct;
-
-  gpio_init_struct.GPIO_Mode = GPIO_Mode_OUT;
-  gpio_init_struct.GPIO_Speed = GPIO_Speed_50MHz;
-  gpio_init_struct.GPIO_OType = GPIO_OType_OD;
-  gpio_init_struct.GPIO_PuPd = GPIO_PuPd_NOPULL;
-
-  gpio_init_struct.GPIO_Pin = scl_pin_ | sda_pin_;
-  GPIO_Init(port_, &gpio_init_struct);
-
-  GPIO_SetBits(port_, scl_pin_ | sda_pin_);
+  scl_.write(GPIO::HIGH);
+  sda_.write(GPIO::HIGH);
 
   for (int i = 0; i < 8; ++i)
   {
-    //wait for potential clock stretching to finish before proceeding
-    //play it safe by delaying 3us which would put clk @ 333.33 kHz
-    while(!GPIO_ReadInputDataBit(port_, scl_pin_))
-      delayMicroseconds(3);
-
-    //Toggle clk at 333.33 kHz
-    GPIO_ResetBits(port_, scl_pin_);
     delayMicroseconds(3);
-    GPIO_SetBits(port_, scl_pin_);
-    delayMicroseconds(3);
+    scl_.toggle();
   }
 
-  GPIO_ResetBits(port_, sda_pin_);
+  sda_.write(GPIO::LOW);
   delayMicroseconds(3);
-  GPIO_ResetBits(port_, scl_pin_);
-  delayMicroseconds(3);
-
-  GPIO_SetBits(port_, scl_pin_);
-  delayMicroseconds(3);
-  GPIO_SetBits(port_, sda_pin_);
+  scl_.write(GPIO::LOW);
   delayMicroseconds(3);
 
-  //reset back to normal:
-  gpio_init_struct.GPIO_Mode = GPIO_Mode_AF;
-  GPIO_Init(port_, &gpio_init_struct);
+  scl_.write(GPIO::HIGH);
+  delayMicroseconds(3);
+  sda_.write(GPIO::HIGH);
+  delayMicroseconds(3);
+
+  scl_.set_mode(GPIO::PERIPH_IN_OUT);
+  sda_.set_mode(GPIO::PERIPH_IN_OUT);
 }
 
 bool I2C::read(uint8_t addr, uint8_t reg, uint8_t len, uint8_t *data) {
-  addr_ 			 = addr << 1;
-  reg_  			 = reg;
-  len_  			 = len;
-  data_buffer_ 	 = data;
-  index_			 = 0;
-  reading_ 		 = true;
-  busy_			 = true;
-  error_ 			 = false;
+  addr_ = addr << 1;
+  reg_ = reg;
+  len_ = len;
+  data_buffer_ = data;
+  index_ = 0;
+  reading_ = true;
+  busy_ = true;
+  error_ = false;
   subaddress_sent_ = (reg_ && 0xFF);
 
   uint32_t timeout = I2C_TIMEOUT_US;
@@ -179,14 +156,14 @@ bool I2C::read(uint8_t addr, uint8_t reg, uint8_t len, uint8_t *data) {
 }
 
 bool I2C::write(uint8_t addr, uint8_t reg, uint8_t len, uint8_t *data) {
-  addr_ 			 = addr << 1;
-  reg_  			 = reg;
-  len_  			 = len;
+  addr_ = addr << 1;
+  reg_ = reg;
+  len_ = len;
   data_buffer_ 	 = data;
-  index_			 = 0;
-  reading_ 		 = false;
-  busy_			 = true;
-  error_ 			 = false;
+  index_ = 0;
+  reading_ = false;
+  busy_ = true;
+  error_ = false;
   subaddress_sent_ = (reg_ && 0xFF);
 
   uint32_t timeout = I2C_TIMEOUT_US;
@@ -307,7 +284,6 @@ void I2C::handle_event() {
         __DMB();
         (void)dev->SR2; // read SR2 to clear the ADDR bit
         I2C_GenerateSTOP(dev, ENABLE);
-        final_stop_ = true;
         I2C_ITConfig(dev, I2C_IT_BUF, ENABLE);  // enable EVT_7
       }
       else // receiving greater than one byte
@@ -339,7 +315,6 @@ void I2C::handle_event() {
 
   else if (sr1 & I2C_SR1_BTF) // EV7_2, EV7_3, EV8_2 - Byte Transfer Finished
   {
-    final_stop_ = true;
     if (reading_ && subaddress_sent_) // EV7_2, EV7_3
     {
       if (len_ > 2) // EV7_2
@@ -347,7 +322,6 @@ void I2C::handle_event() {
         I2C_AcknowledgeConfig(dev, DISABLE); // Turn off ACK
         data_buffer_[index_++] = I2C_ReceiveData(dev);	// Read second to last byte
         I2C_GenerateSTOP(dev, ENABLE); // Program the Stop
-        final_stop_ = true; // Remember that we have set the stop
         data_buffer_[index_++] = I2C_ReceiveData(dev); // Read last byte
         I2C_ITConfig(dev, I2C_IT_BUF, ENABLE);	// Enable for final EV7
       }
@@ -404,8 +378,7 @@ void I2C::handle_event() {
   if (index_ == len_ + 1) // We have completed the current jobs
   {
     subaddress_sent_ = false; // Reset this here
-    if (final_stop_) // If there is a final stop and no more jobs, bus is inactive, disable interrupts to prevent BTF
-      I2C_ITConfig(dev, I2C_IT_EVT | I2C_IT_ERR, DISABLE); // Disable EVT and ERR interrupts while bus inactive
+    I2C_ITConfig(dev, I2C_IT_EVT | I2C_IT_ERR, DISABLE); // Disable EVT and ERR interrupts while bus inactive
     busy_ = false;
   }
 }
