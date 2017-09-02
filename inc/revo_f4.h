@@ -34,12 +34,12 @@
 #define PWM_NUM_OUTPUTS 6
 const pwm_hardware_struct_t pwm_config[PWM_NUM_OUTPUTS] =
 {
-	{GPIOB, GPIO_Pin_0, GPIO_PinSource0, TIM3, TIM_Channel_3, GPIO_AF_TIM3},
-	{GPIOB, GPIO_Pin_1, GPIO_PinSource1, TIM3, TIM_Channel_4, GPIO_AF_TIM3},
-	{GPIOA, GPIO_Pin_3, GPIO_PinSource3, TIM9, TIM_Channel_2, GPIO_AF_TIM9},
-	{GPIOA, GPIO_Pin_2, GPIO_PinSource2, TIM2, TIM_Channel_3, GPIO_AF_TIM2},
-	{GPIOA, GPIO_Pin_1, GPIO_PinSource1, TIM5, TIM_Channel_2, GPIO_AF_TIM5},
-	{GPIOA, GPIO_Pin_0, GPIO_PinSource0, TIM5, TIM_Channel_1, GPIO_AF_TIM5}
+  {GPIOB, GPIO_Pin_0, GPIO_PinSource0, TIM3, TIM_Channel_3, GPIO_AF_TIM3},
+  {GPIOB, GPIO_Pin_1, GPIO_PinSource1, TIM3, TIM_Channel_4, GPIO_AF_TIM3},
+  {GPIOA, GPIO_Pin_3, GPIO_PinSource3, TIM9, TIM_Channel_2, GPIO_AF_TIM9},
+  {GPIOA, GPIO_Pin_2, GPIO_PinSource2, TIM2, TIM_Channel_3, GPIO_AF_TIM2},
+  {GPIOA, GPIO_Pin_1, GPIO_PinSource1, TIM5, TIM_Channel_2, GPIO_AF_TIM5},
+  {GPIOA, GPIO_Pin_0, GPIO_PinSource0, TIM5, TIM_Channel_1, GPIO_AF_TIM5}
 };
 
 /////////////////////// I2C CONFIG ///////////////////////
