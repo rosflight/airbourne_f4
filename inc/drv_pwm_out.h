@@ -18,8 +18,8 @@ private:
 	uint16_t max_cyc_;
 	uint16_t min_cyc_;
 
-	GPIO_TypeDef*	port_;
-	uint16_t		pin_; 
+	GPIO_TypeDef* port_;
+	uint16_t pin_;
 };
 
 #endif //DRV_PWM_H

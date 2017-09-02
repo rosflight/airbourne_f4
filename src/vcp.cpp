@@ -1,12 +1,12 @@
-#include "VCP.h"
+#include "vcp.h"
 
 #define USB_TIMEOUT  50
 
-VCP::VCP(serial_configuration_t config)
+VCP::VCP()
 {
   // Initialize the GPIOs for the pins
-  rx_pin_.init(config.GPIO, config.rx_pin, GPIO::PERIPH_IN_OUT);
-  tx_pin_.init(config.GPIO, config.tx_pin, GPIO::PERIPH_IN_OUT);
+  rx_pin_.init(VCP_GPIO, VCP_GPIO_RX_PIN, GPIO::PERIPH_IN_OUT);
+  tx_pin_.init(VCP_GPIO, VCP_GPIO_TX_PIN, GPIO::PERIPH_IN_OUT);
 
   send_disconnect_signal();
 

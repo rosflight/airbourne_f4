@@ -21,24 +21,13 @@
 #define ARM_MATH_CM4
 
 #include <stdbool.h>
-#include <stdlib.h>
 #include <stdint.h>
-#include <math.h>
 #include <ctype.h>
 #include <string.h>
-#include <stdio.h>
 #include <stdarg.h>
 
-////////////////////////////////////////////////////////////////
-
 #include "stm32f4xx.h"
-#include "arm_math.h"
-#include "usbd_cdc_core.h"
-#include "usbd_cdc.h"
-#include "usbd_usr.h"
-#include "usbd_desc.h"
-
-////////////////////////////////////////////////////////////////
+#include "stm32f4xx_gpio.h"
 
 typedef struct {
 	GPIO_TypeDef* gpio;
@@ -48,11 +37,6 @@ typedef struct {
 	uint8_t tim_channel;
 	uint8_t tim_af_config;
 } pwm_hardware_struct_t;
-
-//YOUR BOARD-SPECIFC FILE GOES HERE
-#include "revo_f4.h"
-
-////////////////////////////////////////////////////////////////
 
 #ifdef __cplusplus
 extern "C" {

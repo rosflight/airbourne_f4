@@ -27,7 +27,7 @@
 
 /* Includes */
 #include "system.h"
-#include "VCP.h"
+#include "vcp.h"
 
 VCP* vcpPtr = NULL;
 
@@ -41,7 +41,7 @@ int main()
 {
   systemInit();
 
-  VCP vcp(serial_config[VCP_INDEX]);
+  VCP vcp;
   vcpPtr = &vcp;
   vcp.register_rx_callback(&rx_callback);
 

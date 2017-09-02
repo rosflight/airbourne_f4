@@ -51,114 +51,105 @@ A2L=arm-none-eabi-addr2line
 #################################
 # Working directories
 #################################
-AIRBOURNE_DIR 	= ../../
-ROOT		 	= .
-SRC_DIR		 	= $(ROOT)
-CMSIS_DIR	 	= $(AIRBOURNE_DIR)/lib/CMSIS
-MATH_DIR	 	= $(AIRBOURNE_DIR)/lib/math
-STDPERIPH_DIR	= $(AIRBOURNE_DIR)/lib/STM32F4xx_StdPeriph_Driver
-USBCORE_DIR	= $(AIRBOURNE_DIR)/lib/STM32_USB_Device_Library/Core
-USBOTG_DIR	= $(AIRBOURNE_DIR)/lib/STM32_USB_OTG_Driver
-USBCDC_DIR	= $(AIRBOURNE_DIR)/lib/STM32_USB_Device_Library/Class/cdc
-VCP_DIR		= $(AIRBOURNE_DIR)/lib/vcp
-OBJECT_DIR	= obj
-BIN_DIR	 	= obj
+ROOT          = ../..
+SRC_DIR       = $(ROOT)/src
+CMSIS_DIR     = $(ROOT)/lib/CMSIS
+STDPERIPH_DIR	= $(ROOT)/lib/STM32F4xx_StdPeriph_Driver
+USBCORE_DIR   = $(ROOT)/lib/STM32_USB_Device_Library/Core
+USBOTG_DIR    = $(ROOT)/lib/STM32_USB_OTG_Driver
+USBCDC_DIR    = $(ROOT)/lib/STM32_USB_Device_Library/Class/cdc
+VCP_DIR       = $(ROOT)/lib/vcp
+STARTUP_DIR   = $(ROOT)/lib/startup
+BIN_DIR       = obj
+
+# Add directories with source files to the VPATH so object files don't end up all over the place
+VPATH  := $(VPATH):$(SRC_DIR)
+VPATH  := $(VPATH):$(SRC_DIR)/vcp
+VPATH	 := $(VPATH):$(USBCORE_DIR)/src:$(USBOTG_DIR)/src:$(USBCDC_DIR)/src
+
 
 #################################
 # Source Files
 #################################
-VPATH := $(VPATH):$(AIRBOURNE_DIR)
-LDSCRIPT = $(AIRBOURNE_DIR)/processor/stm32_flash_f405_1024k.ld
-ASOURCES = $(AIRBOURNE_DIR)/processor/startup_stm32f40_41xxx.s
-
-VPATH		:= $(SRC_DIR):$(SRC_DIR)/startups
+VPATH := $(VPATH):$(STARTUP_DIR)
+LDSCRIPT = $(STARTUP_DIR)/stm32_flash_f405_1024k.ld
+ASOURCES = $(STARTUP_DIR)/startup_stm32f40_41xxx.s
 
 # Search path and source files for the CMSIS sources
-VPATH		:= 	$(VPATH):$(CMSIS_DIR)/CM4/CoreSupport:$(CMSIS_DIR)/CM4/DeviceSupport/ST/STM32F4xx
-CMSIS_SRC	 = 	$(notdir $(wildcard $(CMSIS_DIR)/CM4/CoreSupport/*.c \
-				$(CMSIS_DIR)/CM4/DeviceSupport/ST/STM32F4xx/*.c))
+VPATH	 := $(VPATH):$(CMSIS_DIR)/CM4/CoreSupport
+VPATH  := $(VPATH):$(CMSIS_DIR)/CM4/DeviceSupport/ST/STM32F4xx
+CMSIS_SRC	 = 	$(notdir $(wildcard $(CMSIS_DIR)/CM4/CoreSupport/*.c)) \
+              $(notdir $(wildcard $(CMSIS_DIR)/CM4/DeviceSupport/ST/STM32F4xx/*.c))
 
 # Search path and source files for the ST stdperiph library and exclude files we don't need
 VPATH		:= $(VPATH):$(STDPERIPH_DIR)/src
 STDPERIPH_SRC	 = $(notdir $(wildcard $(STDPERIPH_DIR)/src/*.c))
 EXCLUDES = stm32f4xx_crc.c \
-		stm32f4xx_can.c \
-		stm32f4xx_fmc.c \
-		stm32f4xx_fsmc.c \
-		stm32f4xx_sai.c \
-		stm32f4xx_cec.c \
-		stm32f4xx_dsi.c \
-		stm32f4xx_flash_ramfunc.c \
-		stm32f4xx_fmpi2c.c \
-		stm32f4xx_lptim.c \
-		stm32f4xx_qspi.c
+           stm32f4xx_can.c \
+           stm32f4xx_fmc.c \
+           stm32f4xx_fsmc.c \
+           stm32f4xx_sai.c \
+           stm32f4xx_cec.c \
+           stm32f4xx_dsi.c \
+           stm32f4xx_flash_ramfunc.c \
+           stm32f4xx_fmpi2c.c \
+           stm32f4xx_lptim.c \
+           stm32f4xx_qspi.c
 STDPERIPH_SRC := $(filter-out ${EXCLUDES}, $(STDPERIPH_SRC))
 
 
-# Search path and source files for the USB libraries
+# Search path and source files for the USB libraries and ignore files we don't need
 VPATH		:= $(VPATH):$(USBCORE_DIR)/src:$(USBOTG_DIR)/src:$(USBCDC_DIR)/src
 USBCORE_SRC = $(notdir $(wildcard $(USBCORE_DIR)/src/*.c))
 USBOTG_SRC = $(notdir $(wildcard $(USBOTG_DIR)/src/*.c))
 USBCDC_SRC = $(notdir $(wildcard $(USBCDC_DIR)/src/*.c))
+EXCLUDES	= usb_bsp_template.c \
+            usb_conf_template.c \
+            usb_hcd_int.c \
+            usb_hcd.c \
+            usb_otg.c \
+            usbd_cdc_if_template.c
+USBCDC_SRC := $(filter-out ${EXCLUDES}, $(USBCDC_SRC))
+USBOTG_SRC := $(filter-out ${EXCLUDES}, $(USBOTG_SRC))
 
 # Add VCP source files
 VPATH := $(VPATH):$(VCP_DIR)
 VCP_SRC = $(notdir $(wildcard $(VCP_DIR)/*.c))
 
-# Add processor-specific files
-VPATH := $(VPATH):$(AIRBOURNE_DIR)/src
-PROCESSOR_SRC = $(notdir $(wildcard $(AIRBOURNE_DIR)/src/*.c))
-
-EXCLUDES	= usb_bsp_template.c \
-			  usb_conf_template.c \
-			  usb_hcd_int.c \
-			  usb_hcd.c \
-			  usb_otg.c \
-			  usbd_cdc_if_template.c
-USBCDC_SRC := $(filter-out ${EXCLUDES}, $(USBCDC_SRC))
-USBOTG_SRC := $(filter-out ${EXCLUDES}, $(USBOTG_SRC))
-
-# Search path and source files for the math library
-VPATH		:= $(VPATH):$(MATH_DIR)
-MATH_SRC	 = $(notdir $(wildcard $(MATH_DIR)/*.cpp))
-
-
 # Make a list of source files and includes
+VPATH := $(VPATH):$(SRC_DIR)
 CSOURCES =  $(CMSIS_SRC) \
-	    	$(STDPERIPH_SRC) \
-	    	$(USBCORE_SRC) \
-	    	$(USBOTG_SRC) \
-	    	$(USBCDC_SRC) \
-                $(PROCESSOR_SRC) \
-                $(VCP_SRC) \
-                $(ROOT)/main.cpp
+            $(STDPERIPH_SRC) \
+            $(USBCORE_SRC) \
+            $(USBOTG_SRC) \
+            $(USBCDC_SRC) \
+            $(PROCESSOR_SRC) \
+            $(VCP_SRC) \
+            $(SRC_DIR)/system.c \
+            $(SRC_DIR)/system_stm32f4xx.c
 
 
-CXXSOURCES = $(AIRBOURNE_DIR)/src/gpio.cpp \
-             $(AIRBOURNE_DIR)/src/VCP.cpp \
-             $(AIRBOURNE_DIR)/src/spi.cpp \
+CXXSOURCES = $(SRC_DIR)/gpio.cpp \
+             $(SRC_DIR)/vcp.cpp \
+             main.cpp
 
-INCLUDE_DIRS	 = 	$(SRC_DIR) \
-					$(AIRBOURNE_DIR)/include \
-		   			$(MATH_DIR) \
-		   			$(STDPERIPH_DIR)/inc \
-		   			$(USBOTG_DIR)/inc \
-		   			$(USBCORE_DIR)/inc \
-		   			$(USBCDC_DIR)/inc \
-		   			$(CMSIS_DIR)/CM4/CoreSupport \
-		   			$(CMSIS_DIR)/CM4/DeviceSupport/ST/STM32F4xx \
-		   			$(CMSIS_DIR)/CM4/DeviceSupport/ST/STM32F4xx/Include \
-		   			$(VCP_DIR)
-
-
-
+INCLUDE_DIRS =  $(SRC_DIR) \
+                $(ROOT)/inc \
+                $(STDPERIPH_DIR)/inc \
+                $(USBOTG_DIR)/inc \
+                $(USBCORE_DIR)/inc \
+                $(USBCDC_DIR)/inc \
+                $(CMSIS_DIR)/CM4/CoreSupport \
+                $(CMSIS_DIR)/CM4/DeviceSupport/ST/STM32F4xx \
+                $(CMSIS_DIR)/CM4/DeviceSupport/ST/STM32F4xx/Include \
+                $(VCP_DIR)
 
 #################################
 # Object List
 #################################
-OBJECTS=$(addsuffix .o,$(addprefix $(OBJECT_DIR)/$(TARGET)/,$(basename $(ASOURCES))))
-OBJECTS+=$(addsuffix .o,$(addprefix $(OBJECT_DIR)/$(TARGET)/,$(basename $(CSOURCES))))
-OBJECTS+=$(addsuffix .o,$(addprefix $(OBJECT_DIR)/$(TARGET)/,$(basename $(CXXSOURCES))))
+OBJECTS=$(addsuffix .o,$(addprefix $(BIN_DIR)/$(TARGET)/,$(basename $(ASOURCES))))
+OBJECTS+=$(addsuffix .o,$(addprefix $(BIN_DIR)/$(TARGET)/,$(basename $(CSOURCES))))
+OBJECTS+=$(addsuffix .o,$(addprefix $(BIN_DIR)/$(TARGET)/,$(basename $(CXXSOURCES))))
 
 #################################
 # Target Output Files
@@ -169,23 +160,33 @@ TARGET_HEX=$(BIN_DIR)/$(TARGET).hex
 #################################
 # Debug Config
 #################################
-# ifeq ($(DEBUG), GDB)
+ifeq ($(DEBUG), GDB)
+$(info ************  BUILDING DEBUG SYMBOLS ************)
 DEBUG_FLAGS = -ggdb3
 OPTIMIZE = -Og
-# else
-# OPTIMIZE = -Os
-# LTO_FLAGS = -flto -fuse-linker-plugin $(OPTIMIZE)
-# endif
+else
+$(info ************  BUILDING RELEASE ************)
+DEBUG_FLAGS = -g0
+OPTIMIZE = -O3
+LTO_FLAGS = -flto -fuse-linker-plugin $(OPTIMIZE)
+endif
 
 #################################
 # Flags
 #################################
+
+#CXX_STRICT_FLAGS += -std=c++11 -pedantic -pedantic-errors -Werror -Wall -Wextra \
+#  -Wcast-align -Wcast-qual -Wdisabled-optimization -Wformat=2 -Wlogical-op -Wmissing-include-dirs \
+#  -Wredundant-decls -Wshadow -Wstrict-overflow=5 -Wswitch-default -Wundef -Wunused -Wvariadic-macros \
+#  -Wctor-dtor-privacy -Wnoexcept -Wold-style-cast -Woverloaded-virtual -Wsign-promo -Wstrict-null-sentinel
+FILE_SIZE_FLAGS += -ffunction-sections -fdata-sections -fno-exceptions
+CXX_FILE_SIZE_FLAGS = $(C_FILE_SIZE_FLAGS) -fno-rtti
+
 MCFLAGS=-mcpu=cortex-m4 -mthumb -march=armv7e-m -mfloat-abi=hard -mfpu=fpv4-sp-d16 -fsingle-precision-constant -Wdouble-promotion
-# DEBUG = -DDebug -ggdb3
-DEFS=-DSTM32F40_41xxx -D__CORTEX_M4 -D__FPU_PRESENT -DWORDS_STACK_SIZE=200 -DUSE_STDPERIPH_DRIVER
-CFLAGS=-c $(MCFLAGS) $(DEFS) $(OPTIMIZE) $(DEBUG_FLAGS) $(addprefix -I,$(INCLUDE_DIRS)) -std=c99 -DTARGET_$(BOARD)
-CXXFLAGS=-c $(MCFLAGS) $(DEFS) $(OPTIMIZE) $(DEBUG_FLAGS) $(addprefix -I,$(INCLUDE_DIRS)) -std=c++11 -U__STRICT_ANSI__ -DTARGET_$(BOARD)
-LDFLAGS =-T $(LDSCRIPT) $(MCFLAGS) -lm -nostartfiles -lc --specs=rdimon.specs $(ARCH_FLAGS)  $(LTO_FLAGS)  $(DEBUG_FLAGS) -static  -Wl,-gc-sections
+DEFS=-DSTM32F40_41xxx -D__CORTEX_M4 -D__FPU_PRESENT -DWORDS_STACK_SIZE=200 -DUSE_STDPERIPH_DRIVER -DTARGET_$(BOARD)
+CFLAGS=-c $(MCFLAGS) $(DEFS) $(OPTIMIZE) $(DEBUG_FLAGS) $(FILE_SIZE_FLAGS) $(addprefix -I,$(INCLUDE_DIRS)) -std=c99
+CXXFLAGS=-c $(MCFLAGS) $(DEFS) $(OPTIMIZE) $(DEBUG_FLAGS) $(CXX_FILE_SIZE_FLAGS) $(CXX_STRICT_FLAGS) $(addprefix -I,$(INCLUDE_DIRS)) -std=c++11
+LDFLAGS =-T $(LDSCRIPT) $(MCFLAGS) -lm -lc --specs=nano.specs --specs=rdimon.specs $(ARCH_FLAGS)  $(LTO_FLAGS)  $(DEBUG_FLAGS) -static  -Wl,-gc-sections
 
 #################################
 # Build
@@ -197,17 +198,17 @@ $(TARGET_ELF): $(OBJECTS)
 	$(CXX) -o $@ $^ $(LDFLAGS)
 	$(SIZE) $(TARGET_ELF)
 
-$(OBJECT_DIR)/$(TARGET)/%.o: %.cpp
+$(BIN_DIR)/$(TARGET)/%.o: %.cpp
 	@mkdir -p $(dir $@)
 	@echo %% $(notdir $<)
 	@$(CXX) -c -o $@ $(CXXFLAGS) $<
 
-$(OBJECT_DIR)/$(TARGET)/%.o: %.c
+$(BIN_DIR)/$(TARGET)/%.o: %.c
 	@mkdir -p $(dir $@)
 	@echo %% $(notdir $<)
 	@$(CC) -c -o $@ $(CFLAGS) $<
 
-$(OBJECT_DIR)/$(TARGET)/%.o: %.s
+$(BIN_DIR)/$(TARGET)/%.o: %.s
 	@mkdir -p $(dir $@)
 	@echo %% $(notdir $<)
 	@$(CC) -c -o $@ $(CFLAGS) $<

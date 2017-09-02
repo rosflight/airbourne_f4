@@ -34,6 +34,7 @@ STDPERIPH_DIR	= $(ROOT)/lib/STM32F4xx_StdPeriph_Driver
 USBCORE_DIR		= $(ROOT)/lib/STM32_USB_Device_Library/Core
 USBOTG_DIR		= $(ROOT)/lib/STM32_USB_OTG_Driver
 USBCDC_DIR		= $(ROOT)/lib/STM32_USB_Device_Library/Class/cdc
+VCP_DIR		= $(AIRBOURNE_DIR)/lib/vcp
 STARTUP_DIR		= $(ROOT)/lib/startup
 BIN_DIR	 		= obj
 

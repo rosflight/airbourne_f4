@@ -50,11 +50,11 @@ void I2C::init(void) {
 		I2C_DeInit(dev);
 
 		I2C_StructInit(&i2c_init_struct);
-		i2c_init_struct.I2C_ClockSpeed 			= 400000;
-		i2c_init_struct.I2C_Mode 				= I2C_Mode_I2C;
-		i2c_init_struct.I2C_DutyCycle 			= I2C_DutyCycle_2;
-		i2c_init_struct.I2C_OwnAddress1 		= 0; 					//The first device address
-		i2c_init_struct.I2C_Ack 				= I2C_Ack_Disable;
+		i2c_init_struct.I2C_ClockSpeed = 400000;
+		i2c_init_struct.I2C_Mode = I2C_Mode_I2C;
+		i2c_init_struct.I2C_DutyCycle = I2C_DutyCycle_2;
+		i2c_init_struct.I2C_OwnAddress1 = 0; //The first device address
+		i2c_init_struct.I2C_Ack = I2C_Ack_Disable;
 		i2c_init_struct.I2C_AcknowledgedAddress = I2C_AcknowledgedAddress_7bit;
 
 		I2C_Init(dev, &i2c_init_struct);
@@ -87,10 +87,10 @@ void I2C::unstick() {
 void I2C::unstick_by_dev(GPIO_TypeDef *port_, uint16_t scl_pin_, uint16_t sda_pin_) {
 	GPIO_InitTypeDef gpio_init_struct;
 
-	gpio_init_struct.GPIO_Mode 	= GPIO_Mode_OUT;
+	gpio_init_struct.GPIO_Mode = GPIO_Mode_OUT;
 	gpio_init_struct.GPIO_Speed = GPIO_Speed_50MHz;
 	gpio_init_struct.GPIO_OType = GPIO_OType_OD;
-	gpio_init_struct.GPIO_PuPd 	= GPIO_PuPd_NOPULL;
+	gpio_init_struct.GPIO_PuPd = GPIO_PuPd_NOPULL;
 
 	gpio_init_struct.GPIO_Pin = scl_pin_ | sda_pin_;
 	GPIO_Init(port_, &gpio_init_struct);

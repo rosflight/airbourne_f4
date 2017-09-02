@@ -4,6 +4,10 @@
 
 #include "system.h"
 
+/////////////////////// SERIAL CONFIG ///////////////////////
+#define VCP_GPIO GPIOA
+#define VCP_GPIO_RX_PIN GPIO_Pin_11
+#define VCP_GPIO_TX_PIN GPIO_Pin_12
 
 /////////////////////// SPI CONFIG ///////////////////////
 #define MPU6000_SPI SPI1
@@ -28,7 +32,7 @@
 #define PWM_MAX_US		2000
 #define PWM_MIN_US		1000
 #define PWM_NUM_OUTPUTS 6
-const pwm_hardware_struct_t pwm_hardware[PWM_NUM_OUTPUTS] = 
+const pwm_hardware_struct_t pwm_config[PWM_NUM_OUTPUTS] =
 {
 	{GPIOB, GPIO_Pin_0, GPIO_PinSource0, TIM3, TIM_Channel_3, GPIO_AF_TIM3},
 	{GPIOB, GPIO_Pin_1, GPIO_PinSource1, TIM3, TIM_Channel_4, GPIO_AF_TIM3},
