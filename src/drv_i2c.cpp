@@ -20,7 +20,7 @@ I2C::I2C(I2C_TypeDef *I2C) {
 
 void I2C::init(void) {
   GPIO_InitTypeDef gpio_init_struct;
-  I2C_InitTypeDef	 i2c_init_struct;
+  I2C_InitTypeDef i2c_init_struct;
   NVIC_InitTypeDef nvic_init_struct;
   uint8_t er_irq;
   uint8_t ev_irq;
@@ -242,18 +242,22 @@ void I2C::handle_error(){
   volatile uint32_t sr2 = dev->SR2;
 
   // If AF, BERR or ARLO, abandon the current job and commence new if there are jobs
-  if (sr1 & (I2C_SR1_AF | I2C_SR1_ARLO | I2C_SR1_BERR)){
+  if (sr1 & (I2C_SR1_AF | I2C_SR1_ARLO | I2C_SR1_BERR))
+  {
     I2C_ITConfig(dev, I2C_IT_BUF, DISABLE);
-    if (!(sr1 & I2C_SR1_ARLO) && !(dev->CR1 & I2C_CR1_STOP)) {		// If we dont have an ARLO error, ensure sending of a stop
-      if (dev->CR1 & I2C_CR1_START) {								// We are currently trying to send a start, this is very bad as start,stop will hang the peripheral
-        while (dev->CR1 & I2C_CR1_START);						// Wait for any start to finish sending
-        I2C_GenerateSTOP(dev, ENABLE);							// Send stop to finalise bus transaction
-        while (dev->CR1 & I2C_CR1_STOP);						// Wait for stop to finish sending
+    if (!(sr1 & I2C_SR1_ARLO) && !(dev->CR1 & I2C_CR1_STOP)) // If we dont have an ARLO error, ensure sending of a stop
+    {
+      if (dev->CR1 & I2C_CR1_START) // We are currently trying to send a start, this is very bad as start,stop will hang the peripheral
+      {
+        while (dev->CR1 & I2C_CR1_START); // Wait for any start to finish sending
+        I2C_GenerateSTOP(dev, ENABLE); // Send stop to finalise bus transaction
+        while (dev->CR1 & I2C_CR1_STOP); // Wait for stop to finish sending
         init();												// Reset and configure the hardware
       }
-      else {
-        I2C_GenerateSTOP(dev, ENABLE);							// Stop to free up the bus
-        I2C_ITConfig(dev, I2C_IT_EVT | I2C_IT_ERR, DISABLE);	// Disable EVT and ERR interrupts while bus inactive. They'll be reenabled
+      else
+      {
+        I2C_GenerateSTOP(dev, ENABLE); // Stop to free up the bus
+        I2C_ITConfig(dev, I2C_IT_EVT | I2C_IT_ERR, DISABLE); // Disable EVT and ERR interrupts while bus inactive. They'll be reenabled
       }
     }
   }
@@ -268,124 +272,140 @@ void I2C::handle_event() {
   uint8_t sr1 = dev->SR1;
 
 
-  if (sr1 & I2C_SR1_SB) {					// EV5 (in ref manual) - Start just sent
-    dev->CR1 &= ~I2C_CR1_POS;			// Reset the POS bit so ACK/NACK applied to the current byte
+  if (sr1 & I2C_SR1_SB) // EV5 (in ref manual) - Start just sent
+  {
+    dev->CR1 &= ~I2C_CR1_POS; // Reset the POS bit so ACK/NACK applied to the current byte
     I2C_AcknowledgeConfig(dev, ENABLE);	// Make sure ACK is on
-
-    if (reading_ && subaddress_sent_) {
-      if (len_ == 2) {
-        dev->CR1 |= I2C_CR1_POS;	//if doing a 2-byte read, set NACK to apply to the final byte
+    index_ = 0;
+    if (reading_ && (subaddress_sent_ || reg_ == 0xFF))
+    {
+      subaddress_sent_ = true;
+      if (len_ == 2)
+      {
+        dev->CR1 |= I2C_CR1_POS; // if doing a 2-byte read, set NACK to apply to the final byte
       }
       I2C_Send7bitAddress(dev, addr_, I2C_Direction_Receiver);	// start a read
     }
-    else {
-      I2C_Send7bitAddress(dev, addr_, I2C_Direction_Transmitter);	//start a write
-      if (!subaddress_sent_) {//THIS
-        index_ = -1;
+    else // We are either writing or the subaddress hasn't been sent and we need to write it
+    {
+      I2C_Send7bitAddress(dev, addr_, I2C_Direction_Transmitter); //start a write
+      if (!subaddress_sent_)
+      {
+        index_ = -1;  // Send the subaddress
       }
     }
   }
 
-  else if (sr1 & I2C_SR1_ADDR) {	// EV6 - Address just sent
-    __DMB(); //memory fence to control hardware
-    if (reading_ && subaddress_sent_) {
-      if (len_ == 1) {//EV6_1
+  else if (sr1 & I2C_SR1_ADDR) // EV6 - Address just sent
+  {
+    __DMB();
+    if (reading_ && subaddress_sent_)
+    {
+      if (len_ == 1) // EV6_1, set the stop
+      {
         I2C_AcknowledgeConfig(dev, DISABLE);
         __DMB();
         (void)dev->SR2; // read SR2 to clear the ADDR bit
         I2C_GenerateSTOP(dev, ENABLE);
         final_stop_ = true;
-        I2C_ITConfig(dev, I2C_IT_BUF, ENABLE);  // enables EVT_7
+        I2C_ITConfig(dev, I2C_IT_BUF, ENABLE);  // enable EVT_7
       }
-      else {// receiving greater than one byte
+      else // receiving greater than one byte
+      {
         (void)dev->SR2; 		// read SR2 to clear the ADDR bit
         __DMB();
-        if (len_ == 2) {
+        if (len_ == 2)
+        {
           I2C_AcknowledgeConfig(dev, DISABLE);
-          I2C_ITConfig(dev, I2C_IT_BUF, DISABLE);	// Disable TXE to allow the buffer to fill
+          I2C_ITConfig(dev, I2C_IT_BUF, DISABLE); // Disable TXE to allow the buffer to fill
         }
-        else if (len_ == 3) {
+        else if (len_ == 3) // Receiving three bytes
+        {
           I2C_ITConfig(dev, I2C_IT_BUF, DISABLE);  // Make sure RXNE disabled so we get a BTF in two bytes time
         }
-        else {// Receiving greater than three bytes
+        else  // Receiving greater than three bytes
+        {
           I2C_ITConfig(dev, I2C_IT_BUF, ENABLE);  //enables EVT_7
         }
       }
     }
-    else {// sending subaddress, or transmitting
-      (void)dev->SR2; 		// read SR2 to clear the ADDR bit
+    else // sending subaddress, or transmitting
+    {
+      (void)dev->SR2; // read SR2 to clear the ADDR bit
       __DMB();
       I2C_ITConfig(dev, I2C_IT_BUF, ENABLE);  //enables EVT_7
     }
   }
 
-  else if (sr1 & I2C_SR1_BTF)	{								// EV7_2, EV7_3, EV8_2 - Byte Transfer Finished
+  else if (sr1 & I2C_SR1_BTF) // EV7_2, EV7_3, EV8_2 - Byte Transfer Finished
+  {
     final_stop_ = true;
-    if (reading_ && subaddress_sent_) {						// EV7_2, EV7_3
-      if (len_ > 2) {										// EV7_2
-        I2C_AcknowledgeConfig(dev, DISABLE);			// Turn off ACK
-        data_buffer_[index_++] = I2C_ReceiveData(dev);	// Read data N-2
-        I2C_GenerateSTOP(dev, ENABLE);					// Program the Stop
-        final_stop_ = true;								// Required to fix hardware
-        data_buffer_[index_++] = I2C_ReceiveData(dev);		// Read data N-1
-        I2C_ITConfig(dev, I2C_IT_BUF, ENABLE);			// Enable RxNE to allow the final EV7 to read data N
+    if (reading_ && subaddress_sent_) // EV7_2, EV7_3
+    {
+      if (len_ > 2) // EV7_2
+      {
+        I2C_AcknowledgeConfig(dev, DISABLE); // Turn off ACK
+        data_buffer_[index_++] = I2C_ReceiveData(dev);	// Read second to last byte
+        I2C_GenerateSTOP(dev, ENABLE); // Program the Stop
+        final_stop_ = true; // Remember that we have set the stop
+        data_buffer_[index_++] = I2C_ReceiveData(dev); // Read last byte
+        I2C_ITConfig(dev, I2C_IT_BUF, ENABLE);	// Enable for final EV7
       }
-      else {												// EV7_3
-        if (final_stop_)
-          I2C_GenerateSTOP(dev, ENABLE);				// Program the Stop
-        else
-          I2C_GenerateSTART(dev, ENABLE);				// Program a rep start
-
-        data_buffer_[index_++] = I2C_ReceiveData(dev);	// Read data N-1
-        data_buffer_[index_++] = I2C_ReceiveData(dev);	// Read data N
-        index_++;										// To show job completed
-      }
-    }
-    else {													// EV8_2, which may be due to a subaddress sent or a write completion
-      if (subaddress_sent_ || (!reading_)) {
-        if (final_stop_)
-          I2C_GenerateSTOP(dev, ENABLE);				// Program the Stop
-        else
-          I2C_GenerateSTART(dev, ENABLE);				// Program a rep start
-
-        index_++;										// To show that the job is complete
-      }
-      else {												// We need to send a subaddress
-        I2C_GenerateSTART(dev, ENABLE);					// Program the repeated Start
-        subaddress_sent_ = true;							// This is set back to zero upon completion of the current task
+      else // EV7_3
+      {
+        I2C_GenerateSTOP(dev, ENABLE); // Program the Stop
+        data_buffer_[index_++] = I2C_ReceiveData(dev);	// Read data
+        data_buffer_[index_++] = I2C_ReceiveData(dev);	// Read data
+        index_++;
       }
     }
-    while (dev->CR1 & I2C_CR1_START);						// We must wait for the start to clear, otherwise we get constant BTF
+    else // EV8_2, which may be due to a subaddress sent or a write completion
+    {
+      if (subaddress_sent_ || (!reading_))
+      {
+        I2C_GenerateSTOP(dev, ENABLE);
+        index_++; // Indicate that the job is finished
+      }
+      else // we just wrote the subaddress
+      {
+        I2C_GenerateSTART(dev, ENABLE); // We need a repeated start here
+        subaddress_sent_ = true;
+      }
+    }
+    while (dev->CR1 & I2C_CR1_START); // Wait for the start to clear, to avoid BTF
   }
 
-  else if (sr1 & I2C_SR1_RXNE)								// Byte received - EV7
+  else if (sr1 & I2C_SR1_RXNE)	// Byte received - EV7
   {
     data_buffer_[index_++] = I2C_ReceiveData(dev);
     if (len_ == (index_ + 3))
-      I2C_ITConfig(dev, I2C_IT_BUF, DISABLE);				// Disable RxNE to allow the buffer to flush so we can get an EV7_2
-
-    if (len_ == index_)										// We have completed a final EV7
-      index_++;											// To show job is complete
+      I2C_ITConfig(dev, I2C_IT_BUF, DISABLE); // Disable RxNE
+    if (len_ == index_)	// We have completed a final EV7
+      index_++; // To show job is complete
   }
 
-  else if (sr1 & I2C_SR1_TXE) {								// Byte transmitted - EV8/EV8_1
-    if (index_ != -1) {										// We dont have a subaddress to send
+  else if (sr1 & I2C_SR1_TXE) // Byte transmitted - EV8/EV8_1
+  {
+    if (index_ != -1) // We've already sent subaddress
+    {
       I2C_SendData(dev, data_buffer_[index_++]);
-      if (len_ == index_)									// We have sent all the data
-        I2C_ITConfig(dev, I2C_IT_BUF, DISABLE);			// Disable TXE to allow the buffer to flush
+      if (len_ == index_) // We have sent all the data
+        I2C_ITConfig(dev, I2C_IT_BUF, DISABLE); // Disable TXE to allow the buffer to flush
     }
-    else {
+    else // we need to send the subaddress
+    {
       index_++;
-      I2C_SendData(dev, reg_);							// Send the subaddress
-      if (reading_ || !len_)								// If receiving or sending 0 bytes, flush now
-        I2C_ITConfig(dev, I2C_IT_BUF, DISABLE);			// Disable TXE to allow the buffer to flush
+      I2C_SendData(dev, reg_);	// Send the subaddress
+      if (reading_ || !len_) // If receiving or sending 0 bytes, flush now
+        I2C_ITConfig(dev, I2C_IT_BUF, DISABLE);	// Disable TXE to allow the buffer to flush
     }
   }
 
-  if (index_ == len_ + 1) {									// We have completed the current jobs
-    subaddress_sent_ = false;								// Reset this here
-    if (final_stop_)										// If there is a final stop and no more jobs, bus is inactive, disable interrupts to prevent BTF
-      I2C_ITConfig(dev, I2C_IT_EVT | I2C_IT_ERR, DISABLE);// Disable EVT and ERR interrupts while bus inactive
+  if (index_ == len_ + 1) // We have completed the current jobs
+  {
+    subaddress_sent_ = false; // Reset this here
+    if (final_stop_) // If there is a final stop and no more jobs, bus is inactive, disable interrupts to prevent BTF
+      I2C_ITConfig(dev, I2C_IT_EVT | I2C_IT_ERR, DISABLE); // Disable EVT and ERR interrupts while bus inactive
     busy_ = false;
   }
 }

@@ -8,7 +8,7 @@
  */
 #pragma once
 
-#include "system.h"
+#include "revo_f4.h"
 
 class I2C {
 public:

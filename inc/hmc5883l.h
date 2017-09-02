@@ -59,11 +59,11 @@
 
 class HMC5883L {
 public:
-	HMC5883L(I2C* i2c_drv);
+  HMC5883L(I2C* i2c_drv);
 
-	bool init();
-	bool read(int16_t (&mag_data)[3]);
+  bool init();
+  bool read(float (&mag_data)[3]);
 
 private:
-	I2C* i2c;
+  I2C* i2c;
 };
