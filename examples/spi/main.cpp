@@ -51,7 +51,7 @@ int main() {
              (int32_t) (gyro[0]*1000.0),
              (int32_t) (gyro[1]*1000.0),
              (int32_t) (gyro[2]*1000.0),
-             (int32_t) (temp*1000.0));
+             (int32_t) (temp));
     }
     delay(10);
   }

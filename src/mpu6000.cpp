@@ -67,20 +67,19 @@ MPU6000::MPU6000(SPI* spi_drv) {
 
 void MPU6000::read_sensors(float (&accel_data)[3], float (&gyro_data)[3], float* temp_data)
 {
-  uint8_t raw[14] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+  uint8_t raw[15] = { MPU_RA_ACCEL_XOUT_H | 0x80, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
   spi->enable();
-  spi->transfer_byte(MPU_RA_ACCEL_XOUT_H | 0x80);
-  spi->transfer(raw, 14);
+  spi->transfer(raw, 15); // The first byte is the register, the rest are for data
   spi->disable();
 
-  accel_data[0] = (float)((int16_t)((raw[0] << 8) | raw[1])) * accel_scale_;
-  accel_data[1] = (float)((int16_t)((raw[2] << 8) | raw[3])) * accel_scale_;
-  accel_data[2] = (float)((int16_t)((raw[4] << 8) | raw[5])) * accel_scale_;
+  accel_data[0] = (float)((int16_t)((raw[1] << 8) | raw[2])) * accel_scale_;
+  accel_data[1] = (float)((int16_t)((raw[3] << 8) | raw[4])) * accel_scale_;
+  accel_data[2] = (float)((int16_t)((raw[5] << 8) | raw[6])) * accel_scale_;
 
-  (*temp_data)  = (float)((int16_t)((raw[6] << 8) | raw[7])) / 340.0f * 36.53f;
+  (*temp_data)  = (float)((int16_t)((raw[7] << 8) | raw[8])) / 340.0f + 36.53f;
 
-  gyro_data[0]  = (float)((int16_t)((raw[8]  << 8) | raw[9])) * gyro_scale_;
-  gyro_data[1]  = (float)((int16_t)((raw[10] << 8) | raw[11])) * gyro_scale_;
-  gyro_data[2]  = (float)((int16_t)((raw[12] << 8) | raw[13])) * gyro_scale_;
+  gyro_data[0]  = (float)((int16_t)((raw[9]  << 8) | raw[10])) * gyro_scale_;
+  gyro_data[1]  = (float)((int16_t)((raw[11] << 8) | raw[12])) * gyro_scale_;
+  gyro_data[2]  = (float)((int16_t)((raw[13] << 8) | raw[14])) * gyro_scale_;
 }

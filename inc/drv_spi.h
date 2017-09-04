@@ -23,6 +23,8 @@ public:
   uint8_t transfer_byte(uint8_t data);
 
 private:
+  DMA_InitTypeDef Rx_DMA_InitStructure_;
+  DMA_InitTypeDef Tx_DMA_InitStructure_;
   SPI_TypeDef*	dev;
   GPIO mosi_;
   GPIO miso_;
