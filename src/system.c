@@ -24,10 +24,7 @@ static volatile uint32_t sysTickUptime = 0;
 
 static void cycleCounterInit(void)
 {
-    RCC_ClocksTypeDef clocks;
-    RCC_GetClocksFreq(&clocks);
-    usTicks = clocks.HCLK_Frequency / 1000000;
-    SysTick_Config(clocks.HCLK_Frequency / 1000);
+    usTicks = SystemCoreClock / 1000000;
 }
 
 // SysTick
@@ -64,10 +61,13 @@ void systemInit(void)
     //TODO: Should these be abstracted with the board-specific (ie revo_f4.h) file?
     RCC_AHB2PeriphClockCmd(RCC_AHB2Periph_OTG_FS, DISABLE);
     RCC_APB2PeriphClockCmd(RCC_APB2Periph_SPI1, ENABLE);
+    RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_DMA2, ENABLE);
 
     RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOA, ENABLE);
     RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOB, ENABLE);
+    RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOC, ENABLE);
     
+    RCC_APB2PeriphClockCmd(RCC_APB2Periph_TIM1, ENABLE);
     RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM2, ENABLE);
     RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM3, ENABLE);
     RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM5, ENABLE);
@@ -76,8 +76,9 @@ void systemInit(void)
     // Init cycle counter
     cycleCounterInit();
 
-    NVIC_SetPriority(SysTick_IRQn, 0);
+    SysTick_Config(SystemCoreClock / 1000);
 
+    NVIC_SetPriority(SysTick_IRQn, 0);
 }
 
 void delayMicroseconds(uint32_t us)

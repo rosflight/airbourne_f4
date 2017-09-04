@@ -10,6 +10,8 @@
 
 #include "revo_f4.h"
 
+#include "gpio.h"
+
 class SPI {
 public:
   SPI(SPI_TypeDef *SPI);
@@ -17,10 +19,16 @@ public:
   void set_divisor(uint16_t new_divisor);
   void enable();
   void disable();
-  uint8_t transfer(uint8_t data);
+  bool transfer(uint8_t *data, uint8_t num_bytes);
+  uint8_t transfer_byte(uint8_t data);
 
 private:
-  GPIO_TypeDef*	nss_gpio;
-  uint16_t nss_pin;
   SPI_TypeDef*	dev;
+  GPIO mosi_;
+  GPIO miso_;
+  GPIO sck_;
+  GPIO nss_;
+
+  uint8_t tx_buffer_[14];
+  uint8_t rx_buffer_[14];
 };

@@ -1,7 +1,7 @@
 #ifndef DRV_PWM_OUT_H
 #define DRV_PWM_OUT_H
 
-#include "system.h"
+#include "revo_f4.h"
 
 class PWM_OUT {
 public:

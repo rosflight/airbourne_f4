@@ -126,7 +126,7 @@ typedef struct
                                   This parameter can be a value of @ref TIM_Input_Capture_Polarity */
 
   uint16_t TIM_ICSelection;  /*!< Specifies the input.
-                                  This parameter can be a value of @ref TIM_Input_Capture_Selection */
+                                  This parameter can be a value of @ref RC */
 
   uint16_t TIM_ICPrescaler;  /*!< Specifies the Input Capture Prescaler.
                                   This parameter can be a value of @ref TIM_Input_Capture_Prescaler */

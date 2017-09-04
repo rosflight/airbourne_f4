@@ -2,10 +2,11 @@
 
 PWM_OUT::PWM_OUT(){}
 
-void PWM_OUT::init(const pwm_hardware_struct_t* pwm_init, uint16_t frequency, uint32_t max_us, uint32_t min_us) {
-  GPIO_InitTypeDef 		gpio_init_struct;
+void PWM_OUT::init(const pwm_hardware_struct_t* pwm_init, uint16_t frequency, uint32_t max_us, uint32_t min_us)
+{
+  GPIO_InitTypeDef gpio_init_struct;
   TIM_TimeBaseInitTypeDef tim_init_struct;
-  TIM_OCInitTypeDef 		tim_oc_init_struct;
+  TIM_OCInitTypeDef tim_oc_init_struct;
 
   port_ = pwm_init->gpio;
   pin_  = pwm_init->gpio_pin;
@@ -56,7 +57,8 @@ void PWM_OUT::init(const pwm_hardware_struct_t* pwm_init, uint16_t frequency, ui
   tim_oc_init_struct.TIM_OCPolarity 	= TIM_OCPolarity_Low;
   tim_oc_init_struct.TIM_OCIdleState 	= TIM_OCIdleState_Set;
 
-  switch (pwm_init->tim_channel) {
+  switch (pwm_init->tim_channel)
+  {
   case TIM_Channel_1:
     TIM_OC1Init(TIMPtr, &tim_oc_init_struct);
     TIM_OC1PreloadConfig(TIMPtr, TIM_OCPreload_Enable);

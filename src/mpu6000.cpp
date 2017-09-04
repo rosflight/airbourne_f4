@@ -5,57 +5,57 @@ MPU6000::MPU6000(SPI* spi_drv) {
   spi = spi_drv;
 
   spi->enable();
-  spi->transfer(MPU_RA_PWR_MGMT_1); // Device Reset
-  spi->transfer(MPU_BIT_H_RESET);
+  spi->transfer_byte(MPU_RA_PWR_MGMT_1); // Device Reset
+  spi->transfer_byte(MPU_BIT_H_RESET);
   spi->disable();
 
   delay(150);
 
   spi->enable();
-  spi->transfer(MPU_RA_PWR_MGMT_1); // Clock Source PPL with Z axis gyro reference
-  spi->transfer(MPU_CLK_SEL_PLLGYROZ);
+  spi->transfer_byte(MPU_RA_PWR_MGMT_1); // Clock Source PPL with Z axis gyro reference
+  spi->transfer_byte(MPU_CLK_SEL_PLLGYROZ);
   spi->disable();
 
   delayMicroseconds(1);
 
   spi->enable();
-  spi->transfer(MPU_RA_USER_CTRL); // Disable Primary I2C Interface
-  spi->transfer(MPU_BIT_I2C_IF_DIS);
+  spi->transfer_byte(MPU_RA_USER_CTRL); // Disable Primary I2C Interface
+  spi->transfer_byte(MPU_BIT_I2C_IF_DIS);
   spi->disable();
 
   delayMicroseconds(1);
 
   spi->enable();
-  spi->transfer(MPU_RA_PWR_MGMT_2);
-  spi->transfer(0x00);
+  spi->transfer_byte(MPU_RA_PWR_MGMT_2);
+  spi->transfer_byte(0x00);
   spi->disable();
 
   delayMicroseconds(1);
 
   spi->enable();
-  spi->transfer(MPU_RA_SMPLRT_DIV); // Accel Sample Rate 1000 Hz, Gyro Sample Rate 8000 Hz
-  spi->transfer(0x00);
+  spi->transfer_byte(MPU_RA_SMPLRT_DIV); // Accel Sample Rate 1000 Hz, Gyro Sample Rate 8000 Hz
+  spi->transfer_byte(0x00);
   spi->disable();
 
   delayMicroseconds(1);
 
   spi->enable();
-  spi->transfer(MPU_RA_CONFIG); // Accel and Gyro DLPF Setting
-  spi->transfer(MPU_BITS_DLPF_CFG_98HZ);
+  spi->transfer_byte(MPU_RA_CONFIG); // Accel and Gyro DLPF Setting
+  spi->transfer_byte(MPU_BITS_DLPF_CFG_98HZ);
   spi->disable();
 
   delayMicroseconds(1);
 
   spi->enable();
-  spi->transfer(MPU_RA_ACCEL_CONFIG); // Accel +/- 4 G Full Scale
-  spi->transfer(MPU_BITS_FS_4G);
+  spi->transfer_byte(MPU_RA_ACCEL_CONFIG); // Accel +/- 4 G Full Scale
+  spi->transfer_byte(MPU_BITS_FS_4G);
   spi->disable();
 
   delayMicroseconds(1);
 
   spi->enable();
-  spi->transfer(MPU_RA_GYRO_CONFIG); // Gyro +/- 2000 DPS Full Scale
-  spi->transfer(MPU_BITS_FS_2000DPS);
+  spi->transfer_byte(MPU_RA_GYRO_CONFIG); // Gyro +/- 2000 DPS Full Scale
+  spi->transfer_byte(MPU_BITS_FS_2000DPS);
   spi->disable();
 
   spi->set_divisor(2); // 21 MHz SPI clock (within 20 +/- 10%)
@@ -67,19 +67,12 @@ MPU6000::MPU6000(SPI* spi_drv) {
 
 void MPU6000::read_sensors(float (&accel_data)[3], float (&gyro_data)[3], float* temp_data)
 {
-  uint8_t raw[14];
-  for (int i = 0; i < 14; i++)
-  {
-    raw[i] = 0;
-  }
+  uint8_t raw[14] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
   spi->enable();
-  spi->transfer(MPU_RA_ACCEL_XOUT_H | 0x80);
+  spi->transfer_byte(MPU_RA_ACCEL_XOUT_H | 0x80);
   //the mpu6000 will continue to send the next register's data while you transfer a blank
-  for (int i = 0; i < 14; ++i)
-  {
-    raw[i] = spi->transfer(0x00);
-  }
+  spi->transfer(raw, 14);
   spi->disable();
 
   accel_data[0] = (float)((int16_t)((raw[0] << 8) | raw[1])) * accel_scale_;

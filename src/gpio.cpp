@@ -40,7 +40,7 @@ void GPIO::write(gpio_write_t state)
 {
   if(mode_ == OUTPUT)
   {
-    if(state)
+    if(state == LOW)
       GPIO_SetBits(port_, pin_);
     else
       GPIO_ResetBits(port_, pin_);
@@ -90,16 +90,16 @@ void GPIO::set_mode(gpio_mode_t mode)
   case PERIPH_OUT:
     GPIO_InitStruct.GPIO_Mode = GPIO_Mode_AF;
     GPIO_InitStruct.GPIO_OType = GPIO_OType_PP;
-    GPIO_InitStruct.GPIO_PuPd = GPIO_PuPd_UP;
+    GPIO_InitStruct.GPIO_PuPd = GPIO_PuPd_NOPULL;
     break;
   case PERIPH_IN:
     GPIO_InitStruct.GPIO_Mode = GPIO_Mode_AF;
-    GPIO_InitStruct.GPIO_OType = GPIO_OType_PP;
+    GPIO_InitStruct.GPIO_OType = GPIO_OType_OD;
     GPIO_InitStruct.GPIO_PuPd = GPIO_PuPd_NOPULL;
     break;
   case PERIPH_IN_OUT:
     GPIO_InitStruct.GPIO_Mode = GPIO_Mode_AF;
-    GPIO_InitStruct.GPIO_OType = GPIO_OType_PP;
+    GPIO_InitStruct.GPIO_OType = GPIO_OType_OD;
     GPIO_InitStruct.GPIO_PuPd = GPIO_PuPd_NOPULL;
     break;
   case ANALOG:

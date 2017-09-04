@@ -8,34 +8,25 @@ SPI::SPI(SPI_TypeDef *SPI) {
 
   if (SPI == SPI1)
   {
-
-    gpio_init_struct.GPIO_Pin 	= SPI1_NSS_PIN;
-    gpio_init_struct.GPIO_Mode 	= GPIO_Mode_OUT;
-    gpio_init_struct.GPIO_Speed	= GPIO_Speed_50MHz;
-    gpio_init_struct.GPIO_OType = GPIO_OType_PP;
-    gpio_init_struct.GPIO_PuPd 	= GPIO_PuPd_NOPULL;
-
-    nss_gpio = SPI1_GPIO;
-    nss_pin = SPI1_NSS_PIN;
-
-    GPIO_Init(SPI1_GPIO, &gpio_init_struct);
+    // Configure the Select Pin
+    nss_.init(SPI1_GPIO, SPI1_NSS_PIN, GPIO::OUTPUT);
 
     disable();
 
+    // Set the AF configuration for the other pins
     GPIO_PinAFConfig(SPI1_GPIO, SPI1_SCK_PIN_SOURCE, GPIO_AF_SPI1);
     GPIO_PinAFConfig(SPI1_GPIO, SPI1_MISO_PIN_SOURCE, GPIO_AF_SPI1);
     GPIO_PinAFConfig(SPI1_GPIO, SPI1_MOSI_PIN_SOURCE, GPIO_AF_SPI1);
 
-    gpio_init_struct.GPIO_Pin 	= SPI1_SCK_PIN | SPI1_MISO_PIN | SPI1_MOSI_PIN;
-    gpio_init_struct.GPIO_Mode 	= GPIO_Mode_AF;
-    gpio_init_struct.GPIO_Speed = GPIO_Speed_50MHz;
-    gpio_init_struct.GPIO_OType = GPIO_OType_PP;
-    gpio_init_struct.GPIO_PuPd 	= GPIO_PuPd_NOPULL;
+    // Initialize other pins
+    sck_.init(SPI1_GPIO, SPI1_SCK_PIN, GPIO::PERIPH_OUT);
+    miso_.init(SPI1_GPIO, SPI1_MISO_PIN, GPIO::PERIPH_OUT);
+    mosi_.init(SPI1_GPIO, SPI1_MOSI_PIN, GPIO::PERIPH_OUT);
 
-    GPIO_Init(SPI1_GPIO, &gpio_init_struct);
+    dev = SPI1;
 
-    SPI_I2S_DeInit(SPI1);
-
+    // Set up the SPI peripheral
+    SPI_I2S_DeInit(dev);
     spi_init_struct.SPI_Direction = SPI_Direction_2Lines_FullDuplex;
     spi_init_struct.SPI_Mode = SPI_Mode_Master;
     spi_init_struct.SPI_DataSize = SPI_DataSize_8b;
@@ -45,15 +36,47 @@ SPI::SPI(SPI_TypeDef *SPI) {
     spi_init_struct.SPI_BaudRatePrescaler = SPI_BaudRatePrescaler_64;  // 42/64 = 0.65625 MHz SPI Clock
     spi_init_struct.SPI_FirstBit = SPI_FirstBit_MSB;
     spi_init_struct.SPI_CRCPolynomial = 7;
+    SPI_Init(dev, &spi_init_struct);
+    SPI_CalculateCRC(dev, DISABLE);
+    SPI_Cmd(dev, ENABLE);
 
-    SPI_Init(SPI1, &spi_init_struct);
-    SPI_CalculateCRC(SPI1, DISABLE);
-    SPI_Cmd(SPI1, ENABLE);
-
-    dev = SPI1;
-
+    // Wait for any transfers to clear (this should be really short if at all)
     while (SPI_I2S_GetFlagStatus(dev, SPI_I2S_FLAG_TXE) == RESET);
     SPI_I2S_ReceiveData(dev); //dummy read if needed
+
+    // Configure the DMA
+    DMA_DeInit(DMA2_Stream3); //SPI1_TX_DMA_STREAM
+    DMA_DeInit(DMA2_Stream2); //SPI1_RX_DMA_STREAM
+
+    DMA_InitTypeDef DMA_InitStructure;
+    DMA_InitStructure.DMA_BufferSize = (uint16_t)(14 + 3); // we receive 14 bytes
+
+    DMA_InitStructure.DMA_FIFOMode = DMA_FIFOMode_Disable ;
+    DMA_InitStructure.DMA_FIFOThreshold = DMA_FIFOThreshold_1QuarterFull ;
+    DMA_InitStructure.DMA_MemoryBurst = DMA_MemoryBurst_Single ;
+    DMA_InitStructure.DMA_MemoryDataSize = DMA_MemoryDataSize_Byte;
+    DMA_InitStructure.DMA_MemoryInc = DMA_MemoryInc_Enable;
+    DMA_InitStructure.DMA_Mode = DMA_Mode_Normal;
+
+    DMA_InitStructure.DMA_PeripheralBaseAddr = (uint32_t)(&(SPI1->DR));
+    DMA_InitStructure.DMA_PeripheralBurst = DMA_PeripheralBurst_Single;
+    DMA_InitStructure.DMA_PeripheralDataSize = DMA_PeripheralDataSize_Byte;
+    DMA_InitStructure.DMA_MemoryDataSize = DMA_MemoryDataSize_Byte;
+    DMA_InitStructure.DMA_PeripheralInc = DMA_PeripheralInc_Disable;
+    DMA_InitStructure.DMA_Priority = DMA_Priority_High;
+
+    /* Configure Tx DMA */
+    DMA_InitStructure.DMA_Channel = DMA_Channel_3;
+    DMA_InitStructure.DMA_DIR = DMA_DIR_MemoryToPeripheral;
+    DMA_InitStructure.DMA_Memory0BaseAddr = (uint32_t) tx_buffer_;
+    DMA_Init(DMA2_Stream3, &DMA_InitStructure);
+
+    /* Configure Rx DMA */
+    DMA_InitStructure.DMA_Channel = DMA_Channel_3;
+    DMA_InitStructure.DMA_DIR = DMA_DIR_PeripheralToMemory;
+    DMA_InitStructure.DMA_Memory0BaseAddr = (uint32_t) rx_buffer_;
+    DMA_Init(DMA2_Stream2, &DMA_InitStructure);
+
   }
 }
 
@@ -104,33 +127,44 @@ void SPI::set_divisor(uint16_t new_divisor) {
 }
 
 void SPI::enable() {
-  GPIO_ResetBits(nss_gpio, nss_pin);
+  nss_.write(GPIO::HIGH);
 }
 
 void SPI::disable() {
-  GPIO_SetBits(nss_gpio, nss_pin);
+  nss_.write(GPIO::LOW);
 }
 
-uint8_t SPI::transfer(uint8_t data) {
+uint8_t SPI::transfer_byte(uint8_t data)
+{
+  uint8_t byte = data;
+  transfer(&byte, 1);
+  return byte;
+}
+
+bool SPI::transfer(uint8_t* data, uint8_t num_bytes)
+{
   uint16_t spiTimeout;
 
   spiTimeout = 0x1000;
 
-  while (SPI_I2S_GetFlagStatus(dev, SPI_I2S_FLAG_TXE) == RESET)
+  for (uint8_t i = 0; i < num_bytes; i++)
   {
-    if ((spiTimeout--) == 0)
-      return(0);
+    while (SPI_I2S_GetFlagStatus(dev, SPI_I2S_FLAG_TXE) == RESET)
+    {
+      if ((spiTimeout--) == 0)
+        return false;
+    }
+
+    SPI_I2S_SendData(dev, data[i]);
+
+    spiTimeout = 0x1000;
+
+    while (SPI_I2S_GetFlagStatus(dev, SPI_I2S_FLAG_RXNE) == RESET)
+    {
+      if ((spiTimeout--) == 0)
+        return false;
+    }
+    // Pack received data into the same array
+    data[i] = (uint8_t)SPI_I2S_ReceiveData(dev);
   }
-
-  SPI_I2S_SendData(dev, data);
-
-  spiTimeout = 0x1000;
-
-  while (SPI_I2S_GetFlagStatus(dev, SPI_I2S_FLAG_RXNE) == RESET)
-  {
-    if ((spiTimeout--) == 0)
-      return(0);
-  }
-
-  return((uint8_t)SPI_I2S_ReceiveData(dev));
 }
