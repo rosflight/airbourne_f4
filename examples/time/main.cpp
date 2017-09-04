@@ -28,12 +28,11 @@ int main() {
   info.on();
 
   int i = 0;
-  int delays[6] = {1000000, 100, 5000, 500000, 70000, 1000};
   while(1)
   {
     warn.toggle();
     info.toggle();
     printf("time = %d ms, %ul us\n", millis(), micros());
-    delayMicroseconds(delays[i++ % 6]);
+    delay(500);
   }
 }

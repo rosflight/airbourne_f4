@@ -32,10 +32,12 @@ int main() {
   float temp;
   float acc[3];
   float gyro[3];
+  uint64_t stamp = 0;
+
   while(1)
   {
     info.toggle();
-    imu.read_sensors(acc, gyro, &temp);
+    imu.read_sensors(acc, gyro, &temp, &stamp);
     if (acc[0] == 0xFFFF || acc[0] == 0x0000)
     {
       warn.on();
@@ -44,14 +46,15 @@ int main() {
     else
     {
       warn.off();
-      printf("%d\t%d\t%d\t%d\t%d\t%d\t%d\n",
+      printf("%d\t%d\t%d\t%d\t%d\t%d\t%ul\n",
              (int32_t) (acc[0]*1000.0),
              (int32_t) (acc[1]*1000.0),
              (int32_t) (acc[2]*1000.0),
              (int32_t) (gyro[0]*1000.0),
              (int32_t) (gyro[1]*1000.0),
              (int32_t) (gyro[2]*1000.0),
-             (int32_t) (temp));
+              stamp);
+//             (int32_t) (temp));
     }
     delay(10);
   }

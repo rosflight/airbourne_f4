@@ -1,77 +1,69 @@
 #include "mpu6000.h"
 
+MPU6000* IMU_Ptr = NULL;
 
 MPU6000::MPU6000(SPI* spi_drv) {
-  spi = spi_drv;
+  spi_ = spi_drv;
 
-  spi->enable();
-  spi->transfer_byte(MPU_RA_PWR_MGMT_1); // Device Reset
-  spi->transfer_byte(MPU_BIT_H_RESET);
-  spi->disable();
+  IMU_Ptr = this;
+
+  write(MPU_RA_PWR_MGMT_1, MPU_BIT_H_RESET); // Device Reset
 
   delay(150);
 
-  spi->enable();
-  spi->transfer_byte(MPU_RA_PWR_MGMT_1); // Clock Source PPL with Z axis gyro reference
-  spi->transfer_byte(MPU_CLK_SEL_PLLGYROZ);
-  spi->disable();
+  write(MPU_RA_PWR_MGMT_1, MPU_CLK_SEL_PLLGYROZ); // Clock Source PPL with Z axis gyro reference
+  write(MPU_RA_USER_CTRL, MPU_BIT_I2C_IF_DIS); // Disable Primary I2C Interface
+  write(MPU_RA_PWR_MGMT_2, 0x00);
+  write(MPU_RA_SMPLRT_DIV, 0x00); // Accel Sample Rate 1000 Hz, Gyro Sample Rate 8000 Hz
+  write(MPU_RA_CONFIG, MPU_BITS_DLPF_CFG_188HZ);
+  write(MPU_RA_ACCEL_CONFIG, MPU_BITS_FS_4G);
+  write(MPU_RA_GYRO_CONFIG, MPU_BITS_FS_2000DPS);
+  write(MPU_RA_INT_ENABLE, 0x01);
 
-  delayMicroseconds(1);
+  spi_->set_divisor(2); // 21 MHz SPI clock (within 20 +/- 10%)
 
-  spi->enable();
-  spi->transfer_byte(MPU_RA_USER_CTRL); // Disable Primary I2C Interface
-  spi->transfer_byte(MPU_BIT_I2C_IF_DIS);
-  spi->disable();
+  // Set up the EXTI pin
+  exti_.init(GPIOC, GPIO_Pin_4, GPIO::INPUT);
 
-  delayMicroseconds(1);
+  SYSCFG_EXTILineConfig(EXTI_PortSourceGPIOC, EXTI_PinSource4);
 
-  spi->enable();
-  spi->transfer_byte(MPU_RA_PWR_MGMT_2);
-  spi->transfer_byte(0x00);
-  spi->disable();
+  EXTI_InitTypeDef EXTI_InitStruct;
+  EXTI_InitStruct.EXTI_Line = EXTI_Line4;
+  EXTI_InitStruct.EXTI_LineCmd = ENABLE;
+  EXTI_InitStruct.EXTI_Mode = EXTI_Mode_Interrupt;
+  EXTI_InitStruct.EXTI_Trigger = EXTI_Trigger_Rising;
+  EXTI_Init(&EXTI_InitStruct);
 
-  delayMicroseconds(1);
+  NVIC_InitTypeDef NVIC_InitStruct;
+  NVIC_InitStruct.NVIC_IRQChannel = EXTI4_IRQn;
+  NVIC_InitStruct.NVIC_IRQChannelPreemptionPriority = 0x03;
+  NVIC_InitStruct.NVIC_IRQChannelSubPriority = 0x03;
+  NVIC_InitStruct.NVIC_IRQChannelCmd = ENABLE;
+  NVIC_Init(&NVIC_InitStruct);
 
-  spi->enable();
-  spi->transfer_byte(MPU_RA_SMPLRT_DIV); // Accel Sample Rate 1000 Hz, Gyro Sample Rate 8000 Hz
-  spi->transfer_byte(0x00);
-  spi->disable();
-
-  delayMicroseconds(1);
-
-  spi->enable();
-  spi->transfer_byte(MPU_RA_CONFIG); // Accel and Gyro DLPF Setting
-  spi->transfer_byte(MPU_BITS_DLPF_CFG_98HZ);
-  spi->disable();
-
-  delayMicroseconds(1);
-
-  spi->enable();
-  spi->transfer_byte(MPU_RA_ACCEL_CONFIG); // Accel +/- 4 G Full Scale
-  spi->transfer_byte(MPU_BITS_FS_4G);
-  spi->disable();
-
-  delayMicroseconds(1);
-
-  spi->enable();
-  spi->transfer_byte(MPU_RA_GYRO_CONFIG); // Gyro +/- 2000 DPS Full Scale
-  spi->transfer_byte(MPU_BITS_FS_2000DPS);
-  spi->disable();
-
-  spi->set_divisor(2); // 21 MHz SPI clock (within 20 +/- 10%)
 
   // set the accel and gyro scale parameters
   accel_scale_ = (4.0 * 9.80665f) / ((float)0x7FFF);
   gyro_scale_= (2000.0 * 3.14159f/180.0f) / ((float)0x7FFF);
 }
 
-void MPU6000::read_sensors(float (&accel_data)[3], float (&gyro_data)[3], float* temp_data)
+void MPU6000::write(uint8_t reg, uint8_t data)
+{
+  spi_->enable();
+  spi_->transfer_byte(reg);
+  spi_->transfer_byte(data);
+  spi_->disable();
+  delayMicroseconds(1);
+}
+
+void MPU6000::read_sensors(float (&accel_data)[3], float (&gyro_data)[3], float* temp_data, uint64_t* stamp_us)
 {
   uint8_t raw[15] = { MPU_RA_ACCEL_XOUT_H | 0x80, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
-  spi->enable();
-  spi->transfer(raw, 15); // The first byte is the register, the rest are for data
-  spi->disable();
+  spi_->enable();
+  spi_->transfer(raw, 15); // The first byte is the register, the rest are for data
+  new_data_ = false;
+  spi_->disable();
 
   accel_data[0] = (float)((int16_t)((raw[1] << 8) | raw[2])) * accel_scale_;
   accel_data[1] = (float)((int16_t)((raw[3] << 8) | raw[4])) * accel_scale_;
@@ -82,4 +74,23 @@ void MPU6000::read_sensors(float (&accel_data)[3], float (&gyro_data)[3], float*
   gyro_data[0]  = (float)((int16_t)((raw[9]  << 8) | raw[10])) * gyro_scale_;
   gyro_data[1]  = (float)((int16_t)((raw[11] << 8) | raw[12])) * gyro_scale_;
   gyro_data[2]  = (float)((int16_t)((raw[13] << 8) | raw[14])) * gyro_scale_;
+
+  (*stamp_us) = timestamp_us_;
+}
+
+void MPU6000::set_new_data()
+{
+  timestamp_us_ = micros();
+  new_data_ = true;
+}
+
+extern "C"
+{
+
+void EXTI4_IRQHandler(void)
+{
+  EXTI_ClearITPendingBit(EXTI_Line4);
+  IMU_Ptr->set_new_data();
+}
+
 }

@@ -34,6 +34,8 @@
 #include "stm32f4xx_i2c.h"
 #include "stm32f4xx_tim.h"
 #include "stm32f4xx_dma.h"
+#include "stm32f4xx_syscfg.h"
+#include "stm32f4xx_exti.h"
 #include "misc.h"
 
 typedef struct {
@@ -53,7 +55,7 @@ void systemInit(void);
 void delayMicroseconds(uint32_t us);
 void delay(uint32_t ms);
 
-uint32_t micros(void);
+uint64_t micros(void);
 uint32_t millis(void);
 
 // bootloader/IAP

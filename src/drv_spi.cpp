@@ -121,10 +121,6 @@ void SPI::disable() {
 
 uint8_t SPI::transfer_byte(uint8_t data)
 {
-  // Disconnect SPI from the DMA
-  SPI_I2S_DMACmd(SPI1, SPI_I2S_DMAReq_Rx, DISABLE);
-  SPI_I2S_DMACmd(SPI1, SPI_I2S_DMAReq_Tx, DISABLE);
-
   // Turn on SPI
   SPI_Cmd(SPI1, ENABLE);
 
@@ -186,7 +182,7 @@ bool SPI::transfer(uint8_t* data, uint8_t num_bytes)
     if ((spiTimeout--) == 0)
       return false;
   }
-  while (DMA_GetFlagStatus(DMA2_Stream2, DMA_FLAG_TCIF2)==RESET);
+  while (DMA_GetFlagStatus(DMA2_Stream2, DMA_FLAG_TCIF2)==RESET)
   {
     if ((spiTimeout--) == 0)
       return false;
@@ -199,6 +195,10 @@ bool SPI::transfer(uint8_t* data, uint8_t num_bytes)
   // Turn off DMA
   DMA_Cmd(DMA2_Stream3, DISABLE);
   DMA_Cmd(DMA2_Stream2, DISABLE);
+
+  // Disconnect SPI from the DMA
+  SPI_I2S_DMACmd(SPI1, SPI_I2S_DMAReq_Rx, DISABLE);
+  SPI_I2S_DMACmd(SPI1, SPI_I2S_DMAReq_Tx, DISABLE);
 
   // Turn off the SPI
   SPI_Cmd(SPI1, DISABLE);

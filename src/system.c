@@ -19,12 +19,12 @@
 
 // cycles per microsecond
 static uint32_t usTicks = 0;
-// current uptime for 1kHz systick timer. will rollover after 49 days. hopefully we won't care.
+// current uptime for 16kHz systick timer. will rollover after 3 days. hopefully we won't care.
 static volatile uint32_t sysTickUptime = 0;
 
 static void cycleCounterInit(void)
 {
-    usTicks = SystemCoreClock / 1000000;
+    usTicks = SystemCoreClock / 16000000;
 }
 
 // SysTick
@@ -34,20 +34,15 @@ void SysTick_Handler(void)
 }
 
 // Return system uptime in microseconds (rollover in 70minutes)
-uint32_t micros(void)
+uint64_t micros(void)
 {
-    register uint32_t ms, cycle_cnt;
-    do {
-        ms = sysTickUptime;
-        cycle_cnt = SysTick->VAL;
-    } while (ms != sysTickUptime);
-    return (ms * 1000) + (usTicks * 1000 - cycle_cnt) / usTicks;
+    return sysTickUptime * 63;
 }
 
 // Return system uptime in milliseconds (rollover in 49 days)
 uint32_t millis(void)
 {
-    return sysTickUptime;
+    return (uint32_t)(sysTickUptime >> 3);
 }
 
 void systemInit(void)
@@ -66,6 +61,7 @@ void systemInit(void)
     RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOA, ENABLE);
     RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOB, ENABLE);
     RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOC, ENABLE);
+    RCC_APB2PeriphClockCmd(RCC_APB2Periph_SYSCFG, ENABLE);
     
     RCC_APB2PeriphClockCmd(RCC_APB2Periph_TIM1, ENABLE);
     RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM2, ENABLE);
@@ -76,7 +72,7 @@ void systemInit(void)
     // Init cycle counter
     cycleCounterInit();
 
-    SysTick_Config(SystemCoreClock / 1000);
+    SysTick_Config(SystemCoreClock / 16000); // Run timer at 16 kHz, so we can accurately time an 8kHz IMU
 
     NVIC_SetPriority(SysTick_IRQn, 0);
 }

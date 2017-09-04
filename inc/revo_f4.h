@@ -13,6 +13,13 @@
 #define VCP_GPIO_RX_PIN GPIO_Pin_11
 #define VCP_GPIO_TX_PIN GPIO_Pin_12
 
+/////////////////////// IMU EXTI CONFIG ///////////////////////
+#define IMU_INT_GPIO GPIOC
+#define IMU_INT_GPIO_PIN GPIO_Pin_4
+#define IMU_INT_LINE EXTI_Line4
+#define IMU_INT_IRQn EXTI4_IRQn
+#define IMU_INT_IRQ_Handler EXTI4_IRQHandler
+
 /////////////////////// SPI CONFIG ///////////////////////
 #define MPU6000_SPI SPI1
 

@@ -56,7 +56,7 @@
 #define CDC_IN_FRAME_INTERVAL          15    /* Number of frames between IN transfers */
 #define APP_RX_DATA_SIZE               2048  /* Total size of IN (outbound from FC) buffer:
                                                  APP_RX_DATA_SIZE*8/MAX_BAUDARATE*1000 should be > CDC_IN_FRAME_INTERVAL */
-#define APP_TX_DATA_SIZE               2048  /* total size of the OUT (inbound to FC) buffer */
+#define APP_TX_DATA_SIZE               4096  /* total size of the OUT (inbound to FC) buffer */
 #endif /* USE_USB_OTG_HS */
 
 #define APP_FOPS                        VCP_fops
