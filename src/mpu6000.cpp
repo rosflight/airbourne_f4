@@ -67,11 +67,10 @@ MPU6000::MPU6000(SPI* spi_drv) {
 
 void MPU6000::read_sensors(float (&accel_data)[3], float (&gyro_data)[3], float* temp_data)
 {
-  uint8_t raw[14] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+  uint8_t raw[14] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
   spi->enable();
   spi->transfer_byte(MPU_RA_ACCEL_XOUT_H | 0x80);
-  //the mpu6000 will continue to send the next register's data while you transfer a blank
   spi->transfer(raw, 14);
   spi->disable();
 
