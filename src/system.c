@@ -19,13 +19,8 @@
 
 // cycles per microsecond
 static uint32_t usTicks = 0;
-// current uptime for 1kHz systick timer. will rollover after 49 days. hopefully we won't care.
+// current uptime for 32kHz systick timer. will rollover after 1.5 days. hopefully we won't care.
 static volatile uint32_t sysTickUptime = 0;
-
-static void cycleCounterInit(void)
-{
-    usTicks = SystemCoreClock / 1000000;
-}
 
 // SysTick
 void SysTick_Handler(void)
@@ -33,21 +28,16 @@ void SysTick_Handler(void)
     sysTickUptime++;
 }
 
-// Return system uptime in microseconds (rollover in 70minutes)
-uint32_t micros(void)
+// Return system uptime in microseconds (rollover in 1.5 days)
+uint64_t micros(void)
 {
-    register uint32_t ms, cycle_cnt;
-    do {
-        ms = sysTickUptime;
-        cycle_cnt = SysTick->VAL;
-    } while (ms != sysTickUptime);
-    return (ms * 1000) + (usTicks * 1000 - cycle_cnt) / usTicks;
+    return ((uint64_t)sysTickUptime * 3125ul)/100ul;  // The convsersion is 31.25, so doing fixed-point math to be exact
 }
 
-// Return system uptime in milliseconds (rollover in 49 days)
+// Return system uptime in milliseconds (rollover in 1.5 days)
 uint32_t millis(void)
 {
-    return sysTickUptime;
+    return (uint32_t)(sysTickUptime >> 5);  // ( >> 5 is the same as divide by 32, but takes one operation)
 }
 
 void systemInit(void)
@@ -66,6 +56,7 @@ void systemInit(void)
     RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOA, ENABLE);
     RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOB, ENABLE);
     RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOC, ENABLE);
+    RCC_APB2PeriphClockCmd(RCC_APB2Periph_SYSCFG, ENABLE);
     
     RCC_APB2PeriphClockCmd(RCC_APB2Periph_TIM1, ENABLE);
     RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM2, ENABLE);
@@ -73,10 +64,7 @@ void systemInit(void)
     RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM5, ENABLE);
     RCC_APB2PeriphClockCmd(RCC_APB2Periph_TIM9, ENABLE);
 
-    // Init cycle counter
-    cycleCounterInit();
-
-    SysTick_Config(SystemCoreClock / 1000);
+    SysTick_Config(SystemCoreClock / 32000); // Run timer at 16 kHz, so we can accurately time an 8kHz IMU
 
     NVIC_SetPriority(SysTick_IRQn, 0);
 }
