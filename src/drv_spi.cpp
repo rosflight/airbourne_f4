@@ -1,5 +1,6 @@
 #include "drv_spi.h"
 
+SPI* SPIptr;
 
 SPI::SPI(SPI_TypeDef *SPI) {
 
@@ -8,6 +9,7 @@ SPI::SPI(SPI_TypeDef *SPI) {
 
   if (SPI == SPI1)
   {
+    SPIptr = this;
     // Configure the Select Pin
     nss_.init(SPI1_GPIO, SPI1_NSS_PIN, GPIO::OUTPUT);
 
@@ -128,9 +130,10 @@ uint8_t SPI::transfer_byte(uint8_t data)
   return byte;
 }
 
-bool SPI::transfer(uint8_t* data, uint8_t num_bytes)
+bool SPI::transfer(uint8_t* out_data, uint8_t num_bytes, uint8_t* in_data)
 {
   uint16_t spiTimeout;
+  busy_ = true;
 
   // Configure the DMA
   DMA_DeInit(DMA2_Stream3); //SPI1_TX_DMA_STREAM
@@ -156,14 +159,24 @@ bool SPI::transfer(uint8_t* data, uint8_t num_bytes)
   /* Configure Tx DMA */
   DMA_InitStructure.DMA_Channel = DMA_Channel_3;
   DMA_InitStructure.DMA_DIR = DMA_DIR_MemoryToPeripheral;
-  DMA_InitStructure.DMA_Memory0BaseAddr = (uint32_t) data;
+  DMA_InitStructure.DMA_Memory0BaseAddr = (uint32_t) out_data;
   DMA_Init(DMA2_Stream3, &DMA_InitStructure);
 
   /* Configure Rx DMA */
   DMA_InitStructure.DMA_Channel = DMA_Channel_3;
   DMA_InitStructure.DMA_DIR = DMA_DIR_PeripheralToMemory;
-  DMA_InitStructure.DMA_Memory0BaseAddr = (uint32_t) data;
+  DMA_InitStructure.DMA_Memory0BaseAddr = (uint32_t) in_data;
   DMA_Init(DMA2_Stream2, &DMA_InitStructure);
+
+  //  Configure the Interrupt
+  DMA_ITConfig(DMA2_Stream3, DMA_IT_TC, ENABLE);
+
+  NVIC_InitTypeDef NVIC_InitStruct;
+  NVIC_InitStruct.NVIC_IRQChannel = DMA2_Stream3_IRQn;
+  NVIC_InitStruct.NVIC_IRQChannelCmd = ENABLE;
+  NVIC_InitStruct.NVIC_IRQChannelPreemptionPriority = 0x01;
+  NVIC_InitStruct.NVIC_IRQChannelSubPriority = 0x01;
+  NVIC_Init(&NVIC_InitStruct);
   enable();
 
   DMA_Cmd(DMA2_Stream3, ENABLE); /* Enable the DMA SPI TX Stream */
@@ -176,8 +189,15 @@ bool SPI::transfer(uint8_t* data, uint8_t num_bytes)
   SPI_Cmd(SPI1, ENABLE);
 
   /* Waiting the end of Data transfer */
-  while (DMA_GetFlagStatus(DMA2_Stream3, DMA_FLAG_TCIF3)==RESET);
-  while (DMA_GetFlagStatus(DMA2_Stream2, DMA_FLAG_TCIF2)==RESET);
+  while(busy_);
+}
+
+
+
+void SPI::transfer_complete_cb()
+{
+//  while (DMA_GetFlagStatus(DMA2_Stream3, DMA_FLAG_TCIF3)==RESET);
+//  while (DMA_GetFlagStatus(DMA2_Stream2, DMA_FLAG_TCIF2)==RESET);
 
   disable();
   DMA_ClearFlag(DMA2_Stream3, DMA_FLAG_TCIF3);
@@ -190,4 +210,20 @@ bool SPI::transfer(uint8_t* data, uint8_t num_bytes)
   SPI_I2S_DMACmd(SPI1, SPI_I2S_DMAReq_Tx, DISABLE);
 
   SPI_Cmd(SPI1, DISABLE);
+
+  busy_ = false;
+}
+
+extern "C"
+{
+
+void DMA2_Stream3_IRQHandler()
+{
+  if (DMA_GetITStatus(DMA2_Stream3, DMA_IT_TCIF3))
+  {
+    DMA_ClearITPendingBit(DMA2_Stream3, DMA_IT_TCIF3);
+    SPIptr->transfer_complete_cb();
+  }
+}
+
 }

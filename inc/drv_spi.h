@@ -19,18 +19,15 @@ public:
   void set_divisor(uint16_t new_divisor);
   void enable();
   void disable();
-  bool transfer(uint8_t *data, uint8_t num_bytes);
+  bool transfer(uint8_t *out_data, uint8_t num_bytes, uint8_t* in_data);
   uint8_t transfer_byte(uint8_t data);
+  void transfer_complete_cb();
 
 private:
+  bool busy_;
   SPI_TypeDef*	dev;
   GPIO mosi_;
   GPIO miso_;
   GPIO sck_;
   GPIO nss_;
-
-  uint8_t tx_buffer_[14];
-  uint8_t rx_buffer_[14];
-  uint8_t tx_buffer_index_ = 0;
-  uint8_t rx_buffer_index_ = 0;
 };
