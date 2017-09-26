@@ -42,6 +42,7 @@ public:
   void unstick();
   bool write(uint8_t addr, uint8_t reg, uint8_t len, uint8_t *data);
   bool read(uint8_t addr, uint8_t reg, uint8_t len, uint8_t *data);
+  void DMA_Read(uint8_t addr, uint8_t reg, uint8_t num_bytes, uint8_t* data);
 
   bool write(uint8_t addr, uint8_t reg, uint8_t data);
   bool read(uint8_t addr, uint8_t reg, uint8_t *data);
@@ -51,6 +52,7 @@ public:
   //interrupt handlers
   void handle_error();
   void handle_event();
+  void transfer_complete_cb();
 };
 
 //global i2c ptrs used by the event interrupts

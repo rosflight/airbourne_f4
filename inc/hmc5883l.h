@@ -16,7 +16,7 @@
 #define HMC58X3_CRB 			0x01
 #define HMC58X3_MODE 			0x02
 #define HMC58X3_DATA 			0x03
-#define HMC58X3_STATUS 			0x09
+#define HMC58X3_STATUS 	  0x09
 #define HMC58X3_ID1 			0x0A
 #define HMC58X3_ID2 			0x0B
 #define HMC58X3_ID3 			0x0C
