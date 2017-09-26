@@ -94,6 +94,11 @@ void SPI::set_divisor(uint16_t new_divisor) {
   SPI_Cmd(dev, ENABLE);
 }
 
+void SPI::register_complete_cb(void (*cb)())
+{
+  transfer_cb_ = cb;
+}
+
 void SPI::enable() {
   nss_.write(GPIO::HIGH);
 }
@@ -188,17 +193,13 @@ bool SPI::transfer(uint8_t* out_data, uint8_t num_bytes, uint8_t* in_data)
 
   SPI_Cmd(SPI1, ENABLE);
 
-  /* Waiting the end of Data transfer */
-  while(busy_);
+//  while(busy_);
 }
 
 
 
 void SPI::transfer_complete_cb()
 {
-//  while (DMA_GetFlagStatus(DMA2_Stream3, DMA_FLAG_TCIF3)==RESET);
-//  while (DMA_GetFlagStatus(DMA2_Stream2, DMA_FLAG_TCIF2)==RESET);
-
   disable();
   DMA_ClearFlag(DMA2_Stream3, DMA_FLAG_TCIF3);
   DMA_ClearFlag(DMA2_Stream2, DMA_FLAG_TCIF2);
@@ -212,6 +213,8 @@ void SPI::transfer_complete_cb()
   SPI_Cmd(SPI1, DISABLE);
 
   busy_ = false;
+  if (transfer_cb_)
+    transfer_cb_();
 }
 
 extern "C"

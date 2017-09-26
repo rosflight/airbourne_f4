@@ -22,12 +22,15 @@ public:
   bool transfer(uint8_t *out_data, uint8_t num_bytes, uint8_t* in_data);
   uint8_t transfer_byte(uint8_t data);
   void transfer_complete_cb();
+  void register_complete_cb(void (*cb)(void));
 
 private:
-  bool busy_;
+  bool busy_ = false;
   SPI_TypeDef*	dev;
   GPIO mosi_;
   GPIO miso_;
   GPIO sck_;
   GPIO nss_;
+
+  void (*transfer_cb_)(void) = NULL;
 };

@@ -138,12 +138,19 @@ class MPU6000 {
 public:
   MPU6000(SPI* spi_drv);
 
-  void read_sensors(float (&accel_data)[3], float (&gyro_data)[3], float *temp_data);
+  void update();
+  void read(float (&accel_data)[3], float (&gyro_data)[3], float *temp_data);
+  void data_transfer_callback();
+  inline bool new_data() {return new_data_;}
 
 private:
+  bool new_data_;
   SPI* spi;
   float accel_scale_;
   float gyro_scale_;
+  float acc_[3];
+  float gyro_[3];
+  float temp_;
 };
 
 #endif
