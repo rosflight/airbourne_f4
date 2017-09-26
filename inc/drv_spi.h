@@ -31,4 +31,6 @@ private:
 
   uint8_t tx_buffer_[14];
   uint8_t rx_buffer_[14];
+  uint8_t tx_buffer_index_ = 0;
+  uint8_t rx_buffer_index_ = 0;
 };

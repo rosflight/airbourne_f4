@@ -43,40 +43,6 @@ SPI::SPI(SPI_TypeDef *SPI) {
     // Wait for any transfers to clear (this should be really short if at all)
     while (SPI_I2S_GetFlagStatus(dev, SPI_I2S_FLAG_TXE) == RESET);
     SPI_I2S_ReceiveData(dev); //dummy read if needed
-
-    // Configure the DMA
-    DMA_DeInit(DMA2_Stream3); //SPI1_TX_DMA_STREAM
-    DMA_DeInit(DMA2_Stream2); //SPI1_RX_DMA_STREAM
-
-    DMA_InitTypeDef DMA_InitStructure;
-    DMA_InitStructure.DMA_BufferSize = (uint16_t)(14 + 3); // we receive 14 bytes
-
-    DMA_InitStructure.DMA_FIFOMode = DMA_FIFOMode_Disable ;
-    DMA_InitStructure.DMA_FIFOThreshold = DMA_FIFOThreshold_1QuarterFull ;
-    DMA_InitStructure.DMA_MemoryBurst = DMA_MemoryBurst_Single ;
-    DMA_InitStructure.DMA_MemoryDataSize = DMA_MemoryDataSize_Byte;
-    DMA_InitStructure.DMA_MemoryInc = DMA_MemoryInc_Enable;
-    DMA_InitStructure.DMA_Mode = DMA_Mode_Normal;
-
-    DMA_InitStructure.DMA_PeripheralBaseAddr = (uint32_t)(&(SPI1->DR));
-    DMA_InitStructure.DMA_PeripheralBurst = DMA_PeripheralBurst_Single;
-    DMA_InitStructure.DMA_PeripheralDataSize = DMA_PeripheralDataSize_Byte;
-    DMA_InitStructure.DMA_MemoryDataSize = DMA_MemoryDataSize_Byte;
-    DMA_InitStructure.DMA_PeripheralInc = DMA_PeripheralInc_Disable;
-    DMA_InitStructure.DMA_Priority = DMA_Priority_High;
-
-    /* Configure Tx DMA */
-    DMA_InitStructure.DMA_Channel = DMA_Channel_3;
-    DMA_InitStructure.DMA_DIR = DMA_DIR_MemoryToPeripheral;
-    DMA_InitStructure.DMA_Memory0BaseAddr = (uint32_t) tx_buffer_;
-    DMA_Init(DMA2_Stream3, &DMA_InitStructure);
-
-    /* Configure Rx DMA */
-    DMA_InitStructure.DMA_Channel = DMA_Channel_3;
-    DMA_InitStructure.DMA_DIR = DMA_DIR_PeripheralToMemory;
-    DMA_InitStructure.DMA_Memory0BaseAddr = (uint32_t) rx_buffer_;
-    DMA_Init(DMA2_Stream2, &DMA_InitStructure);
-
   }
 }
 
@@ -137,7 +103,28 @@ void SPI::disable() {
 uint8_t SPI::transfer_byte(uint8_t data)
 {
   uint8_t byte = data;
-  transfer(&byte, 1);
+  uint16_t spiTimeout;
+
+  spiTimeout = 0x1000;
+
+  while (SPI_I2S_GetFlagStatus(dev, SPI_I2S_FLAG_TXE) == RESET)
+  {
+    if ((spiTimeout--) == 0)
+      return false;
+  }
+
+  SPI_I2S_SendData(dev, data);
+
+  spiTimeout = 0x1000;
+
+  while (SPI_I2S_GetFlagStatus(dev, SPI_I2S_FLAG_RXNE) == RESET)
+  {
+    if ((spiTimeout--) == 0)
+      return false;
+  }
+  // Pack received data into the same array
+  data = (uint8_t)SPI_I2S_ReceiveData(dev);
+
   return byte;
 }
 
@@ -145,26 +132,62 @@ bool SPI::transfer(uint8_t* data, uint8_t num_bytes)
 {
   uint16_t spiTimeout;
 
-  spiTimeout = 0x1000;
+  // Configure the DMA
+  DMA_DeInit(DMA2_Stream3); //SPI1_TX_DMA_STREAM
+  DMA_DeInit(DMA2_Stream2); //SPI1_RX_DMA_STREAM
 
-  for (uint8_t i = 0; i < num_bytes; i++)
-  {
-    while (SPI_I2S_GetFlagStatus(dev, SPI_I2S_FLAG_TXE) == RESET)
-    {
-      if ((spiTimeout--) == 0)
-        return false;
-    }
+  DMA_InitTypeDef DMA_InitStructure;
+  DMA_InitStructure.DMA_BufferSize = (uint16_t)(num_bytes); // we receive 14 bytes
 
-    SPI_I2S_SendData(dev, data[i]);
+  DMA_InitStructure.DMA_FIFOMode = DMA_FIFOMode_Disable ;
+  DMA_InitStructure.DMA_FIFOThreshold = DMA_FIFOThreshold_1QuarterFull ;
+  DMA_InitStructure.DMA_MemoryBurst = DMA_MemoryBurst_Single ;
+  DMA_InitStructure.DMA_MemoryDataSize = DMA_MemoryDataSize_Byte;
+  DMA_InitStructure.DMA_MemoryInc = DMA_MemoryInc_Enable;
+  DMA_InitStructure.DMA_Mode = DMA_Mode_Normal;
 
-    spiTimeout = 0x1000;
+  DMA_InitStructure.DMA_PeripheralBaseAddr = (uint32_t)(&(SPI1->DR));
+  DMA_InitStructure.DMA_PeripheralBurst = DMA_PeripheralBurst_Single;
+  DMA_InitStructure.DMA_PeripheralDataSize = DMA_PeripheralDataSize_Byte;
+  DMA_InitStructure.DMA_MemoryDataSize = DMA_MemoryDataSize_Byte;
+  DMA_InitStructure.DMA_PeripheralInc = DMA_PeripheralInc_Disable;
+  DMA_InitStructure.DMA_Priority = DMA_Priority_High;
 
-    while (SPI_I2S_GetFlagStatus(dev, SPI_I2S_FLAG_RXNE) == RESET)
-    {
-      if ((spiTimeout--) == 0)
-        return false;
-    }
-    // Pack received data into the same array
-    data[i] = (uint8_t)SPI_I2S_ReceiveData(dev);
-  }
+  /* Configure Tx DMA */
+  DMA_InitStructure.DMA_Channel = DMA_Channel_3;
+  DMA_InitStructure.DMA_DIR = DMA_DIR_MemoryToPeripheral;
+  DMA_InitStructure.DMA_Memory0BaseAddr = (uint32_t) data;
+  DMA_Init(DMA2_Stream3, &DMA_InitStructure);
+
+  /* Configure Rx DMA */
+  DMA_InitStructure.DMA_Channel = DMA_Channel_3;
+  DMA_InitStructure.DMA_DIR = DMA_DIR_PeripheralToMemory;
+  DMA_InitStructure.DMA_Memory0BaseAddr = (uint32_t) data;
+  DMA_Init(DMA2_Stream2, &DMA_InitStructure);
+  enable();
+
+  DMA_Cmd(DMA2_Stream3, ENABLE); /* Enable the DMA SPI TX Stream */
+  DMA_Cmd(DMA2_Stream2, ENABLE); /* Enable the DMA SPI RX Stream */
+
+  /* Enable the SPI Rx/Tx DMA request */
+  SPI_I2S_DMACmd(SPI1, SPI_I2S_DMAReq_Rx, ENABLE);
+  SPI_I2S_DMACmd(SPI1, SPI_I2S_DMAReq_Tx, ENABLE);
+
+  SPI_Cmd(SPI1, ENABLE);
+
+  /* Waiting the end of Data transfer */
+  while (DMA_GetFlagStatus(DMA2_Stream3, DMA_FLAG_TCIF3)==RESET);
+  while (DMA_GetFlagStatus(DMA2_Stream2, DMA_FLAG_TCIF2)==RESET);
+
+  disable();
+  DMA_ClearFlag(DMA2_Stream3, DMA_FLAG_TCIF3);
+  DMA_ClearFlag(DMA2_Stream2, DMA_FLAG_TCIF2);
+
+  DMA_Cmd(DMA2_Stream3, DISABLE);
+  DMA_Cmd(DMA2_Stream2, DISABLE);
+
+  SPI_I2S_DMACmd(SPI1, SPI_I2S_DMAReq_Rx, DISABLE);
+  SPI_I2S_DMACmd(SPI1, SPI_I2S_DMAReq_Tx, DISABLE);
+
+  SPI_Cmd(SPI1, DISABLE);
 }
