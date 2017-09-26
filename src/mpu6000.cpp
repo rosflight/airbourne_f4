@@ -3,10 +3,13 @@
 uint8_t raw[15] = {MPU_RA_ACCEL_XOUT_H | 0x80, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
 MPU6000* IMU_Ptr;
+
 void data_transfer_cb(void)
 {
   IMU_Ptr->data_transfer_callback();
 }
+
+
 
 void MPU6000::write(uint8_t reg, uint8_t data)
 {
@@ -31,6 +34,39 @@ MPU6000::MPU6000(SPI* spi_drv) {
   write(MPU_RA_CONFIG, MPU_BITS_DLPF_CFG_98HZ);
   write(MPU_RA_ACCEL_CONFIG, MPU_BITS_FS_4G);
   write(MPU_RA_GYRO_CONFIG, MPU_BITS_FS_2000DPS);
+  write(MPU_RA_INT_ENABLE, 0x01);
+
+  /* Enable clock for GPIOD */
+  RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOC, ENABLE);
+  /* Enable clock for SYSCFG */
+  RCC_APB2PeriphClockCmd(RCC_APB2Periph_SYSCFG, ENABLE);
+
+  // Set up the EXTI pin
+  //  exti_.init(GPIOC, GPIO_Pin_4, GPIO::INPUT);
+  /* Set pin as input */
+  GPIO_InitTypeDef GPIO_InitStruct;
+  GPIO_InitStruct.GPIO_Mode = GPIO_Mode_IN;
+  GPIO_InitStruct.GPIO_OType = GPIO_OType_PP;
+  GPIO_InitStruct.GPIO_Pin = GPIO_Pin_4;
+  GPIO_InitStruct.GPIO_PuPd = GPIO_PuPd_UP;
+  GPIO_InitStruct.GPIO_Speed = GPIO_Speed_100MHz;
+  GPIO_Init(GPIOC, &GPIO_InitStruct);
+
+  SYSCFG_EXTILineConfig(EXTI_PortSourceGPIOC, EXTI_PinSource4);
+
+	EXTI_InitTypeDef EXTI_InitStruct;
+	EXTI_InitStruct.EXTI_Line = EXTI_Line4;
+	EXTI_InitStruct.EXTI_LineCmd = ENABLE;
+	EXTI_InitStruct.EXTI_Mode = EXTI_Mode_Interrupt;
+	EXTI_InitStruct.EXTI_Trigger = EXTI_Trigger_Rising_Falling;
+	EXTI_Init(&EXTI_InitStruct);
+
+  NVIC_InitTypeDef NVIC_InitStruct;
+  NVIC_InitStruct.NVIC_IRQChannel = EXTI0_IRQn;
+  NVIC_InitStruct.NVIC_IRQChannelPreemptionPriority = 0x00;
+  NVIC_InitStruct.NVIC_IRQChannelSubPriority = 0x00;
+  NVIC_InitStruct.NVIC_IRQChannelCmd = ENABLE;
+  NVIC_Init(&NVIC_InitStruct);
 
   spi->set_divisor(2); // 21 MHz SPI clock (within 20 +/- 10%)
 
@@ -44,7 +80,7 @@ MPU6000::MPU6000(SPI* spi_drv) {
 void MPU6000::update()
 {
   static auto last_update_time_us = 0;
-  if (micros() > last_update_time_us + 1000)
+  if (new_exti_)
   {
     raw[0] = MPU_RA_ACCEL_XOUT_H | 0x80;
     spi->transfer(raw, 15, raw);
@@ -74,4 +110,21 @@ void MPU6000::read(float (&accel_data)[3], float (&gyro_data)[3], float* temp_da
   gyro_data[1] = gyro_[1];
   gyro_data[2] = gyro_[2];
   *temp_data = temp_;
+}
+
+void MPU6000::exti_cb()
+{
+  new_exti_ = true;
+  imu_timestamp_ = micros();
+}
+
+extern "C"
+{
+
+void EXTI4_IRQHandler(void)
+{
+  EXTI_ClearITPendingBit(EXTI_Line4);
+  IMU_Ptr->exti_cb();
+}
+
 }

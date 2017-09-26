@@ -95,7 +95,7 @@
 #define MPU_RA_I2C_SLV4_DI			0x35
 #define MPU_RA_I2C_MST_STATUS		0x36
 #define MPU_RA_INT_PIN_CFG			0x37
-#define MPU_RA_INT_ENABLE			0x38
+#define MPU_RA_INT_ENABLE			  0x38
 #define MPU_RA_DMP_INT_STATUS		0x39
 #define MPU_RA_INT_STATUS 			0x3A
 #define MPU_RA_ACCEL_XOUT_H			0x3B
@@ -141,12 +141,16 @@ public:
   void update();
   void read(float (&accel_data)[3], float (&gyro_data)[3], float *temp_data);
   void data_transfer_callback();
+  void exti_cb();
   inline bool new_data() {return new_data_;}
 
 private:
   void write(uint8_t reg, uint8_t data);
-  bool new_data_;
+  bool new_data_ = false;
+  bool new_exti_ = false;
+  uint64_t imu_timestamp_ = 0;
   SPI* spi;
+  GPIO exti_;
   float accel_scale_;
   float gyro_scale_;
   float acc_[3];

@@ -81,6 +81,8 @@ void GPIO::set_mode(gpio_mode_t mode)
   {
   case INPUT:
     GPIO_InitStruct.GPIO_Mode = GPIO_Mode_IN;
+    GPIO_InitStruct.GPIO_OType = GPIO_OType_OD;
+    GPIO_InitStruct.GPIO_PuPd = GPIO_PuPd_NOPULL;
     break;
   case OUTPUT:
     GPIO_InitStruct.GPIO_Mode = GPIO_Mode_OUT;
