@@ -158,7 +158,6 @@ uint8_t SPI::transfer_byte(uint8_t data)
 
 bool SPI::transfer(uint8_t* out_data, uint8_t num_bytes, uint8_t* in_data)
 {
-  uint16_t spiTimeout;
   busy_ = true;
 
   // Configure the DMA

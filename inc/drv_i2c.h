@@ -35,6 +35,8 @@ private:
   volatile uint8_t  len_;
   volatile uint8_t* data_buffer_;
 
+  DMA_InitTypeDef  DMA_InitStructure_;
+
 public:
   I2C(I2C_TypeDef *I2C);
 

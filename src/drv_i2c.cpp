@@ -10,10 +10,12 @@ I2C::I2C(I2C_TypeDef *I2C) {
   if (dev == I2C1)
   {
     RCC_APB1PeriphClockCmd(RCC_APB1Periph_I2C1, ENABLE);
+    RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_DMA1, ENABLE);
   }
   else if (dev == I2C2)
   {
     RCC_APB1PeriphClockCmd(RCC_APB1Periph_I2C2, ENABLE);
+    RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_DMA1, ENABLE);
   }
   init();
 }
@@ -54,21 +56,40 @@ void I2C::init(void) {
   i2c_init_struct.I2C_AcknowledgedAddress = I2C_AcknowledgedAddress_7bit;
   I2C_Init(dev, &i2c_init_struct);
 
-  I2C_Cmd(dev, ENABLE);
-
   //initialize the interrupts
-  //    nvic_init_struct.NVIC_IRQChannelPreemptionPriority = 2;
-  //    nvic_init_struct.NVIC_IRQChannelSubPriority = 1;
-  //    nvic_init_struct.NVIC_IRQChannelCmd	= ENABLE;
+  NVIC_InitTypeDef NVIC_InitStructure;
+  NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0x02;
+  NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0x01;
+  NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
+  NVIC_InitStructure.NVIC_IRQChannel = I2C1_EV_IRQn;
+  NVIC_Init(&NVIC_InitStructure);
 
-  //    nvic_init_struct.NVIC_IRQChannel = er_irq;
-  //    NVIC_Init(&nvic_init_struct);
+  //I2C Event Interrupt
+  NVIC_InitStructure.NVIC_IRQChannel = I2C1_EV_IRQn;
+  NVIC_Init(&NVIC_InitStructure);
 
-  //    //I2C Event Interrupt
-  //    nvic_init_struct.NVIC_IRQChannel = ev_irq;
-  //    NVIC_Init(&nvic_init_struct);
+  NVIC_InitStructure.NVIC_IRQChannel = DMA1_Stream0_IRQn;
+  NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
+  NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0x00;
+  NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0x00;
+  NVIC_Init(&NVIC_InitStructure);
 
 
+  DMA_InitStructure_.DMA_FIFOMode = DMA_FIFOMode_Disable ;
+  DMA_InitStructure_.DMA_FIFOThreshold = DMA_FIFOThreshold_1QuarterFull ;
+  DMA_InitStructure_.DMA_MemoryBurst = DMA_MemoryBurst_Single ;
+  DMA_InitStructure_.DMA_MemoryDataSize = DMA_MemoryDataSize_Byte;
+  DMA_InitStructure_.DMA_MemoryInc = DMA_MemoryInc_Enable;
+  DMA_InitStructure_.DMA_Mode = DMA_Mode_Normal;
+
+  DMA_InitStructure_.DMA_PeripheralBaseAddr = (uint32_t)(&(I2C1->DR));
+  DMA_InitStructure_.DMA_PeripheralBurst = DMA_PeripheralBurst_Single;
+  DMA_InitStructure_.DMA_PeripheralDataSize = DMA_PeripheralDataSize_Byte;
+  DMA_InitStructure_.DMA_MemoryDataSize = DMA_MemoryDataSize_Byte;
+  DMA_InitStructure_.DMA_PeripheralInc = DMA_PeripheralInc_Disable;
+  DMA_InitStructure_.DMA_Priority = DMA_Priority_High;
+
+  I2C_Cmd(dev, ENABLE);
 }
 
 void I2C::unstick()
@@ -152,81 +173,57 @@ bool I2C::read(uint8_t addr, uint8_t reg, uint8_t len, uint8_t *data) {
 void I2C::DMA_Read(uint8_t addr, uint8_t reg, uint8_t num_bytes, uint8_t* data)
 {
   busy_ = true;
-//  NVIC_InitTypeDef NVIC_InitStructure;
-//  DMA_InitTypeDef  DMA_InitStructure;
+  addr_ = addr << 1;
+  I2C_ITConfig(dev, I2C_IT_EVT | I2C_IT_ERR, DISABLE);
 
-//  DMA_DeInit(DMA1_Stream0); //reset DMA1 channe1 to default values;
+  DMA_DeInit(DMA1_Stream0);
 
-//  DMA_InitStructure.DMA_PeripheralBaseAddr = (uint32_t)I2C1->DR; //=0x40005410 : address of data reading register of I2C1
-//  DMA_InitStructure.DMA_Memory0BaseAddr = (uint32_t)data; //variable to store data
-//  DMA_InitStructure.DMA_Mode = DMA_Mode_Normal;    //setting normal mode (non circular)
-//  DMA_InitStructure.DMA_Priority = DMA_Priority_Medium;    //medium priority
-//  DMA_InitStructure.DMA_DIR = DMA_DIR_PeripheralToMemory;    //Location assigned to peripheral register will be source
-//  DMA_InitStructure.DMA_BufferSize = num_bytes;    //number of data to be transfered
-//  DMA_InitStructure.DMA_PeripheralInc = DMA_PeripheralInc_Disable; //automatic memory increment disable for peripheral
-//  DMA_InitStructure.DMA_MemoryInc = DMA_MemoryInc_Enable;    //automatic memory increment enable for memory
-//  DMA_InitStructure.DMA_PeripheralDataSize = DMA_PeripheralDataSize_Byte;    //source peripheral data size = 8bit
-//  DMA_InitStructure.DMA_MemoryDataSize = DMA_MemoryDataSize_Byte;    //destination memory data size = 8bit
-//  DMA_Init(DMA1_Stream0, &DMA_InitStructure);
-//  DMA_ITConfig(DMA1_Stream0, DMA_IT_TC, ENABLE);
+  DMA_InitStructure_.DMA_BufferSize = (uint16_t)(num_bytes);
+  DMA_InitStructure_.DMA_Channel = DMA_Channel_1;
+  DMA_InitStructure_.DMA_DIR = DMA_DIR_PeripheralToMemory;
+  DMA_InitStructure_.DMA_Memory0BaseAddr = (uint32_t) data;
+  DMA_Init(DMA1_Stream0, &DMA_InitStructure_);
 
-//  NVIC_InitStructure.NVIC_IRQChannel = DMA1_Stream0_IRQn; //I2C1 connect to channel 7 of DMA1
-//  NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0x05;
-//  NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0x05;
-//  NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
-//  NVIC_Init(&NVIC_InitStructure);
+  //  Configure the Interrupt
+  DMA_ITConfig(DMA1_Stream0, DMA_IT_TC | DMA_IT_HT | DMA_IT_TE | DMA_IT_FE, ENABLE);
 
   I2C_Cmd(dev, ENABLE);
 
-  /* Disable DMA channel*/
-//  DMA_Cmd(DMA1_Stream0, DISABLE);
-  /* Set current data number again to 14 for MPu6050, only possible after disabling the DMA channel */
-//  DMA_SetCurrDataCounter(DMA1_Stream0, num_bytes);
+  DMA_SetCurrDataCounter(DMA1_Stream0, num_bytes);
 
-  /* While the bus is busy */
   while(I2C_GetFlagStatus(dev, I2C_FLAG_BUSY));
 
-  /* Enable DMA NACK automatic generation */
-//  I2C_DMALastTransferCmd(dev, ENABLE);                    //Note this one, very important
-
-  /* Send START condition */
+  I2C_DMALastTransferCmd(dev, ENABLE);
   I2C_GenerateSTART(dev, ENABLE);
 
-  /* Test on EV5 and clear it */
   while(!I2C_CheckEvent(dev, I2C_EVENT_MASTER_MODE_SELECT));
 
-  /* Send MPU6050 address for write */
-  I2C_Send7bitAddress(dev, addr, I2C_Direction_Transmitter);
+  I2C_Send7bitAddress(dev, addr_, I2C_Direction_Transmitter);
 
-  /* Test on EV6 and clear it */
   while(!I2C_CheckEvent(dev, I2C_EVENT_MASTER_TRANSMITTER_MODE_SELECTED));
 
-  /* Clear EV6 by setting again the PE bit */
   I2C_Cmd(dev, ENABLE);
 
-  /* Send the MPU6050's internal address to write to */
   I2C_SendData(dev, reg);
 
-  /* Test on EV8 and clear it */
   while(!I2C_CheckEvent(dev, I2C_EVENT_MASTER_BYTE_TRANSMITTED));
 
-  /* Send START condition a second time */
   I2C_GenerateSTART(dev, ENABLE);
 
-  /* Test on EV5 and clear it */
   while(!I2C_CheckEvent(dev, I2C_EVENT_MASTER_MODE_SELECT));
 
-  /* Send MPU6050 address for read */
-  I2C_Send7bitAddress(dev, addr, I2C_Direction_Receiver);
+  I2C_Send7bitAddress(dev, addr_, I2C_Direction_Receiver);
 
-  /* Test on EV6 and clear it */
+  DMA_Cmd(DMA1_Stream0, ENABLE);
+
   while(!I2C_CheckEvent(dev, I2C_EVENT_MASTER_RECEIVER_MODE_SELECTED));
 
-  /* Start DMA to receive data from I2C */
-  DMA_Cmd(DMA1_Stream0, ENABLE);
-  I2C_DMACmd(dev, ENABLE);
+  I2C_DMACmd(I2C1, ENABLE);
 
-  while(busy_);
+  while(DMA_GetFlagStatus(DMA1_Stream0, DMA_FLAG_TCIF0) == RESET)
+  {
+    volatile auto debug = 1;
+  }
 
   return;
 }
@@ -470,12 +467,16 @@ void I2C::handle_event() {
   }
 }
 
-extern "C" void DMA1_Stream0_IRQHandler(void)
+extern "C"
+
 {
-  if (DMA_GetFlagStatus(DMA1_Stream0, DMA_FLAG_TCIF0))
+
+void DMA1_Stream0_IRQHandler(void)
+{
+  if (DMA_GetFlagStatus(DMA1_Stream0, DMA_FLAG_TCIF5))
   {
     /* Clear transmission complete flag */
-    DMA_ClearFlag(DMA1_Stream0, DMA_FLAG_TCIF0);
+    DMA_ClearFlag(DMA1_Stream0, DMA_FLAG_TCIF5);
 
     I2C_DMACmd(I2C1, DISABLE);
     /* Send I2C1 STOP Condition */
@@ -488,18 +489,20 @@ extern "C" void DMA1_Stream0_IRQHandler(void)
 
 
 // C-based IRQ functions (defined in the STD lib somewhere
-extern "C" void I2C1_ER_IRQHandler(void) {
+void I2C1_ER_IRQHandler(void) {
   I2CDev_1Ptr->handle_error();
 }
 
-extern "C" void I2C1_EV_IRQHandler(void) {
+void I2C1_EV_IRQHandler(void) {
   I2CDev_1Ptr->handle_event();
 }
 
-extern "C" void I2C2_ER_IRQHandler(void) {
+void I2C2_ER_IRQHandler(void) {
   I2CDev_2Ptr->handle_error();
 }
 
-extern "C" void I2C2_EV_IRQHandler(void) {
+void I2C2_EV_IRQHandler(void) {
   I2CDev_2Ptr->handle_event();
+}
+
 }
