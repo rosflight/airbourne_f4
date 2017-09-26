@@ -144,6 +144,7 @@ public:
   inline bool new_data() {return new_data_;}
 
 private:
+  void write(uint8_t reg, uint8_t data);
   bool new_data_;
   SPI* spi;
   float accel_scale_;

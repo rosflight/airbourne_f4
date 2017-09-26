@@ -8,63 +8,29 @@ void data_transfer_cb(void)
   IMU_Ptr->data_transfer_callback();
 }
 
+void MPU6000::write(uint8_t reg, uint8_t data)
+{
+  spi->enable();
+  spi->transfer_byte(reg);
+  spi->transfer_byte(data);
+  spi->disable();
+  delayMicroseconds(1);
+}
+
 MPU6000::MPU6000(SPI* spi_drv) {
   IMU_Ptr = this;
   spi = spi_drv;
 
-  spi->enable();
-  spi->transfer_byte(MPU_RA_PWR_MGMT_1); // Device Reset
-  spi->transfer_byte(MPU_BIT_H_RESET);
-  spi->disable();
-
+  write(MPU_RA_PWR_MGMT_1, MPU_BIT_H_RESET);
   delay(150);
 
-  spi->enable();
-  spi->transfer_byte(MPU_RA_PWR_MGMT_1); // Clock Source PPL with Z axis gyro reference
-  spi->transfer_byte(MPU_CLK_SEL_PLLGYROZ);
-  spi->disable();
-
-  delayMicroseconds(1);
-
-  spi->enable();
-  spi->transfer_byte(MPU_RA_USER_CTRL); // Disable Primary I2C Interface
-  spi->transfer_byte(MPU_BIT_I2C_IF_DIS);
-  spi->disable();
-
-  delayMicroseconds(1);
-
-  spi->enable();
-  spi->transfer_byte(MPU_RA_PWR_MGMT_2);
-  spi->transfer_byte(0x00);
-  spi->disable();
-
-  delayMicroseconds(1);
-
-  spi->enable();
-  spi->transfer_byte(MPU_RA_SMPLRT_DIV); // Accel Sample Rate 1000 Hz, Gyro Sample Rate 8000 Hz
-  spi->transfer_byte(0x00);
-  spi->disable();
-
-  delayMicroseconds(1);
-
-  spi->enable();
-  spi->transfer_byte(MPU_RA_CONFIG); // Accel and Gyro DLPF Setting
-  spi->transfer_byte(MPU_BITS_DLPF_CFG_98HZ);
-  spi->disable();
-
-  delayMicroseconds(1);
-
-  spi->enable();
-  spi->transfer_byte(MPU_RA_ACCEL_CONFIG); // Accel +/- 4 G Full Scale
-  spi->transfer_byte(MPU_BITS_FS_4G);
-  spi->disable();
-
-  delayMicroseconds(1);
-
-  spi->enable();
-  spi->transfer_byte(MPU_RA_GYRO_CONFIG); // Gyro +/- 2000 DPS Full Scale
-  spi->transfer_byte(MPU_BITS_FS_2000DPS);
-  spi->disable();
+  write(MPU_RA_PWR_MGMT_1, MPU_CLK_SEL_PLLGYROZ);
+  write(MPU_RA_USER_CTRL, MPU_BIT_I2C_IF_DIS);
+  write(MPU_RA_PWR_MGMT_2, 0x00);
+  write(MPU_RA_SMPLRT_DIV, 0x00);
+  write(MPU_RA_CONFIG, MPU_BITS_DLPF_CFG_98HZ);
+  write(MPU_RA_ACCEL_CONFIG, MPU_BITS_FS_4G);
+  write(MPU_RA_GYRO_CONFIG, MPU_BITS_FS_2000DPS);
 
   spi->set_divisor(2); // 21 MHz SPI clock (within 20 +/- 10%)
 
