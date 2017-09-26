@@ -35,7 +35,6 @@ int main() {
   while(1)
   {
     info.toggle();
-    imu.update();
     imu.read(acc, gyro, &temp);
     if (acc[0] == 0xFFFF || acc[0] == 0x0000)
     {

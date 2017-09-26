@@ -45,6 +45,27 @@ SPI::SPI(SPI_TypeDef *SPI) {
     // Wait for any transfers to clear (this should be really short if at all)
     while (SPI_I2S_GetFlagStatus(dev, SPI_I2S_FLAG_TXE) == RESET);
     SPI_I2S_ReceiveData(dev); //dummy read if needed
+
+    DMA_InitStructure_.DMA_FIFOMode = DMA_FIFOMode_Disable ;
+    DMA_InitStructure_.DMA_FIFOThreshold = DMA_FIFOThreshold_1QuarterFull ;
+    DMA_InitStructure_.DMA_MemoryBurst = DMA_MemoryBurst_Single ;
+    DMA_InitStructure_.DMA_MemoryDataSize = DMA_MemoryDataSize_Byte;
+    DMA_InitStructure_.DMA_MemoryInc = DMA_MemoryInc_Enable;
+    DMA_InitStructure_.DMA_Mode = DMA_Mode_Normal;
+
+    DMA_InitStructure_.DMA_PeripheralBaseAddr = (uint32_t)(&(SPI1->DR));
+    DMA_InitStructure_.DMA_PeripheralBurst = DMA_PeripheralBurst_Single;
+    DMA_InitStructure_.DMA_PeripheralDataSize = DMA_PeripheralDataSize_Byte;
+    DMA_InitStructure_.DMA_MemoryDataSize = DMA_MemoryDataSize_Byte;
+    DMA_InitStructure_.DMA_PeripheralInc = DMA_PeripheralInc_Disable;
+    DMA_InitStructure_.DMA_Priority = DMA_Priority_High;
+
+    NVIC_InitTypeDef NVIC_InitStruct;
+    NVIC_InitStruct.NVIC_IRQChannel = DMA2_Stream3_IRQn;
+    NVIC_InitStruct.NVIC_IRQChannelCmd = ENABLE;
+    NVIC_InitStruct.NVIC_IRQChannelPreemptionPriority = 0x02;
+    NVIC_InitStruct.NVIC_IRQChannelSubPriority = 0x02;
+    NVIC_Init(&NVIC_InitStruct);
   }
 }
 
@@ -144,44 +165,23 @@ bool SPI::transfer(uint8_t* out_data, uint8_t num_bytes, uint8_t* in_data)
   DMA_DeInit(DMA2_Stream3); //SPI1_TX_DMA_STREAM
   DMA_DeInit(DMA2_Stream2); //SPI1_RX_DMA_STREAM
 
-  DMA_InitTypeDef DMA_InitStructure;
-  DMA_InitStructure.DMA_BufferSize = (uint16_t)(num_bytes); // we receive 14 bytes
-
-  DMA_InitStructure.DMA_FIFOMode = DMA_FIFOMode_Disable ;
-  DMA_InitStructure.DMA_FIFOThreshold = DMA_FIFOThreshold_1QuarterFull ;
-  DMA_InitStructure.DMA_MemoryBurst = DMA_MemoryBurst_Single ;
-  DMA_InitStructure.DMA_MemoryDataSize = DMA_MemoryDataSize_Byte;
-  DMA_InitStructure.DMA_MemoryInc = DMA_MemoryInc_Enable;
-  DMA_InitStructure.DMA_Mode = DMA_Mode_Normal;
-
-  DMA_InitStructure.DMA_PeripheralBaseAddr = (uint32_t)(&(SPI1->DR));
-  DMA_InitStructure.DMA_PeripheralBurst = DMA_PeripheralBurst_Single;
-  DMA_InitStructure.DMA_PeripheralDataSize = DMA_PeripheralDataSize_Byte;
-  DMA_InitStructure.DMA_MemoryDataSize = DMA_MemoryDataSize_Byte;
-  DMA_InitStructure.DMA_PeripheralInc = DMA_PeripheralInc_Disable;
-  DMA_InitStructure.DMA_Priority = DMA_Priority_High;
+  DMA_InitStructure_.DMA_BufferSize = (uint16_t)(num_bytes); // we receive 14 bytes
 
   /* Configure Tx DMA */
-  DMA_InitStructure.DMA_Channel = DMA_Channel_3;
-  DMA_InitStructure.DMA_DIR = DMA_DIR_MemoryToPeripheral;
-  DMA_InitStructure.DMA_Memory0BaseAddr = (uint32_t) out_data;
-  DMA_Init(DMA2_Stream3, &DMA_InitStructure);
+  DMA_InitStructure_.DMA_Channel = DMA_Channel_3;
+  DMA_InitStructure_.DMA_DIR = DMA_DIR_MemoryToPeripheral;
+  DMA_InitStructure_.DMA_Memory0BaseAddr = (uint32_t) out_data;
+  DMA_Init(DMA2_Stream3, &DMA_InitStructure_);
 
   /* Configure Rx DMA */
-  DMA_InitStructure.DMA_Channel = DMA_Channel_3;
-  DMA_InitStructure.DMA_DIR = DMA_DIR_PeripheralToMemory;
-  DMA_InitStructure.DMA_Memory0BaseAddr = (uint32_t) in_data;
-  DMA_Init(DMA2_Stream2, &DMA_InitStructure);
+  DMA_InitStructure_.DMA_Channel = DMA_Channel_3;
+  DMA_InitStructure_.DMA_DIR = DMA_DIR_PeripheralToMemory;
+  DMA_InitStructure_.DMA_Memory0BaseAddr = (uint32_t) in_data;
+  DMA_Init(DMA2_Stream2, &DMA_InitStructure_);
 
   //  Configure the Interrupt
   DMA_ITConfig(DMA2_Stream3, DMA_IT_TC, ENABLE);
 
-  NVIC_InitTypeDef NVIC_InitStruct;
-  NVIC_InitStruct.NVIC_IRQChannel = DMA2_Stream3_IRQn;
-  NVIC_InitStruct.NVIC_IRQChannelCmd = ENABLE;
-  NVIC_InitStruct.NVIC_IRQChannelPreemptionPriority = 0x01;
-  NVIC_InitStruct.NVIC_IRQChannelSubPriority = 0x01;
-  NVIC_Init(&NVIC_InitStruct);
   enable();
 
   DMA_Cmd(DMA2_Stream3, ENABLE); /* Enable the DMA SPI TX Stream */
@@ -192,8 +192,6 @@ bool SPI::transfer(uint8_t* out_data, uint8_t num_bytes, uint8_t* in_data)
   SPI_I2S_DMACmd(SPI1, SPI_I2S_DMAReq_Tx, ENABLE);
 
   SPI_Cmd(SPI1, ENABLE);
-
-//  while(busy_);
 }
 
 

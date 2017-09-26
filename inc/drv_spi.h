@@ -32,5 +32,7 @@ private:
   GPIO sck_;
   GPIO nss_;
 
+  DMA_InitTypeDef DMA_InitStructure_;
+
   void (*transfer_cb_)(void) = NULL;
 };

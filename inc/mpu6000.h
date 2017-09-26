@@ -138,7 +138,6 @@ class MPU6000 {
 public:
   MPU6000(SPI* spi_drv);
 
-  void update();
   void read(float (&accel_data)[3], float (&gyro_data)[3], float *temp_data);
   void data_transfer_callback();
   void exti_cb();
@@ -147,7 +146,6 @@ public:
 private:
   void write(uint8_t reg, uint8_t data);
   bool new_data_ = false;
-  bool new_exti_ = false;
   uint64_t imu_timestamp_ = 0;
   SPI* spi;
   GPIO exti_;
