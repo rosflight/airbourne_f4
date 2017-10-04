@@ -7,18 +7,14 @@ HMC5883L::HMC5883L(I2C* i2c_drv) {
 bool HMC5883L::init() {
   // Detect Magnetometer
   uint8_t byte = 0;
-  if(!i2c->read(HMC58X3_ADDR, HMC58X3_ID1, &byte))
-  {
-    return false;
-  }
-  else if( byte != 0x48)
-  {
-    return false;
-  }
-  else
-  {
-    return true;
-  }
+//  if(!i2c->read(HMC58X3_ADDR, HMC58X3_ID1, &byte))
+//  {
+//    return false;
+//  }
+//  else
+//  {
+//    return true;
+//  }
 }
 
 bool HMC5883L::read(float (&mag_data)[3]) {

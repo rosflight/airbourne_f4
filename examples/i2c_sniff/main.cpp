@@ -24,7 +24,7 @@ int main() {
   LED info(LED2_GPIO, LED2_PIN);
 
   info.on();
-  I2C i2c1(I2C1);
+  I2C i2c1(I2C2);
 
   while(1)
   {
@@ -37,7 +37,7 @@ int main() {
       }
       delay(1);
     }
-    printf("-------------------------");
+    printf("-------------------------\n");
     delay(100);
   }
 }
