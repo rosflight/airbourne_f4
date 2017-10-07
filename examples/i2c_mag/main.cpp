@@ -27,7 +27,7 @@ int main() {
   delay(500);
 
   info.on();
-  I2C i2c1(I2C1);
+  I2C i2c1(I2C2);
   HMC5883L mag(&i2c1);
 
   if (!mag.init()) {

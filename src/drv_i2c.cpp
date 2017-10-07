@@ -66,7 +66,7 @@ I2C::I2C(I2C_TypeDef *I2C) {
   I2C_Init(dev, &I2C_InitStructure);
 
   //initialize the interrupts
-//  NVIC_InitTypeDef NVIC_InitStructure;
+  NVIC_InitTypeDef NVIC_InitStructure;
 //  NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0x02;
 //  NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0x01;
 //  NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
@@ -77,11 +77,11 @@ I2C::I2C(I2C_TypeDef *I2C) {
 //  NVIC_InitStructure.NVIC_IRQChannel = I2C2_ER_IRQn;
 //  NVIC_Init(&NVIC_InitStructure);
 
-//  NVIC_InitStructure.NVIC_IRQChannel = DMA1_Stream2_IRQn;
-//  NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
-//  NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0x00;
-//  NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0x00;
-//  NVIC_Init(&NVIC_InitStructure);
+  NVIC_InitStructure.NVIC_IRQChannel = DMA1_Stream2_IRQn;
+  NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
+  NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0x00;
+  NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0x00;
+  NVIC_Init(&NVIC_InitStructure);
 
   DMA_Cmd(DMA_stream_, DISABLE);
   DMA_DeInit(DMA_stream_);
@@ -170,9 +170,9 @@ bool I2C::read(uint8_t addr, uint8_t reg, uint8_t num_bytes, uint8_t* data)
 
   I2C_Send7bitAddress(dev, addr_, I2C_Direction_Receiver);
 
-
   DMA_SetCurrDataCounter(DMA_stream_, num_bytes);
   I2C_DMACmd(dev, ENABLE);
+  DMA_ITConfig(DMA_stream_, DMA_IT_TC, ENABLE);
 
   DMA_Cmd(DMA_stream_, ENABLE);
 
@@ -180,28 +180,33 @@ bool I2C::read(uint8_t addr, uint8_t reg, uint8_t num_bytes, uint8_t* data)
 
   while_check (!I2C_CheckEvent(dev, I2C_EVENT_MASTER_RECEIVER_MODE_SELECTED));
 
-  while_check (DMA_GetFlagStatus(DMA_stream_, DMA_Stream_TCFLAG_) == RESET);
+//  while_check (DMA_GetFlagStatus(DMA_stream_, DMA_Stream_TCFLAG_) == RESET);
 
-  while_check (DMA_GetCurrDataCounter(DMA_stream_));
+//  while_check (DMA_GetCurrDataCounter(DMA_stream_));
 
-  I2C_GenerateSTOP(dev, ENABLE);
+//  I2C_GenerateSTOP(dev, ENABLE);
 
-  DMA_Cmd(DMA_stream_, DISABLE);
+//  DMA_Cmd(DMA_stream_, DISABLE);
 
-  while_check (DMA_GetCmdStatus(DMA_stream_)!= DISABLE);
+//  while_check (DMA_GetCmdStatus(DMA_stream_)!= DISABLE);
 
-  I2C_DMACmd(dev,DISABLE);
+//  I2C_DMACmd(dev,DISABLE);
 
-  DMA_ClearFlag(DMA_stream_, DMA_Stream_TCFLAG_);
+//  DMA_ClearFlag(DMA_stream_, DMA_Stream_TCFLAG_);
+
+  while_check(busy_);
 
   return true;
 }
+
 
 void I2C::transfer_complete_cb()
 {
   busy_ = false;
 }
 
+
+// blocking, single register read (for configuring devices)
 bool I2C::read(uint8_t addr, uint8_t reg, uint8_t *data)
 {
   while_check (I2C_GetFlagStatus(dev, I2C_FLAG_BUSY));
@@ -231,6 +236,7 @@ bool I2C::read(uint8_t addr, uint8_t reg, uint8_t *data)
   return true;
 }
 
+// blocking, single register write (for configuring devices)
 bool I2C::write(uint8_t addr, uint8_t reg, uint8_t data)
 {
   while (I2C_GetFlagStatus(dev, I2C_FLAG_BUSY));
@@ -259,11 +265,14 @@ bool I2C::write(uint8_t addr, uint8_t reg, uint8_t data)
   return true;
 }
 
+// if for some reason, a step in an I2C read or write fails, call this
 void I2C::handle_hardware_failure() {
   error_count_++;
   unstick(); //unstick and reinitialize the hardware
 }
 
+
+// This is the I2C_IT_ERR handler
 void I2C::handle_error(){
   //grab this device's status registers
   volatile uint32_t sr1 = dev->SR1;
@@ -296,6 +305,7 @@ void I2C::handle_error(){
   busy_ = false;
 }
 
+// This is the I2C_IT_EV handler
 void I2C::handle_event() {
   //grab the bottom 8 bits of this device's status register
   uint8_t sr1 = dev->SR1;
@@ -451,6 +461,7 @@ void DMA1_Stream2_IRQHandler(void)
     I2C_GenerateSTOP(I2C2, ENABLE);
     /* Disable DMA channel*/
     DMA_Cmd(DMA1_Stream2, DISABLE);
+
     I2CDev_1Ptr->transfer_complete_cb();
   }
 }
