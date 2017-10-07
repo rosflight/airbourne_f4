@@ -132,45 +132,8 @@ void I2C::unstick()
   sda_.set_mode(GPIO::PERIPH_IN_OUT);
 }
 
-bool I2C::read(uint8_t addr, uint8_t reg, uint8_t len, uint8_t *data) {
-  addr_ = addr << 1;
-  reg_ = reg;
-  len_ = len;
-  data_buffer_ = data;
-  index_ = 0;
-  reading_ = true;
-  busy_ = true;
-  error_ = false;
-  subaddress_sent_ = (reg_ && 0xFF);
-  //dont do anything if the device is restarting
-  if (!(dev->CR2 & I2C_IT_EVT))
-  {
-    //check if we're supposed to send a start
-    if (!(dev->CR1 & I2C_CR1_START))
-    {
-      // Wait for any stop to finish
-      while_check(dev->CR1 & I2C_CR1_STOP);
-      // Start the new job
-      I2C_GenerateSTART(dev, ENABLE);
-    }
-    // Allow the interrupts to fire off again
-    I2C_ITConfig(dev, I2C_IT_EVT | I2C_IT_ERR, ENABLE);
-  }
 
-  //probably want to remove for fully interupt-based
-  while_check(busy_);
-  if (error_)
-  {
-    error_ = false;
-    return false;
-  }
-
-  return true;
-}
-
-
-
-void I2C::DMA_Read(uint8_t addr, uint8_t reg, uint8_t num_bytes, uint8_t* data)
+bool I2C::read(uint8_t addr, uint8_t reg, uint8_t num_bytes, uint8_t* data)
 {
   busy_ = true;
   addr_ = addr << 1;
@@ -182,28 +145,28 @@ void I2C::DMA_Read(uint8_t addr, uint8_t reg, uint8_t num_bytes, uint8_t* data)
 
   I2C_Cmd(dev, ENABLE);
 
-  while (I2C_GetFlagStatus(dev, I2C_FLAG_BUSY));
+  while_check (I2C_GetFlagStatus(dev, I2C_FLAG_BUSY));
 
   I2C_GenerateSTART(dev, ENABLE);
 
-  while (!I2C_CheckEvent(dev, I2C_EVENT_MASTER_MODE_SELECT));
+  while_check (!I2C_CheckEvent(dev, I2C_EVENT_MASTER_MODE_SELECT));
 
   I2C_Send7bitAddress(dev, addr_, I2C_Direction_Transmitter);
 
-  while (!I2C_CheckEvent(dev, I2C_EVENT_MASTER_TRANSMITTER_MODE_SELECTED));
+  while_check (!I2C_CheckEvent(dev, I2C_EVENT_MASTER_TRANSMITTER_MODE_SELECTED));
 
   I2C_Cmd(dev, ENABLE);
 
   I2C_SendData(dev, reg);
 
-  while (!I2C_CheckEvent(dev, I2C_EVENT_MASTER_BYTE_TRANSMITTED));
+  while_check (!I2C_CheckEvent(dev, I2C_EVENT_MASTER_BYTE_TRANSMITTED));
 
   I2C_AcknowledgeConfig(dev, ENABLE);
   I2C_DMALastTransferCmd(dev, ENABLE);
 
   I2C_GenerateSTART(dev, ENABLE);
 
-  while (!I2C_CheckEvent(dev, I2C_EVENT_MASTER_MODE_SELECT));
+  while_check (!I2C_CheckEvent(dev, I2C_EVENT_MASTER_MODE_SELECT));
 
   I2C_Send7bitAddress(dev, addr_, I2C_Direction_Receiver);
 
@@ -213,80 +176,30 @@ void I2C::DMA_Read(uint8_t addr, uint8_t reg, uint8_t num_bytes, uint8_t* data)
 
   DMA_Cmd(DMA_stream_, ENABLE);
 
-  while (DMA_GetCmdStatus(DMA_stream_) != ENABLE);
+  while_check (DMA_GetCmdStatus(DMA_stream_) != ENABLE);
 
-  while (!I2C_CheckEvent(dev, I2C_EVENT_MASTER_RECEIVER_MODE_SELECTED));
+  while_check (!I2C_CheckEvent(dev, I2C_EVENT_MASTER_RECEIVER_MODE_SELECTED));
 
-  while (DMA_GetFlagStatus(DMA_stream_, DMA_Stream_TCFLAG_) == RESET);
+  while_check (DMA_GetFlagStatus(DMA_stream_, DMA_Stream_TCFLAG_) == RESET);
 
-  while (DMA_GetCurrDataCounter(DMA_stream_));
+  while_check (DMA_GetCurrDataCounter(DMA_stream_));
 
   I2C_GenerateSTOP(dev, ENABLE);
 
   DMA_Cmd(DMA_stream_, DISABLE);
 
-  while (DMA_GetCmdStatus(DMA_stream_)!= DISABLE);
+  while_check (DMA_GetCmdStatus(DMA_stream_)!= DISABLE);
 
   I2C_DMACmd(dev,DISABLE);
 
   DMA_ClearFlag(DMA_stream_, DMA_Stream_TCFLAG_);
 
-  return;
+  return true;
 }
 
 void I2C::transfer_complete_cb()
 {
   busy_ = false;
-}
-
-bool I2C::write(uint8_t addr, uint8_t reg, uint8_t len, uint8_t *data) {
-  addr_ = addr << 1;
-  reg_ = reg;
-  len_ = len;
-  data_buffer_ 	 = data;
-  index_ = 0;
-  reading_ = false;
-  busy_ = true;
-  error_ = false;
-  subaddress_sent_ = (reg_ && 0xFF);
-
-  uint32_t timeout = I2C_TIMEOUT_US;
-
-  //dont do anything if the device is restarting
-  if (!(dev->CR2 & I2C_IT_EVT))
-  {
-    //check if we're supposed to send a start
-    if (!(dev->CR1 & I2C_CR1_START))
-    {
-      // Wait for any stop to finish
-      while (dev->CR1 & I2C_CR1_STOP && --timeout > 0);
-      if (timeout == 0)
-      {
-        handle_hardware_failure();
-        return false;
-      }
-      // Start the new job
-      I2C_GenerateSTART(dev, ENABLE);
-    }
-    // Allow the interrupts to fire off again
-    I2C_ITConfig(dev, I2C_IT_EVT | I2C_IT_ERR, ENABLE);
-  }
-
-  //probably want to remove for fully interupt-based
-  timeout = I2C_TIMEOUT_US;
-  while(busy_ && --timeout > 0);
-  if (timeout == 0)
-  {
-    handle_hardware_failure();
-    return false;
-  }
-  else if (error_)
-  {
-    error_ = false;
-    return false;
-  }
-
-  return true;
 }
 
 bool I2C::read(uint8_t addr, uint8_t reg, uint8_t *data)

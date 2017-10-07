@@ -26,7 +26,7 @@ bool HMC5883L::init() {
 
 bool HMC5883L::read(float (&mag_data)[3]) {
   uint8_t raw[6] = {0, 0, 0, 0, 0, 0};
-  i2c->DMA_Read(HMC58X3_ADDR, HMC58X3_DATA, 6, raw);
+  i2c->read(HMC58X3_ADDR, HMC58X3_DATA, 6, raw);
 //  i2c->read(HMC58X3_ADDR, HMC58X3_DATA, 6, raw);
   mag_data[0] = (float)((int16_t)((raw[0] << 8) | raw[1]));
   mag_data[1] = (float)((int16_t)((raw[2] << 8) | raw[3]));
