@@ -24,8 +24,10 @@ int main() {
   LED warn(LED1_GPIO, LED1_PIN);
   LED info(LED2_GPIO, LED2_PIN);
 
+  delay(500);
+
   info.on();
-  I2C i2c1(I2C2);
+  I2C i2c1(I2C1);
   HMC5883L mag(&i2c1);
 
   if (!mag.init()) {
@@ -34,7 +36,7 @@ int main() {
     warn.off();
   }
 
-  float mag_data[3];
+  float mag_data[3] = {0., 0., 0.};
   while(1) {
     info.toggle();
     if (mag.read(mag_data))
@@ -51,6 +53,6 @@ int main() {
       warn.on();
       printf("error\n");
     }
-    delay(100);
+    delay(10);
   }
 }

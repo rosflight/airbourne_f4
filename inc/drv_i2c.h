@@ -36,12 +36,16 @@ private:
   volatile uint8_t* data_buffer_;
 
   DMA_InitTypeDef  DMA_InitStructure_;
+  DMA_Stream_TypeDef* DMA_stream_;
+  uint32_t DMA_channel_;
+  uint32_t DMA_Stream_TCFLAG_;
 
 public:
   I2C(I2C_TypeDef *I2C);
 
   void init();
   void unstick();
+  void hardware_failure();
   bool write(uint8_t addr, uint8_t reg, uint8_t len, uint8_t *data);
   bool read(uint8_t addr, uint8_t reg, uint8_t len, uint8_t *data);
   void DMA_Read(uint8_t addr, uint8_t reg, uint8_t num_bytes, uint8_t* data);

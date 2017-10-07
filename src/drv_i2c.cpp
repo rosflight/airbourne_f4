@@ -1,5 +1,17 @@
 #include "drv_i2c.h"
 
+#define while_check(cond) \
+  {\
+    int32_t timeout_var = 30000; \
+    while ((cond) && timeout_var) \
+      timeout_var--; \
+    if (!timeout_var) \
+    { \
+      handle_hardware_failure();\
+      return false; \
+    }\
+  }
+
 //global i2c ptrs used by the event interrupts
 I2C* I2CDev_1Ptr;
 I2C* I2CDev_2Ptr;
@@ -18,6 +30,9 @@ I2C::I2C(I2C_TypeDef *I2C) {
     sda_.init(I2C1_GPIO, I2C1_SDA_PIN, GPIO::PERIPH_IN_OUT);
     scl_.init(I2C1_GPIO, I2C1_SCL_PIN, GPIO::PERIPH_IN_OUT);
     I2CDev_1Ptr = this;
+    DMA_stream_ = DMA1_Stream0;
+    DMA_channel_ = DMA_Channel_1;
+    DMA_Stream_TCFLAG_ = DMA_FLAG_TCIF0;
   }
   else if (dev == I2C2)
   {
@@ -30,6 +45,9 @@ I2C::I2C(I2C_TypeDef *I2C) {
     sda_.init(I2C2_GPIO, I2C2_SDA_PIN, GPIO::PERIPH_IN_OUT);
     scl_.init(I2C2_GPIO, I2C2_SCL_PIN, GPIO::PERIPH_IN_OUT);
     I2CDev_2Ptr = this;
+    DMA_stream_ = DMA1_Stream2;
+    DMA_channel_ = DMA_Channel_7;
+    DMA_Stream_TCFLAG_ = DMA_FLAG_TCIF2;
   }
 
   unstick(); //unstick will properly initialize pins
@@ -65,8 +83,8 @@ I2C::I2C(I2C_TypeDef *I2C) {
 //  NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0x00;
 //  NVIC_Init(&NVIC_InitStructure);
 
-  DMA_Cmd(DMA1_Stream2, DISABLE);
-  DMA_DeInit(DMA1_Stream2);
+  DMA_Cmd(DMA_stream_, DISABLE);
+  DMA_DeInit(DMA_stream_);
   DMA_InitStructure_.DMA_FIFOMode = DMA_FIFOMode_Enable;
   DMA_InitStructure_.DMA_FIFOThreshold = DMA_FIFOThreshold_Full ;
   DMA_InitStructure_.DMA_MemoryBurst = DMA_MemoryBurst_Single ;
@@ -75,7 +93,7 @@ I2C::I2C(I2C_TypeDef *I2C) {
   DMA_InitStructure_.DMA_PeripheralInc = DMA_PeripheralInc_Disable;
   DMA_InitStructure_.DMA_MemoryInc = DMA_MemoryInc_Enable;
   DMA_InitStructure_.DMA_Mode = DMA_Mode_Normal;
-  DMA_InitStructure_.DMA_Channel = DMA_Channel_7;
+  DMA_InitStructure_.DMA_Channel = DMA_channel_;
 
   DMA_InitStructure_.DMA_PeripheralBaseAddr = (uint32_t)(&(dev->DR));
   DMA_InitStructure_.DMA_PeripheralBurst = DMA_PeripheralBurst_Single;
@@ -124,9 +142,6 @@ bool I2C::read(uint8_t addr, uint8_t reg, uint8_t len, uint8_t *data) {
   busy_ = true;
   error_ = false;
   subaddress_sent_ = (reg_ && 0xFF);
-
-  uint32_t timeout = I2C_TIMEOUT_US;
-
   //dont do anything if the device is restarting
   if (!(dev->CR2 & I2C_IT_EVT))
   {
@@ -134,12 +149,7 @@ bool I2C::read(uint8_t addr, uint8_t reg, uint8_t len, uint8_t *data) {
     if (!(dev->CR1 & I2C_CR1_START))
     {
       // Wait for any stop to finish
-      while (dev->CR1 & I2C_CR1_STOP && --timeout > 0);
-      if (timeout == 0)
-      {
-        handle_hardware_failure();
-        return false;
-      }
+      while_check(dev->CR1 & I2C_CR1_STOP);
       // Start the new job
       I2C_GenerateSTART(dev, ENABLE);
     }
@@ -148,14 +158,8 @@ bool I2C::read(uint8_t addr, uint8_t reg, uint8_t len, uint8_t *data) {
   }
 
   //probably want to remove for fully interupt-based
-  timeout = I2C_TIMEOUT_US;
-  while(busy_ && --timeout > 0);
-  if (timeout == 0)
-  {
-    handle_hardware_failure();
-    return false;
-  }
-  else if (error_)
+  while_check(busy_);
+  if (error_)
   {
     error_ = false;
     return false;
@@ -164,15 +168,17 @@ bool I2C::read(uint8_t addr, uint8_t reg, uint8_t len, uint8_t *data) {
   return true;
 }
 
+
+
 void I2C::DMA_Read(uint8_t addr, uint8_t reg, uint8_t num_bytes, uint8_t* data)
 {
   busy_ = true;
   addr_ = addr << 1;
 
-  DMA_DeInit(DMA1_Stream2);
+  DMA_DeInit(DMA_stream_);
   DMA_InitStructure_.DMA_BufferSize = (uint16_t)(num_bytes);
   DMA_InitStructure_.DMA_Memory0BaseAddr = (uint32_t) data;
-  DMA_Init(DMA1_Stream2, &DMA_InitStructure_);
+  DMA_Init(DMA_stream_, &DMA_InitStructure_);
 
   I2C_Cmd(dev, ENABLE);
 
@@ -192,8 +198,8 @@ void I2C::DMA_Read(uint8_t addr, uint8_t reg, uint8_t num_bytes, uint8_t* data)
 
   while (!I2C_CheckEvent(dev, I2C_EVENT_MASTER_BYTE_TRANSMITTED));
 
-  I2C_AcknowledgeConfig(I2C2, ENABLE);
-  I2C_DMALastTransferCmd(I2C2, ENABLE);
+  I2C_AcknowledgeConfig(dev, ENABLE);
+  I2C_DMALastTransferCmd(dev, ENABLE);
 
   I2C_GenerateSTART(dev, ENABLE);
 
@@ -202,32 +208,28 @@ void I2C::DMA_Read(uint8_t addr, uint8_t reg, uint8_t num_bytes, uint8_t* data)
   I2C_Send7bitAddress(dev, addr_, I2C_Direction_Receiver);
 
 
-  DMA_SetCurrDataCounter(DMA1_Stream2, num_bytes);
-  I2C_DMACmd(I2C2, ENABLE);
+  DMA_SetCurrDataCounter(DMA_stream_, num_bytes);
+  I2C_DMACmd(dev, ENABLE);
 
-  DMA_Cmd(DMA1_Stream2, ENABLE);
+  DMA_Cmd(DMA_stream_, ENABLE);
 
-  while (DMA_GetCmdStatus(DMA1_Stream2) != ENABLE);
+  while (DMA_GetCmdStatus(DMA_stream_) != ENABLE);
 
   while (!I2C_CheckEvent(dev, I2C_EVENT_MASTER_RECEIVER_MODE_SELECTED));
 
-  while (DMA_GetFlagStatus(DMA1_Stream2, DMA_FLAG_TCIF2) == RESET);
+  while (DMA_GetFlagStatus(DMA_stream_, DMA_Stream_TCFLAG_) == RESET);
 
-  while (DMA_GetCurrDataCounter(DMA1_Stream2));
+  while (DMA_GetCurrDataCounter(DMA_stream_));
 
-  I2C_GenerateSTOP(I2C2, ENABLE);
+  I2C_GenerateSTOP(dev, ENABLE);
 
-  DMA_Cmd(DMA1_Stream2, DISABLE);
+  DMA_Cmd(DMA_stream_, DISABLE);
 
-  while (DMA_GetCmdStatus(DMA1_Stream2)!= DISABLE);
+  while (DMA_GetCmdStatus(DMA_stream_)!= DISABLE);
 
-  I2C_DMACmd(I2C2,DISABLE);
+  I2C_DMACmd(dev,DISABLE);
 
-  while (DMA_GetCmdStatus(DMA1_Stream2) != DISABLE);
-
-  I2C_DMACmd(I2C2, DISABLE);
-
-  DMA_ClearFlag(DMA1_Stream2, DMA_FLAG_TCIF3);
+  DMA_ClearFlag(DMA_stream_, DMA_Stream_TCFLAG_);
 
   return;
 }
@@ -287,12 +289,61 @@ bool I2C::write(uint8_t addr, uint8_t reg, uint8_t len, uint8_t *data) {
   return true;
 }
 
-bool I2C::read(uint8_t addr, uint8_t reg, uint8_t *data) {
-  return read(addr, reg, 1, data);
+bool I2C::read(uint8_t addr, uint8_t reg, uint8_t *data)
+{
+  while_check (I2C_GetFlagStatus(dev, I2C_FLAG_BUSY));
+
+  I2C_Cmd(dev, ENABLE);
+  if (reg != 0xFF)
+  {
+    I2C_GenerateSTART(dev, ENABLE);
+    while_check (!I2C_CheckEvent(dev, I2C_EVENT_MASTER_MODE_SELECT));
+    I2C_Send7bitAddress(dev, addr << 1, I2C_Direction_Transmitter);
+    while_check (!I2C_CheckEvent(dev, I2C_EVENT_MASTER_TRANSMITTER_MODE_SELECTED));
+    I2C_Cmd(dev, ENABLE);
+    I2C_SendData(dev, reg);
+    while_check (!I2C_CheckEvent(dev, I2C_EVENT_MASTER_BYTE_TRANSMITTED));
+  }
+
+  // Read the byte
+  I2C_AcknowledgeConfig(dev, DISABLE);
+  I2C_GenerateSTART(dev, ENABLE);
+  while_check (!I2C_CheckEvent(dev, I2C_EVENT_MASTER_MODE_SELECT));
+  I2C_Cmd(dev, ENABLE);
+  I2C_Send7bitAddress(dev, addr << 1, I2C_Direction_Receiver);
+  while_check (!I2C_CheckEvent(dev, I2C_EVENT_MASTER_BYTE_RECEIVED));
+  *data = I2C_ReceiveData(dev);
+  I2C_GenerateSTOP(dev, ENABLE  );
+  I2C_Cmd(dev, DISABLE);
+  return true;
 }
 
-bool I2C::write(uint8_t addr, uint8_t reg, uint8_t data) {
-  return write(addr, reg, 1, &data);
+bool I2C::write(uint8_t addr, uint8_t reg, uint8_t data)
+{
+  while (I2C_GetFlagStatus(dev, I2C_FLAG_BUSY));
+  I2C_Cmd(dev, ENABLE);
+
+  // start the transfer
+  I2C_GenerateSTART(dev, ENABLE);
+  while_check (!I2C_CheckEvent(dev, I2C_EVENT_MASTER_MODE_SELECT));
+  I2C_Send7bitAddress(dev, addr << 1, I2C_Direction_Transmitter);
+  while_check (!I2C_CheckEvent(dev, I2C_EVENT_MASTER_TRANSMITTER_MODE_SELECTED));
+  I2C_Cmd(dev, ENABLE);
+
+  // Send the register
+  if (reg != 0xFF)
+  {
+    I2C_SendData(dev, reg);
+    while_check (!I2C_CheckEvent(dev, I2C_EVENT_MASTER_BYTE_TRANSMITTED));
+  }
+
+  // Write the byte with a NACK
+  I2C_AcknowledgeConfig(dev, DISABLE);
+  I2C_SendData(dev, data);
+  while_check (!I2C_CheckEvent(dev, I2C_EVENT_MASTER_BYTE_TRANSMITTED));
+  I2C_GenerateSTOP(dev, ENABLE  );
+  I2C_Cmd(dev, DISABLE);
+  return true;
 }
 
 void I2C::handle_hardware_failure() {
@@ -477,14 +528,14 @@ extern "C"
 
 void DMA1_Stream2_IRQHandler(void)
 {
-  if (DMA_GetFlagStatus(DMA1_Stream2, DMA_FLAG_TCIF5))
+  if (DMA_GetFlagStatus(DMA1_Stream2, DMA_FLAG_TCIF2))
   {
     /* Clear transmission complete flag */
-    DMA_ClearFlag(DMA1_Stream2, DMA_FLAG_TCIF5);
+    DMA_ClearFlag(DMA1_Stream2, DMA_FLAG_TCIF2);
 
-    I2C_DMACmd(I2C1, DISABLE);
+    I2C_DMACmd(I2C2, DISABLE);
     /* Send I2C1 STOP Condition */
-    I2C_GenerateSTOP(I2C1, ENABLE);
+    I2C_GenerateSTOP(I2C2, ENABLE);
     /* Disable DMA channel*/
     DMA_Cmd(DMA1_Stream2, DISABLE);
     I2CDev_1Ptr->transfer_complete_cb();
