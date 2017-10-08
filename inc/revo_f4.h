@@ -4,10 +4,6 @@
 
 #include "system.h"
 
-#ifndef STM32F40_41xxx
-#define STM32F40_41xxx
-#endif
-
 /////////////////////// SERIAL CONFIG ///////////////////////
 
 

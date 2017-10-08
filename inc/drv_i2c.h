@@ -23,6 +23,8 @@ private:
   GPIO scl_;
   GPIO sda_;
 
+
+
   uint16_t error_count_ = 0;
 
   //Variables for current job:
@@ -45,6 +47,7 @@ private:
 
 
 public:
+  GPIO debug_;
   std::function<void(void)> cb_;
   I2C(I2C_TypeDef *I2C);
 

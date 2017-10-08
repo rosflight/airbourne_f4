@@ -41,9 +41,9 @@ void GPIO::write(gpio_write_t state)
   if(mode_ == OUTPUT)
   {
     if(state == LOW)
-      GPIO_SetBits(port_, pin_);
-    else
       GPIO_ResetBits(port_, pin_);
+    else
+      GPIO_SetBits(port_, pin_);
   }
 }
 
