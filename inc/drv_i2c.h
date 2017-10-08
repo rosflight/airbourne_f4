@@ -18,6 +18,20 @@ class I2C {
 private:
   void handle_hardware_failure();
 
+  enum : int8_t
+  {
+    ERROR = 0,
+    SUCCESS = 1,
+    BUSY = -1
+  };
+
+  typedef enum
+  {
+    IDLE,
+    READING,
+    WRITING
+  } current_status_t;
+
   I2C_TypeDef* dev_;
 
   GPIO scl_;
@@ -26,7 +40,7 @@ private:
   uint16_t error_count_ = 0;
 
   //Variables for current job:
-  bool busy_  = false;
+  current_status_t current_status_;
   bool subaddress_sent_ = false;
 
   volatile uint8_t  addr_;
