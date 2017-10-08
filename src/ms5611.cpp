@@ -164,12 +164,12 @@ void MS5611::convert()
 
 void MS5611::start_temp_meas()
 {
-  i2c_->write(ADDR, ADC_CONV + ADC_D2 + ADC_4096, 1);
+  i2c_->write(ADDR, ADC_CONV + ADC_D2 + ADC_4096, 1, std::bind(&MS5611::temp_start_cb, this));
 }
 
 void MS5611::start_pres_meas()
 {
-  i2c_->write(ADDR, ADC_CONV + ADC_D1 + ADC_4096, 1);
+  i2c_->write(ADDR, ADC_CONV + ADC_D1 + ADC_4096, 1, std::bind(&MS5611::pres_start_cb, this));
 }
 
 void MS5611::read_pres_mess()
@@ -193,7 +193,17 @@ void MS5611::pres_read_cb()
 {
   pres_raw_ = (pres_buf_[0] << 16) | (pres_buf_[1] << 8) | pres_buf_[2];
   next_update_ms_ = millis() + 15;
-  new_data_ = false;
+  new_data_ = true;
+}
+
+void MS5611::temp_start_cb()
+{
+  next_update_ms_ = millis() + 15;
+}
+
+void MS5611::pres_start_cb()
+{
+  next_update_ms_ = millis() + 15;
 }
 
 void MS5611::read(float * press, float* temp)

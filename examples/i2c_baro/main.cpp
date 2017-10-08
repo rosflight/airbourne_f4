@@ -27,7 +27,7 @@ int main() {
   delay(500);
 
   info.on();
-  I2C i2c1(I2C2);
+  I2C i2c1(I2C1);
   MS5611 baro(&i2c1);
 
   if (!baro.init())

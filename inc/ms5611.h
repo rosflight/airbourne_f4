@@ -63,6 +63,8 @@ public:
 
   void temp_read_cb();
   void pres_read_cb();
+  void temp_start_cb();
+  void pres_start_cb();
 };
 
 #endif // MS5611_H

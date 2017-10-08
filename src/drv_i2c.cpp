@@ -226,12 +226,40 @@ int8_t I2C::read(uint8_t addr, uint8_t reg, uint8_t *data)
   return return_code;
 }
 
+// asynchronous write, for commanding adc conversions
+int8_t I2C::write(uint8_t addr, uint8_t reg, uint8_t data, std::function<void(void)> callback)
+{
+  if (current_status_ != IDLE)
+    return BUSY;
+
+  current_status_ = WRITING;
+  addr_ = addr << 1;
+  cb_ = callback;
+  reg_ = reg;
+  subaddress_sent_ = (reg_ == 0xFF);
+  len_ = 1;
+  done_ = false;
+  data_ = data;
+
+  I2C_Cmd(dev_, ENABLE);
+
+  while_check (I2C_GetFlagStatus(dev_, I2C_FLAG_BUSY));
+
+  I2C_GenerateSTART(dev_, ENABLE);
+
+  I2C_ITConfig(dev_, I2C_IT_EVT | I2C_IT_ERR, ENABLE);
+
+  while (current_status_ != IDLE);
+
+  return SUCCESS;
+}
+
 // blocking, single register write (for configuring devices)
 int8_t I2C::write(uint8_t addr, uint8_t reg, uint8_t data)
 {
   if (current_status_ != IDLE)
     return BUSY;
-  while (I2C_GetFlagStatus(dev_, I2C_FLAG_BUSY));
+  while_check (I2C_GetFlagStatus(dev_, I2C_FLAG_BUSY));
   I2C_Cmd(dev_, ENABLE);
 
   // start the transfer
@@ -277,7 +305,9 @@ bool I2C::handle_error()
 {
   I2C_Cmd(dev_, DISABLE);
   while_check (I2C_GetFlagStatus(dev_, I2C_FLAG_BUSY));
-  I2C_ITConfig(dev_, I2C_IT_EVT | I2C_IT_ERR, DISABLE); // Disable EVT and ERR interrupts while bus inactive. They'll be reenabled
+
+  // Turn off the interrupts
+  I2C_ITConfig(dev_, I2C_IT_EVT | I2C_IT_ERR, DISABLE);
 
   //reset errors
   I2C_ClearFlag(dev_, I2C_SR1_OVR | I2C_SR1_AF | I2C_SR1_ARLO | I2C_SR1_BERR);
@@ -300,12 +330,6 @@ bool I2C::handle_event()
       I2C_DMALastTransferCmd(dev_, ENABLE);
       I2C_GenerateSTART(dev_, ENABLE);
     }
-    // If we are in write mode, and just sent the subaddress but still need
-    // to send our data
-    else if (!done_)
-    {
-      I2C_SendData(dev_, data_);
-    }
     // We are in write mode and are done, need to clean up
     else
     {
@@ -315,14 +339,19 @@ bool I2C::handle_event()
     }
   }
 
-  // We just sent the address in write mode, preparing to send the subaddress
+  // We just sent the address in write mode
   if (last_event == I2C_EVENT_MASTER_TRANSMITTER_MODE_SELECTED)
   {
     // We need to send the subaddress
-    if(!subaddress_sent_)
+    if (!subaddress_sent_)
     {
       I2C_SendData(dev_, reg_);
       subaddress_sent_ = true;
+      if (current_status_ == WRITING)
+      {
+        I2C_SendData(dev_, data_);
+        done_ = true;
+      }
     }
     // We need to send our data (no subaddress)
     else
