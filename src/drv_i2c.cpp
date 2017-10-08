@@ -25,10 +25,10 @@ I2C::I2C(I2C_TypeDef *I2C) {
     RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_DMA1, ENABLE);
 
     //configure the gpio pins
-    GPIO_PinAFConfig(I2C1_GPIO, I2C1_SCL_PIN_SOURCE, GPIO_AF_I2C1);
-    GPIO_PinAFConfig(I2C1_GPIO, I2C1_SDA_PIN_SOURCE, GPIO_AF_I2C1);
-    sda_.init(I2C1_GPIO, I2C1_SDA_PIN, GPIO::PERIPH_IN_OUT);
-    scl_.init(I2C1_GPIO, I2C1_SCL_PIN, GPIO::PERIPH_IN_OUT);
+    GPIO_PinAFConfig(GPIOB, GPIO_PinSource8, GPIO_AF_I2C1);
+    GPIO_PinAFConfig(GPIOB, GPIO_PinSource9, GPIO_AF_I2C1);
+    sda_.init(GPIOB, GPIO_Pin_9, GPIO::PERIPH_IN_OUT);
+    scl_.init(GPIOB, GPIO_Pin_8, GPIO::PERIPH_IN_OUT);
     I2C1_Ptr = this;
     DMA_stream_ = DMA1_Stream0;
     DMA_channel_ = DMA_Channel_1;
@@ -43,10 +43,10 @@ I2C::I2C(I2C_TypeDef *I2C) {
     RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_DMA1, ENABLE);
 
     //configure the gpio pins
-    GPIO_PinAFConfig(I2C2_GPIO, I2C2_SCL_PIN_SOURCE, GPIO_AF_I2C2);
-    GPIO_PinAFConfig(I2C2_GPIO, I2C2_SDA_PIN_SOURCE, GPIO_AF_I2C2);
-    sda_.init(I2C2_GPIO, I2C2_SDA_PIN, GPIO::PERIPH_IN_OUT);
-    scl_.init(I2C2_GPIO, I2C2_SCL_PIN, GPIO::PERIPH_IN_OUT);
+    GPIO_PinAFConfig(GPIOB, GPIO_PinSource10, GPIO_AF_I2C2);
+    GPIO_PinAFConfig(GPIOB, GPIO_PinSource11, GPIO_AF_I2C2);
+    sda_.init(GPIOB, GPIO_Pin_11, GPIO::PERIPH_IN_OUT);
+    scl_.init(GPIOB, GPIO_Pin_10, GPIO::PERIPH_IN_OUT);
     I2C2_Ptr = this;
     DMA_stream_ = DMA1_Stream2;
     DMA_channel_ = DMA_Channel_7;

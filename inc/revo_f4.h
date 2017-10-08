@@ -69,16 +69,6 @@ const pwm_hardware_struct_t pwm_config[PWM_NUM_CHANNELS] =
 #define HMC5883L_I2C		I2C1
 #define I2C_TIMEOUT_US		30000
 
-#define I2C1_GPIO			GPIOB
-#define I2C1_SCL_PIN		GPIO_Pin_8
-#define I2C1_SCL_PIN_SOURCE GPIO_PinSource8
-#define I2C1_SDA_PIN		GPIO_Pin_9
-#define I2C1_SDA_PIN_SOURCE GPIO_PinSource9
 
-#define I2C2_GPIO			GPIOB
-#define I2C2_SCL_PIN		GPIO_Pin_10
-#define I2C2_SCL_PIN_SOURCE GPIO_PinSource10
-#define I2C2_SDA_PIN		GPIO_Pin_11
-#define I2C2_SDA_PIN_SOURCE GPIO_PinSource11
 
 #endif // REVO_F4_H
