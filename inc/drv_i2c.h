@@ -41,6 +41,9 @@ private:
   DMA_Stream_TypeDef* DMA_stream_;
   uint32_t DMA_channel_;
   uint32_t DMA_Stream_TCFLAG_;
+  IRQn_Type DMA_IRQn_;
+  IRQn_Type I2C_EV_IRQn_;
+  IRQn_Type I2C_ER_IRQn_;
 
 
 
