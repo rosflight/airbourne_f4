@@ -17,9 +17,9 @@ I2C* I2C1_Ptr;
 I2C* I2C2_Ptr;
 
 I2C::I2C(I2C_TypeDef *I2C) {
-  dev = I2C;
+  dev_ = I2C;
   //enable peripheral clocks as we need them
-  if (dev == I2C1)
+  if (dev_ == I2C1)
   {
     RCC_APB1PeriphClockCmd(RCC_APB1Periph_I2C1, ENABLE);
     RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_DMA1, ENABLE);
@@ -37,7 +37,7 @@ I2C::I2C(I2C_TypeDef *I2C) {
     I2C_EV_IRQn_ = I2C1_EV_IRQn;
     I2C_ER_IRQn_ = I2C1_ER_IRQn;
   }
-  else if (dev == I2C2)
+  else if (dev_ == I2C2)
   {
     RCC_APB1PeriphClockCmd(RCC_APB1Periph_I2C2, ENABLE);
     RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_DMA1, ENABLE);
@@ -56,12 +56,10 @@ I2C::I2C(I2C_TypeDef *I2C) {
     I2C_ER_IRQn_ = I2C2_ER_IRQn;
   }
 
-  debug_.init(GPIOB, GPIO_Pin_0, GPIO::OUTPUT);
-
   unstick(); //unstick will properly initialize pins
 
   //initialze the i2c itself
-  I2C_DeInit(dev);
+  I2C_DeInit(dev_);
 
   I2C_InitTypeDef I2C_InitStructure;
   I2C_StructInit(&I2C_InitStructure);
@@ -71,7 +69,7 @@ I2C::I2C(I2C_TypeDef *I2C) {
   I2C_InitStructure.I2C_OwnAddress1 = 0; //The first device address
   I2C_InitStructure.I2C_Ack = I2C_Ack_Disable;
   I2C_InitStructure.I2C_AcknowledgedAddress = I2C_AcknowledgedAddress_7bit;
-  I2C_Init(dev, &I2C_InitStructure);
+  I2C_Init(dev_, &I2C_InitStructure);
 
   // Interrupts
   NVIC_InitTypeDef NVIC_InitStructure;
@@ -101,18 +99,17 @@ I2C::I2C(I2C_TypeDef *I2C) {
   DMA_InitStructure_.DMA_Mode = DMA_Mode_Normal;
   DMA_InitStructure_.DMA_Channel = DMA_channel_;
 
-  DMA_InitStructure_.DMA_PeripheralBaseAddr = (uint32_t)(&(dev->DR));
+  DMA_InitStructure_.DMA_PeripheralBaseAddr = (uint32_t)(&(dev_->DR));
   DMA_InitStructure_.DMA_PeripheralBurst = DMA_PeripheralBurst_Single;
   DMA_InitStructure_.DMA_MemoryDataSize = DMA_MemoryDataSize_Byte;
   DMA_InitStructure_.DMA_Priority = DMA_Priority_High;
   DMA_InitStructure_.DMA_DIR = DMA_DIR_PeripheralToMemory;
 
-  I2C_Cmd(dev, ENABLE);
+  I2C_Cmd(dev_, ENABLE);
 }
 
 void I2C::unstick()
 {
-  debug_.write(GPIO::HIGH);
   scl_.set_mode(GPIO::OUTPUT);
   sda_.set_mode(GPIO::OUTPUT);
 
@@ -123,8 +120,6 @@ void I2C::unstick()
   {
     delayMicroseconds(3);
     scl_.toggle();
-    if ( i == 4)
-      debug_.write(GPIO::LOW);
   }
 
   sda_.write(GPIO::LOW);
@@ -146,7 +141,6 @@ void I2C::unstick()
 
 bool I2C::read(uint8_t addr, uint8_t reg, uint8_t num_bytes, uint8_t* data, std::function<void(void)> callback)
 {
-  debug_.write(GPIO::HIGH);
   busy_ = true;
   addr_ = addr << 1;
   cb_ = callback;
@@ -159,59 +153,52 @@ bool I2C::read(uint8_t addr, uint8_t reg, uint8_t num_bytes, uint8_t* data, std:
   DMA_InitStructure_.DMA_Memory0BaseAddr = (uint32_t) data;
   DMA_Init(DMA_stream_, &DMA_InitStructure_);
 
-  I2C_Cmd(dev, ENABLE);
+  I2C_Cmd(dev_, ENABLE);
 
-  while_check (I2C_GetFlagStatus(dev, I2C_FLAG_BUSY));
+  while_check (I2C_GetFlagStatus(dev_, I2C_FLAG_BUSY));
 
-  I2C_GenerateSTART(dev, ENABLE);
+  I2C_GenerateSTART(dev_, ENABLE);
 
-  I2C_ITConfig(dev, I2C_IT_EVT, ENABLE);
-
-  debug_.write(GPIO::LOW);
+  I2C_ITConfig(dev_, I2C_IT_EVT, ENABLE);
   return true;
 }
 
 
 void I2C::transfer_complete_cb()
 {
-  debug_.write(GPIO::HIGH);
   busy_ = false;
   if (cb_ != NULL);
     cb_();
-  debug_.write(GPIO::LOW);
 }
 
 
 // blocking, single register read (for configuring devices)
 bool I2C::read(uint8_t addr, uint8_t reg, uint8_t *data)
 {
-  debug_.write(GPIO::HIGH);
-  while_check (I2C_GetFlagStatus(dev, I2C_FLAG_BUSY));
+  while_check (I2C_GetFlagStatus(dev_, I2C_FLAG_BUSY));
 
-  I2C_Cmd(dev, ENABLE);
+  I2C_Cmd(dev_, ENABLE);
   if (reg != 0xFF)
   {
-    I2C_GenerateSTART(dev, ENABLE);
-    while_check (!I2C_CheckEvent(dev, I2C_EVENT_MASTER_MODE_SELECT));
-    I2C_Send7bitAddress(dev, addr << 1, I2C_Direction_Transmitter);
-    while_check (!I2C_CheckEvent(dev, I2C_EVENT_MASTER_TRANSMITTER_MODE_SELECTED));
-    I2C_Cmd(dev, ENABLE);
-    I2C_SendData(dev, reg);
-    while_check (!I2C_CheckEvent(dev, I2C_EVENT_MASTER_BYTE_TRANSMITTED));
+    I2C_GenerateSTART(dev_, ENABLE);
+    while_check (!I2C_CheckEvent(dev_, I2C_EVENT_MASTER_MODE_SELECT));
+    I2C_Send7bitAddress(dev_, addr << 1, I2C_Direction_Transmitter);
+    while_check (!I2C_CheckEvent(dev_, I2C_EVENT_MASTER_TRANSMITTER_MODE_SELECTED));
+    I2C_Cmd(dev_, ENABLE);
+    I2C_SendData(dev_, reg);
+    while_check (!I2C_CheckEvent(dev_, I2C_EVENT_MASTER_BYTE_TRANSMITTED));
   }
 
   // Read the byte
-  I2C_AcknowledgeConfig(dev, DISABLE);
-  I2C_GenerateSTART(dev, ENABLE);
-  while_check (!I2C_CheckEvent(dev, I2C_EVENT_MASTER_MODE_SELECT));
-  I2C_Cmd(dev, ENABLE);
-  I2C_Send7bitAddress(dev, addr << 1, I2C_Direction_Receiver);
-  while_check (!I2C_CheckEvent(dev, I2C_EVENT_MASTER_BYTE_RECEIVED));
-  *data = I2C_ReceiveData(dev);
-  I2C_GenerateSTOP(dev, ENABLE  );
-  I2C_Cmd(dev, DISABLE);
-
-  debug_.write(GPIO::LOW);
+  I2C_AcknowledgeConfig(dev_, DISABLE);
+  I2C_GenerateSTART(dev_, ENABLE);
+  while_check (!I2C_CheckEvent(dev_, I2C_EVENT_MASTER_MODE_SELECT));
+  I2C_Cmd(dev_, ENABLE);
+  I2C_Send7bitAddress(dev_, addr << 1, I2C_Direction_Receiver);
+  while_check (!I2C_CheckEvent(dev_, I2C_EVENT_MASTER_BYTE_RECEIVED));
+  *data = I2C_ReceiveData(dev_);
+  I2C_GenerateSTOP(dev_, ENABLE  );
+  I2C_Cmd(dev_, DISABLE);
 
   return true;
 
@@ -220,32 +207,29 @@ bool I2C::read(uint8_t addr, uint8_t reg, uint8_t *data)
 // blocking, single register write (for configuring devices)
 bool I2C::write(uint8_t addr, uint8_t reg, uint8_t data)
 {
-  debug_.write(GPIO::HIGH);
-  while (I2C_GetFlagStatus(dev, I2C_FLAG_BUSY));
-  I2C_Cmd(dev, ENABLE);
+  while (I2C_GetFlagStatus(dev_, I2C_FLAG_BUSY));
+  I2C_Cmd(dev_, ENABLE);
 
   // start the transfer
-  I2C_GenerateSTART(dev, ENABLE);
-  while_check (!I2C_CheckEvent(dev, I2C_EVENT_MASTER_MODE_SELECT));
-  I2C_Send7bitAddress(dev, addr << 1, I2C_Direction_Transmitter);
-  while_check (!I2C_CheckEvent(dev, I2C_EVENT_MASTER_TRANSMITTER_MODE_SELECTED));
-  I2C_Cmd(dev, ENABLE);
+  I2C_GenerateSTART(dev_, ENABLE);
+  while_check (!I2C_CheckEvent(dev_, I2C_EVENT_MASTER_MODE_SELECT));
+  I2C_Send7bitAddress(dev_, addr << 1, I2C_Direction_Transmitter);
+  while_check (!I2C_CheckEvent(dev_, I2C_EVENT_MASTER_TRANSMITTER_MODE_SELECTED));
+  I2C_Cmd(dev_, ENABLE);
 
   // Send the register
   if (reg != 0xFF)
   {
-    I2C_SendData(dev, reg);
-    while_check (!I2C_CheckEvent(dev, I2C_EVENT_MASTER_BYTE_TRANSMITTED));
+    I2C_SendData(dev_, reg);
+    while_check (!I2C_CheckEvent(dev_, I2C_EVENT_MASTER_BYTE_TRANSMITTED));
   }
 
   // Write the byte with a NACK
-  I2C_AcknowledgeConfig(dev, DISABLE);
-  I2C_SendData(dev, data);
-  while_check (!I2C_CheckEvent(dev, I2C_EVENT_MASTER_BYTE_TRANSMITTED));
-  I2C_GenerateSTOP(dev, ENABLE  );
-  I2C_Cmd(dev, DISABLE);
-
-  debug_.write(GPIO::LOW);
+  I2C_AcknowledgeConfig(dev_, DISABLE);
+  I2C_SendData(dev_, data);
+  while_check (!I2C_CheckEvent(dev_, I2C_EVENT_MASTER_BYTE_TRANSMITTED));
+  I2C_GenerateSTOP(dev_, ENABLE  );
+  I2C_Cmd(dev_, DISABLE);
   return true;
 
 }
@@ -260,41 +244,40 @@ void I2C::handle_hardware_failure() {
 // This is the I2C_IT_ERR handler
 bool I2C::handle_error()
 {
-  I2C_Cmd(dev, DISABLE);
-  while_check (I2C_GetFlagStatus(dev, I2C_FLAG_BUSY));
-  I2C_ITConfig(dev, I2C_IT_EVT | I2C_IT_ERR, DISABLE); // Disable EVT and ERR interrupts while bus inactive. They'll be reenabled
+  I2C_Cmd(dev_, DISABLE);
+  while_check (I2C_GetFlagStatus(dev_, I2C_FLAG_BUSY));
+  I2C_ITConfig(dev_, I2C_IT_EVT | I2C_IT_ERR, DISABLE); // Disable EVT and ERR interrupts while bus inactive. They'll be reenabled
 
   //reset errors
-  I2C_ClearFlag(dev, I2C_SR1_OVR | I2C_SR1_AF | I2C_SR1_ARLO | I2C_SR1_BERR);
+  I2C_ClearFlag(dev_, I2C_SR1_OVR | I2C_SR1_AF | I2C_SR1_ARLO | I2C_SR1_BERR);
   busy_ = false;
 }
 
 // This is the I2C_IT_EV handler
 bool I2C::handle_event()
 {
-  debug_.write(GPIO::HIGH);
-  uint32_t last_event = I2C_GetLastEvent(dev);
+  uint32_t last_event = I2C_GetLastEvent(dev_);
   if (last_event == I2C_EVENT_MASTER_BYTE_TRANSMITTED)
   {
-    I2C_AcknowledgeConfig(dev, ENABLE);
-    I2C_DMALastTransferCmd(dev, ENABLE);
+    I2C_AcknowledgeConfig(dev_, ENABLE);
+    I2C_DMALastTransferCmd(dev_, ENABLE);
 
-    I2C_GenerateSTART(dev, ENABLE);
+    I2C_GenerateSTART(dev_, ENABLE);
   }
 
   // We just sent the address in write mode, preparing to send the subaddress
   if (last_event == I2C_EVENT_MASTER_TRANSMITTER_MODE_SELECTED)
   {
-      I2C_SendData(dev, reg_);
+      I2C_SendData(dev_, reg_);
       subaddress_sent_ = true;
   }
 
   // We are in receiving mode, preparing to receive the big DMA dump
   if (last_event == I2C_EVENT_MASTER_RECEIVER_MODE_SELECTED)
   {
-    I2C_ITConfig(dev, I2C_IT_EVT, DISABLE);
+    I2C_ITConfig(dev_, I2C_IT_EVT, DISABLE);
     DMA_SetCurrDataCounter(DMA_stream_, len_);
-    I2C_DMACmd(dev, ENABLE);
+    I2C_DMACmd(dev_, ENABLE);
     DMA_ITConfig(DMA_stream_, DMA_IT_TC, ENABLE);
     DMA_Cmd(DMA_stream_, ENABLE);
   }
@@ -306,30 +289,26 @@ bool I2C::handle_event()
     if (subaddress_sent_)
     {
       // Set up a receive
-      I2C_Send7bitAddress(dev, addr_, I2C_Direction_Receiver);
+      I2C_Send7bitAddress(dev_, addr_, I2C_Direction_Receiver);
     }
     // We need to write a subaddress
     else
     {
       // Set up a write
-      I2C_Send7bitAddress(dev, addr_, I2C_Direction_Transmitter);
+      I2C_Send7bitAddress(dev_, addr_, I2C_Direction_Transmitter);
     }
   }
-  debug_.write(GPIO::LOW);
 }
 
 extern "C"
 {
 
 // C-based IRQ functions (defined in the STD lib somewhere)
-
-
 void DMA1_Stream2_IRQHandler(void)
 {
 
   if (DMA_GetFlagStatus(DMA1_Stream2, DMA_FLAG_TCIF2))
   {
-    I2C2_Ptr->debug_.write(GPIO::HIGH);
     /* Clear transmission complete flag */
     DMA_ClearFlag(DMA1_Stream2, DMA_FLAG_TCIF2);
 
@@ -340,9 +319,7 @@ void DMA1_Stream2_IRQHandler(void)
     DMA_Cmd(DMA1_Stream2, DISABLE);
 
     I2C2_Ptr->transfer_complete_cb();
-    I2C2_Ptr->debug_.write(GPIO::LOW);
   }
-
 }
 
 void DMA1_Stream0_IRQHandler(void)

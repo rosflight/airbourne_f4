@@ -18,12 +18,10 @@ class I2C {
 private:
   void handle_hardware_failure();
 
-  I2C_TypeDef* dev;
+  I2C_TypeDef* dev_;
 
   GPIO scl_;
   GPIO sda_;
-
-
 
   uint16_t error_count_ = 0;
 
@@ -34,7 +32,6 @@ private:
   volatile uint8_t  addr_;
   volatile uint8_t  reg_;
   volatile uint8_t  len_;
-  volatile uint8_t* data_buffer_;
 
   DMA_InitTypeDef  DMA_InitStructure_;
   DMA_Stream_TypeDef* DMA_stream_;
@@ -44,10 +41,7 @@ private:
   IRQn_Type I2C_EV_IRQn_;
   IRQn_Type I2C_ER_IRQn_;
 
-
-
 public:
-  GPIO debug_;
   std::function<void(void)> cb_;
   I2C(I2C_TypeDef *I2C);
 
