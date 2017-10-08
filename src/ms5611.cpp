@@ -1,5 +1,80 @@
 #include "ms5611.h"
 
+
+MS5611::MS5611(I2C *_i2c)
+{
+  i2c_ = _i2c;
+}
+
+bool MS5611::init()
+{
+  while (millis() < 10);  // wait for chip to power on
+
+  uint8_t byte;
+  i2c_->write(0, 0, 0);
+  delay(1);
+  uint8_t ack = i2c_->read(ADDR, PROM_RD, &byte);
+  if (!ack)
+  {
+    return false;
+  }
+
+  reset();
+
+  // Read the PROM
+  read_prom();
+
+    // Check crc
+  if (calc_crc() != 0)
+    return false;
+
+  next_update_ms_ = 0;
+  state_ = START_TEMP;
+  new_data_ = false;
+
+  update();
+
+  return true;
+}
+
+void MS5611::update()
+{
+  uint32_t now_ms = millis();
+
+  if (now_ms > next_update_ms_)
+  {
+    next_update_ms_ += 100;
+
+    switch (state_)
+    {
+    case START_TEMP:
+      start_temp_meas();
+      state_ = READ_TEMP;
+      break;
+    case READ_TEMP:
+      read_temp_mess();
+      state_ = START_PRESS;
+      break;
+    case START_PRESS:
+      start_pres_meas();
+      state_ = READ_PRESS;
+      break;
+    case READ_PRESS:
+      read_pres_mess();
+      state_ = START_TEMP;
+      break;
+    default:
+      state_ = START_TEMP;
+      break;
+    }
+  }
+  if (new_data_)
+  {
+    convert();
+  }
+}
+
+
 void MS5611::reset()
 {
   i2c_->write(ADDR, RESET, 1);
@@ -113,87 +188,13 @@ void MS5611::temp_read_cb()
   next_update_ms_ = millis() + 15;
   new_data_ = true;
 }
+
 void MS5611::pres_read_cb()
 {
   pres_raw_ = (pres_buf_[0] << 16) | (pres_buf_[1] << 8) | pres_buf_[2];
   next_update_ms_ = millis() + 15;
   new_data_ = false;
 }
-
-
-MS5611::MS5611(I2C *_i2c)
-{
-  i2c_ = _i2c;
-}
-
-bool MS5611::init()
-{
-  while (millis() < 10);  // wait for chip to power on
-
-  uint8_t byte;
-  i2c_->write(0, 0, 0);
-  delay(1);
-  uint8_t ack = i2c_->read(ADDR, PROM_RD, &byte);
-  if (!ack)
-  {
-    return false;
-  }
-
-  reset();
-
-  // Read the PROM
-  read_prom();
-
-    // Check crc
-  if (calc_crc() != 0)
-    return false;
-
-  next_update_ms_ = 0;
-  state_ = START_TEMP;
-  new_data_ = false;
-
-  update();
-
-  return true;
-}
-
-void MS5611::update()
-{
-  uint32_t now_ms = millis();
-
-  if (now_ms > next_update_ms_)
-  {
-    next_update_ms_ += 100;
-
-    switch (state_)
-    {
-    case START_TEMP:
-      start_temp_meas();
-      state_ = READ_TEMP;
-      break;
-    case READ_TEMP:
-      read_temp_mess();
-      state_ = START_PRESS;
-      break;
-    case START_PRESS:
-      start_pres_meas();
-      state_ = READ_PRESS;
-      break;
-    case READ_PRESS:
-      read_pres_mess();
-      state_ = START_TEMP;
-      break;
-    default:
-      state_ = START_TEMP;
-      break;
-    }
-  }
-  if (new_data_)
-  {
-    convert();
-  }
-}
-
 
 void MS5611::read(float * press, float* temp)
 {
