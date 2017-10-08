@@ -24,14 +24,14 @@ int main() {
   LED info(LED2_GPIO, LED2_PIN);
 
   info.on();
-  I2C i2c1(I2C2);
+  I2C i2c1(I2C1);
 
   while(1)
   {
     for (int i = 0; i < 128; i++)
     {
       uint8_t data;
-      if (i2c1.read(i, 0x00, &data))
+      if (i2c1.read(i, 0xFF, &data))
       {
         printf("found device at 0x%X\n", i);
       }

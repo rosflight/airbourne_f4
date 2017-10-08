@@ -2,7 +2,7 @@
 
 #define while_check(cond) \
   {\
-    int32_t timeout_var = 30000; \
+    int32_t timeout_var = 5000; \
     while ((cond) && timeout_var) \
       timeout_var--; \
     if (!timeout_var) \
@@ -118,21 +118,19 @@ void I2C::unstick()
 
   for (int i = 0; i < 8; ++i)
   {
-    delayMicroseconds(3);
+    delayMicroseconds(1);
     scl_.toggle();
   }
 
   sda_.write(GPIO::LOW);
-  delayMicroseconds(3);
+  delayMicroseconds(1);
   scl_.write(GPIO::LOW);
-  delayMicroseconds(3);
-
-
+  delayMicroseconds(1);
 
   scl_.write(GPIO::HIGH);
-  delayMicroseconds(3);
+  delayMicroseconds(1);
   sda_.write(GPIO::HIGH);
-  delayMicroseconds(3);
+  delayMicroseconds(1);
 
   scl_.set_mode(GPIO::PERIPH_IN_OUT);
   sda_.set_mode(GPIO::PERIPH_IN_OUT);
@@ -175,6 +173,7 @@ void I2C::transfer_complete_cb()
 // blocking, single register read (for configuring devices)
 bool I2C::read(uint8_t addr, uint8_t reg, uint8_t *data)
 {
+  bool valid_address = false;
   while_check (I2C_GetFlagStatus(dev_, I2C_FLAG_BUSY));
 
   I2C_Cmd(dev_, ENABLE);
@@ -195,12 +194,17 @@ bool I2C::read(uint8_t addr, uint8_t reg, uint8_t *data)
   while_check (!I2C_CheckEvent(dev_, I2C_EVENT_MASTER_MODE_SELECT));
   I2C_Cmd(dev_, ENABLE);
   I2C_Send7bitAddress(dev_, addr << 1, I2C_Direction_Receiver);
-  while_check (!I2C_CheckEvent(dev_, I2C_EVENT_MASTER_BYTE_RECEIVED));
-  *data = I2C_ReceiveData(dev_);
+  uint32_t timeout = 500;
+  while (!I2C_CheckEvent(dev_, I2C_EVENT_MASTER_BYTE_RECEIVED) && --timeout);
+  if (timeout)
+  {
+    valid_address = true;
+    *data = I2C_ReceiveData(dev_);
+  }
   I2C_GenerateSTOP(dev_, ENABLE  );
   I2C_Cmd(dev_, DISABLE);
 
-  return true;
+  return valid_address;
 
 }
 
