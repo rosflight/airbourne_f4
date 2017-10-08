@@ -36,6 +36,7 @@ void HMC5883L::update()
   {
 //    std::function<void(void)> callback_fn =
     i2c_->read(HMC58X3_ADDR, HMC58X3_DATA, 6, i2c_buf_, std::bind(&HMC5883L::convert, this));
+    last_update_ms_ = now_ms;
   }
 }
 

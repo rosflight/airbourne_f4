@@ -139,8 +139,6 @@ bool I2C::read(uint8_t addr, uint8_t reg, uint8_t num_bytes, uint8_t* data, std:
   addr_ = addr << 1;
   cb_ = callback;
 
-  cb_();
-
   DMA_DeInit(DMA_stream_);
   DMA_InitStructure_.DMA_BufferSize = (uint16_t)(num_bytes);
   DMA_InitStructure_.DMA_Memory0BaseAddr = (uint32_t) data;
@@ -197,7 +195,7 @@ bool I2C::read(uint8_t addr, uint8_t reg, uint8_t num_bytes, uint8_t* data, std:
 
 //  DMA_ClearFlag(DMA_stream_, DMA_Stream_TCFLAG_);
 
-  while_check(busy_);
+//  while_check(busy_);
 
   return true;
 }
