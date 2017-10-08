@@ -26,11 +26,8 @@ private:
   uint16_t error_count_ = 0;
 
   //Variables for current job:
-  bool reading_;
-  bool subaddress_sent_;
-  volatile bool busy_  = false;
-  volatile bool error_ = false;
-  uint8_t index_;
+  bool busy_  = false;
+  bool subaddress_sent_ = false;
 
   volatile uint8_t  addr_;
   volatile uint8_t  reg_;
@@ -63,7 +60,7 @@ public:
 
   //interrupt handlers
   void handle_error();
-  void handle_event();
+  bool handle_event();
   void transfer_complete_cb();
 };
 

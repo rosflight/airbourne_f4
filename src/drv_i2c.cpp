@@ -142,9 +142,12 @@ bool I2C::read(uint8_t addr, uint8_t reg, uint8_t num_bytes, uint8_t* data, std:
   busy_ = true;
   addr_ = addr << 1;
   cb_ = callback;
+  reg_ = reg;
+  subaddress_sent_ = (reg_ == 0xFF);
+  len_ = num_bytes;
 
   DMA_DeInit(DMA_stream_);
-  DMA_InitStructure_.DMA_BufferSize = (uint16_t)(num_bytes);
+  DMA_InitStructure_.DMA_BufferSize = (uint16_t)(len_);
   DMA_InitStructure_.DMA_Memory0BaseAddr = (uint32_t) data;
   DMA_Init(DMA_stream_, &DMA_InitStructure_);
 
@@ -154,36 +157,43 @@ bool I2C::read(uint8_t addr, uint8_t reg, uint8_t num_bytes, uint8_t* data, std:
 
   I2C_GenerateSTART(dev, ENABLE);
 
-  while_check (!I2C_CheckEvent(dev, I2C_EVENT_MASTER_MODE_SELECT));
+//  while_check (!I2C_CheckEvent(dev, I2C_EVENT_MASTER_MODE_SELECT));
 
-  I2C_Send7bitAddress(dev, addr_, I2C_Direction_Transmitter);
+//  I2C_Send7bitAddress(dev, addr_, I2C_Direction_Transmitter);
 
-  while_check (!I2C_CheckEvent(dev, I2C_EVENT_MASTER_TRANSMITTER_MODE_SELECTED));
+  I2C_ITConfig(dev, I2C_IT_EVT, ENABLE);
 
-  I2C_Cmd(dev, ENABLE);
+//  while_check (!I2C_CheckEvent(dev, I2C_EVENT_MASTER_TRANSMITTER_MODE_SELECTED));
 
-  I2C_SendData(dev, reg);
+//  I2C_Cmd(dev, ENABLE);
 
-  while_check (!I2C_CheckEvent(dev, I2C_EVENT_MASTER_BYTE_TRANSMITTED));
+//  I2C_SendData(dev, reg);
 
-  I2C_AcknowledgeConfig(dev, ENABLE);
-  I2C_DMALastTransferCmd(dev, ENABLE);
+//  while_check (!I2C_CheckEvent(dev, I2C_EVENT_MASTER_BYTE_TRANSMITTED));
 
-  I2C_GenerateSTART(dev, ENABLE);
+//  I2C_ITConfig(dev, I2C_IT_EVT, ENABLE);
 
-  while_check (!I2C_CheckEvent(dev, I2C_EVENT_MASTER_MODE_SELECT));
+//  I2C_AcknowledgeConfig(dev, ENABLE);
+//  I2C_DMALastTransferCmd(dev, ENABLE);
 
-  I2C_Send7bitAddress(dev, addr_, I2C_Direction_Receiver);
+//  I2C_GenerateSTART(dev, ENABLE);
 
-  DMA_SetCurrDataCounter(DMA_stream_, num_bytes);
-  I2C_DMACmd(dev, ENABLE);
-  DMA_ITConfig(DMA_stream_, DMA_IT_TC, ENABLE);
+//  while_check (!I2C_CheckEvent(dev, I2C_EVENT_MASTER_MODE_SELECT));
 
-  DMA_Cmd(DMA_stream_, ENABLE);
 
-  while_check (DMA_GetCmdStatus(DMA_stream_) != ENABLE);
 
-  while_check (!I2C_CheckEvent(dev, I2C_EVENT_MASTER_RECEIVER_MODE_SELECTED));
+
+
+
+//  I2C_Send7bitAddress(dev, addr_, I2C_Direction_Receiver);
+
+//  DMA_SetCurrDataCounter(DMA_stream_, num_bytes);
+//  I2C_DMACmd(dev, ENABLE);
+//  DMA_ITConfig(DMA_stream_, DMA_IT_TC, ENABLE);
+
+//  DMA_Cmd(DMA_stream_, ENABLE);
+
+
 
   return true;
 }
@@ -292,153 +302,58 @@ void I2C::handle_error(){
 
   //reset errors
   dev->SR1 &= ~(I2C_SR1_OVR | I2C_SR1_AF | I2C_SR1_ARLO | I2C_SR1_BERR);
-  error_ = true;
   busy_ = false;
 }
 
 // This is the I2C_IT_EV handler
-void I2C::handle_event() {
-  //grab the bottom 8 bits of this device's status register
-  uint8_t sr1 = dev->SR1;
-
-
-  if (sr1 & I2C_SR1_SB) // EV5 (in ref manual) - Start just sent
+bool I2C::handle_event()
+{
+  uint32_t last_event = I2C_GetLastEvent(dev);
+  if (last_event == I2C_EVENT_MASTER_BYTE_TRANSMITTED)
   {
-    dev->CR1 &= ~I2C_CR1_POS; // Reset the POS bit so ACK/NACK applied to the current byte
-    I2C_AcknowledgeConfig(dev, ENABLE);	// Make sure ACK is on
-    index_ = 0;
-    if (reading_ && (subaddress_sent_ || reg_ == 0xFF))
-    {
+    I2C_AcknowledgeConfig(dev, ENABLE);
+    I2C_DMALastTransferCmd(dev, ENABLE);
+
+    I2C_GenerateSTART(dev, ENABLE);
+  }
+
+  // We just sent the address, preparing to send the subaddress
+  if (last_event == I2C_EVENT_MASTER_TRANSMITTER_MODE_SELECTED)
+  {
+      I2C_SendData(dev, reg_);
       subaddress_sent_ = true;
-      if (len_ == 2)
-      {
-        dev->CR1 |= I2C_CR1_POS; // if doing a 2-byte read, set NACK to apply to the final byte
-      }
-      I2C_Send7bitAddress(dev, addr_, I2C_Direction_Receiver);	// start a read
-    }
-    else // We are either writing or the subaddress hasn't been sent and we need to write it
-    {
-      I2C_Send7bitAddress(dev, addr_, I2C_Direction_Transmitter); //start a write
-      if (!subaddress_sent_)
-      {
-        index_ = -1;  // Send the subaddress
-      }
-    }
   }
 
-  else if (sr1 & I2C_SR1_ADDR) // EV6 - Address just sent
+  // Start just sent
+  if (last_event == I2C_EVENT_MASTER_MODE_SELECT)
   {
-    __DMB();
-    if (reading_ && subaddress_sent_)
+    // we either don't need to send, or already sent the subaddress
+    if (subaddress_sent_)
     {
-      if (len_ == 1) // EV6_1, set the stop
-      {
-        I2C_AcknowledgeConfig(dev, DISABLE);
-        __DMB();
-        (void)dev->SR2; // read SR2 to clear the ADDR bit
-        I2C_GenerateSTOP(dev, ENABLE);
-        I2C_ITConfig(dev, I2C_IT_BUF, ENABLE);  // enable EVT_7
-      }
-      else // receiving greater than one byte
-      {
-        (void)dev->SR2; 		// read SR2 to clear the ADDR bit
-        __DMB();
-        if (len_ == 2)
-        {
-          I2C_AcknowledgeConfig(dev, DISABLE);
-          I2C_ITConfig(dev, I2C_IT_BUF, DISABLE); // Disable TXE to allow the buffer to fill
-        }
-        else if (len_ == 3) // Receiving three bytes
-        {
-          I2C_ITConfig(dev, I2C_IT_BUF, DISABLE);  // Make sure RXNE disabled so we get a BTF in two bytes time
-        }
-        else  // Receiving greater than three bytes
-        {
-          I2C_ITConfig(dev, I2C_IT_BUF, ENABLE);  //enables EVT_7
-        }
-      }
-    }
-    else // sending subaddress, or transmitting
-    {
-      (void)dev->SR2; // read SR2 to clear the ADDR bit
-      __DMB();
-      I2C_ITConfig(dev, I2C_IT_BUF, ENABLE);  //enables EVT_7
-    }
-  }
+      // Perform a DMA bulk read
+      I2C_Send7bitAddress(dev, addr_, I2C_Direction_Receiver);
+      DMA_SetCurrDataCounter(DMA_stream_, len_);
+      I2C_DMACmd(dev, ENABLE);
+      DMA_ITConfig(DMA_stream_, DMA_IT_TC, ENABLE);
+      DMA_Cmd(DMA_stream_, ENABLE);
+      I2C_ITConfig(dev, I2C_IT_EVT, DISABLE);
 
-  else if (sr1 & I2C_SR1_BTF) // EV7_2, EV7_3, EV8_2 - Byte Transfer Finished
-  {
-    if (reading_ && subaddress_sent_) // EV7_2, EV7_3
-    {
-      if (len_ > 2) // EV7_2
-      {
-        I2C_AcknowledgeConfig(dev, DISABLE); // Turn off ACK
-        data_buffer_[index_++] = I2C_ReceiveData(dev);	// Read second to last byte
-        I2C_GenerateSTOP(dev, ENABLE); // Program the Stop
-        data_buffer_[index_++] = I2C_ReceiveData(dev); // Read last byte
-        I2C_ITConfig(dev, I2C_IT_BUF, ENABLE);	// Enable for final EV7
-      }
-      else // EV7_3
-      {
-        I2C_GenerateSTOP(dev, ENABLE); // Program the Stop
-        data_buffer_[index_++] = I2C_ReceiveData(dev);	// Read data
-        data_buffer_[index_++] = I2C_ReceiveData(dev);	// Read data
-        index_++;
-      }
+      // wait for the I2C to start receiving  (it doesn't work otherwise)
+      while_check (!I2C_CheckEvent(dev, I2C_EVENT_MASTER_RECEIVER_MODE_SELECTED));
     }
-    else // EV8_2, which may be due to a subaddress sent or a write completion
+    // We need to write a subaddress
+    else
     {
-      if (subaddress_sent_ || (!reading_))
-      {
-        I2C_GenerateSTOP(dev, ENABLE);
-        index_++; // Indicate that the job is finished
-      }
-      else // we just wrote the subaddress
-      {
-        I2C_GenerateSTART(dev, ENABLE); // We need a repeated start here
-        subaddress_sent_ = true;
-      }
+      I2C_Send7bitAddress(dev, addr_, I2C_Direction_Transmitter);
     }
-    while (dev->CR1 & I2C_CR1_START); // Wait for the start to clear, to avoid BTF
-  }
-
-  else if (sr1 & I2C_SR1_RXNE)	// Byte received - EV7
-  {
-    data_buffer_[index_++] = I2C_ReceiveData(dev);
-    if (len_ == (index_ + 3))
-      I2C_ITConfig(dev, I2C_IT_BUF, DISABLE); // Disable RxNE
-    if (len_ == index_)	// We have completed a final EV7
-      index_++; // To show job is complete
-  }
-
-  else if (sr1 & I2C_SR1_TXE) // Byte transmitted - EV8/EV8_1
-  {
-    if (index_ != -1) // We've already sent subaddress
-    {
-      I2C_SendData(dev, data_buffer_[index_++]);
-      if (len_ == index_) // We have sent all the data
-        I2C_ITConfig(dev, I2C_IT_BUF, DISABLE); // Disable TXE to allow the buffer to flush
-    }
-    else // we need to send the subaddress
-    {
-      index_++;
-      I2C_SendData(dev, reg_);	// Send the subaddress
-      if (reading_ || !len_) // If receiving or sending 0 bytes, flush now
-        I2C_ITConfig(dev, I2C_IT_BUF, DISABLE);	// Disable TXE to allow the buffer to flush
-    }
-  }
-
-  if (index_ == len_ + 1) // We have completed the current jobs
-  {
-    subaddress_sent_ = false; // Reset this here
-    I2C_ITConfig(dev, I2C_IT_EVT | I2C_IT_ERR, DISABLE); // Disable EVT and ERR interrupts while bus inactive
-    busy_ = false;
   }
 }
 
 extern "C"
-
 {
+
+// C-based IRQ functions (defined in the STD lib somewhere)
+
 
 void DMA1_Stream2_IRQHandler(void)
 {
@@ -474,8 +389,6 @@ void DMA1_Stream0_IRQHandler(void)
   }
 }
 
-
-// C-based IRQ functions (defined in the STD lib somewhere
 void I2C1_ER_IRQHandler(void) {
   I2C1_Ptr->handle_error();
 }
