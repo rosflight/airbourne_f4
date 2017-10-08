@@ -48,10 +48,10 @@ public:
   void init();
   void unstick();
   void hardware_failure();
-  bool read(uint8_t addr, uint8_t reg, uint8_t num_bytes, uint8_t* data, std::function<void(void)> callback);
+  int8_t read(uint8_t addr, uint8_t reg, uint8_t num_bytes, uint8_t* data, std::function<void(void)> callback);
 
-  bool write(uint8_t addr, uint8_t reg, uint8_t data);
-  bool read(uint8_t addr, uint8_t reg, uint8_t *data);
+  int8_t write(uint8_t addr, uint8_t reg, uint8_t data);
+  int8_t read(uint8_t addr, uint8_t reg, uint8_t *data);
 
   inline uint16_t num_errors() { return error_count_; }
 

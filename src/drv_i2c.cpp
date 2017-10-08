@@ -137,8 +137,10 @@ void I2C::unstick()
 }
 
 
-bool I2C::read(uint8_t addr, uint8_t reg, uint8_t num_bytes, uint8_t* data, std::function<void(void)> callback)
+int8_t I2C::read(uint8_t addr, uint8_t reg, uint8_t num_bytes, uint8_t* data, std::function<void(void)> callback)
 {
+  if (busy_)
+    return -1;
   busy_ = true;
   addr_ = addr << 1;
   cb_ = callback;
@@ -157,8 +159,8 @@ bool I2C::read(uint8_t addr, uint8_t reg, uint8_t num_bytes, uint8_t* data, std:
 
   I2C_GenerateSTART(dev_, ENABLE);
 
-  I2C_ITConfig(dev_, I2C_IT_EVT, ENABLE);
-  return true;
+  I2C_ITConfig(dev_, I2C_IT_EVT | I2C_IT_ERR, ENABLE);
+  return 1;
 }
 
 
@@ -171,8 +173,10 @@ void I2C::transfer_complete_cb()
 
 
 // blocking, single register read (for configuring devices)
-bool I2C::read(uint8_t addr, uint8_t reg, uint8_t *data)
+int8_t I2C::read(uint8_t addr, uint8_t reg, uint8_t *data)
 {
+  if (busy_)
+    return -1;
   bool valid_address = false;
   while_check (I2C_GetFlagStatus(dev_, I2C_FLAG_BUSY));
 
@@ -182,7 +186,14 @@ bool I2C::read(uint8_t addr, uint8_t reg, uint8_t *data)
     I2C_GenerateSTART(dev_, ENABLE);
     while_check (!I2C_CheckEvent(dev_, I2C_EVENT_MASTER_MODE_SELECT));
     I2C_Send7bitAddress(dev_, addr << 1, I2C_Direction_Transmitter);
-    while_check (!I2C_CheckEvent(dev_, I2C_EVENT_MASTER_TRANSMITTER_MODE_SELECTED));
+    uint32_t timeout = 500;
+    while (!I2C_CheckEvent(dev_, I2C_EVENT_MASTER_TRANSMITTER_MODE_SELECTED) && --timeout);
+    if (!timeout)
+    {
+      I2C_GenerateSTOP(dev_, ENABLE);
+      I2C_Cmd(dev_, DISABLE);
+      return 0;
+    }
     I2C_Cmd(dev_, ENABLE);
     I2C_SendData(dev_, reg);
     while_check (!I2C_CheckEvent(dev_, I2C_EVENT_MASTER_BYTE_TRANSMITTED));
@@ -201,16 +212,17 @@ bool I2C::read(uint8_t addr, uint8_t reg, uint8_t *data)
     valid_address = true;
     *data = I2C_ReceiveData(dev_);
   }
-  I2C_GenerateSTOP(dev_, ENABLE  );
+  I2C_GenerateSTOP(dev_, ENABLE);
   I2C_Cmd(dev_, DISABLE);
 
   return valid_address;
-
 }
 
 // blocking, single register write (for configuring devices)
-bool I2C::write(uint8_t addr, uint8_t reg, uint8_t data)
+int8_t I2C::write(uint8_t addr, uint8_t reg, uint8_t data)
 {
+  if (busy_)
+    return -1;
   while (I2C_GetFlagStatus(dev_, I2C_FLAG_BUSY));
   I2C_Cmd(dev_, ENABLE);
 
@@ -218,7 +230,14 @@ bool I2C::write(uint8_t addr, uint8_t reg, uint8_t data)
   I2C_GenerateSTART(dev_, ENABLE);
   while_check (!I2C_CheckEvent(dev_, I2C_EVENT_MASTER_MODE_SELECT));
   I2C_Send7bitAddress(dev_, addr << 1, I2C_Direction_Transmitter);
-  while_check (!I2C_CheckEvent(dev_, I2C_EVENT_MASTER_TRANSMITTER_MODE_SELECTED));
+  uint32_t timeout = 500;
+  while (!I2C_CheckEvent(dev_, I2C_EVENT_MASTER_TRANSMITTER_MODE_SELECTED) && --timeout);
+  if (!timeout)
+  {
+    I2C_GenerateSTOP(dev_, ENABLE);
+    I2C_Cmd(dev_, DISABLE);
+    return 0;
+  }
   I2C_Cmd(dev_, ENABLE);
 
   // Send the register
@@ -234,7 +253,7 @@ bool I2C::write(uint8_t addr, uint8_t reg, uint8_t data)
   while_check (!I2C_CheckEvent(dev_, I2C_EVENT_MASTER_BYTE_TRANSMITTED));
   I2C_GenerateSTOP(dev_, ENABLE  );
   I2C_Cmd(dev_, DISABLE);
-  return true;
+  return 1;
 
 }
 
@@ -261,6 +280,8 @@ bool I2C::handle_error()
 bool I2C::handle_event()
 {
   uint32_t last_event = I2C_GetLastEvent(dev_);
+
+  // We just sent the subaddress, send the repeated start
   if (last_event == I2C_EVENT_MASTER_BYTE_TRANSMITTED)
   {
     I2C_AcknowledgeConfig(dev_, ENABLE);
