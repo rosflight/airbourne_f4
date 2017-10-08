@@ -137,7 +137,7 @@ void I2C::unstick()
 }
 
 
-int8_t I2C::read(uint8_t addr, uint8_t reg, uint8_t num_bytes, uint8_t* data, std::function<void(void)> callback, bool blocking=false)
+int8_t I2C::read(uint8_t addr, uint8_t reg, uint8_t num_bytes, uint8_t* data, std::function<void(void)> callback, bool blocking)
 {
   if (busy_)
     return -1;
