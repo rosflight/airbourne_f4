@@ -42,10 +42,12 @@ private:
   //Variables for current job:
   current_status_t current_status_;
   bool subaddress_sent_ = false;
+  bool done_ = false;
 
   volatile uint8_t  addr_;
   volatile uint8_t  reg_;
   volatile uint8_t  len_;
+  volatile uint8_t data_;
 
   DMA_InitTypeDef  DMA_InitStructure_;
   DMA_Stream_TypeDef* DMA_stream_;
@@ -63,6 +65,7 @@ public:
   void unstick();
   void hardware_failure();
   int8_t read(uint8_t addr, uint8_t reg, uint8_t num_bytes, uint8_t* data, std::function<void(void)> callback, bool blocking = false);
+  int8_t write(uint8_t addr, uint8_t reg, uint8_t data, std::function<void(void)> callback);
 
   int8_t write(uint8_t addr, uint8_t reg, uint8_t data);
   int8_t read(uint8_t addr, uint8_t reg, uint8_t *data);

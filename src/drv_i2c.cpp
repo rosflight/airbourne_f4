@@ -148,6 +148,7 @@ int8_t I2C::read(uint8_t addr, uint8_t reg, uint8_t num_bytes, uint8_t* data, st
   reg_ = reg;
   subaddress_sent_ = (reg_ == 0xFF);
   len_ = num_bytes;
+  done_ = false;
 
   DMA_DeInit(DMA_stream_);
   DMA_InitStructure_.DMA_BufferSize = (uint16_t)(len_);
@@ -288,20 +289,47 @@ bool I2C::handle_event()
 {
   uint32_t last_event = I2C_GetLastEvent(dev_);
 
-  // We just sent the subaddress, send the repeated start
+  // We just sent a byte
   if (last_event == I2C_EVENT_MASTER_BYTE_TRANSMITTED)
   {
-    I2C_AcknowledgeConfig(dev_, ENABLE);
-    I2C_DMALastTransferCmd(dev_, ENABLE);
-
-    I2C_GenerateSTART(dev_, ENABLE);
+    // If we are reading, then we just sent a subaddress and need to send
+    // a repeated start, and enable the DMA NACK
+    if (current_status_ == READING)
+    {
+      I2C_AcknowledgeConfig(dev_, ENABLE);
+      I2C_DMALastTransferCmd(dev_, ENABLE);
+      I2C_GenerateSTART(dev_, ENABLE);
+    }
+    // If we are in write mode, and just sent the subaddress but still need
+    // to send our data
+    else if (!done_)
+    {
+      I2C_SendData(dev_, data_);
+    }
+    // We are in write mode and are done, need to clean up
+    else
+    {
+      I2C_GenerateSTOP(dev_, ENABLE);
+      I2C_ITConfig(dev_, I2C_IT_EVT, DISABLE);
+      transfer_complete_cb();
+    }
   }
 
   // We just sent the address in write mode, preparing to send the subaddress
   if (last_event == I2C_EVENT_MASTER_TRANSMITTER_MODE_SELECTED)
   {
+    // We need to send the subaddress
+    if(!subaddress_sent_)
+    {
       I2C_SendData(dev_, reg_);
       subaddress_sent_ = true;
+    }
+    // We need to send our data (no subaddress)
+    else
+    {
+      I2C_SendData(dev_, data_);
+      done_ = true;
+    }
   }
 
   // We are in receiving mode, preparing to receive the big DMA dump
@@ -318,12 +346,12 @@ bool I2C::handle_event()
   if (last_event == I2C_EVENT_MASTER_MODE_SELECT)
   {
     // we either don't need to send, or already sent the subaddress
-    if (subaddress_sent_)
+    if (subaddress_sent_ && current_status_ == READING)
     {
       // Set up a receive
       I2C_Send7bitAddress(dev_, addr_, I2C_Direction_Receiver);
     }
-    // We need to write a subaddress
+    // We need to either send the subaddress or our datas
     else
     {
       // Set up a write
