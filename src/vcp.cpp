@@ -5,8 +5,8 @@
 VCP::VCP()
 {
   // Initialize the GPIOs for the pins
-  rx_pin_.init(VCP_GPIO, VCP_GPIO_RX_PIN, GPIO::PERIPH_IN_OUT);
-  tx_pin_.init(VCP_GPIO, VCP_GPIO_TX_PIN, GPIO::PERIPH_IN_OUT);
+  rx_pin_.init(GPIOA, GPIO_Pin_11, GPIO::PERIPH_IN_OUT);
+  tx_pin_.init(GPIOA, GPIO_Pin_12, GPIO::PERIPH_IN_OUT);
 
   send_disconnect_signal();
 

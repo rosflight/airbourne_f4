@@ -1,5 +1,6 @@
 #include "drv_spi.h"
 
+
 SPI* SPIptr;
 
 SPI::SPI(SPI_TypeDef *SPI) {
@@ -11,19 +12,19 @@ SPI::SPI(SPI_TypeDef *SPI) {
   {
     SPIptr = this;
     // Configure the Select Pin
-    nss_.init(SPI1_GPIO, SPI1_NSS_PIN, GPIO::OUTPUT);
+    nss_.init(GPIOA, GPIO_Pin_4, GPIO::OUTPUT);
 
     disable();
 
     // Set the AF configuration for the other pins
-    GPIO_PinAFConfig(SPI1_GPIO, SPI1_SCK_PIN_SOURCE, GPIO_AF_SPI1);
-    GPIO_PinAFConfig(SPI1_GPIO, SPI1_MISO_PIN_SOURCE, GPIO_AF_SPI1);
-    GPIO_PinAFConfig(SPI1_GPIO, SPI1_MOSI_PIN_SOURCE, GPIO_AF_SPI1);
+    GPIO_PinAFConfig(GPIOA, GPIO_PinSource5, GPIO_AF_SPI1);
+    GPIO_PinAFConfig(GPIOA, GPIO_PinSource6, GPIO_AF_SPI1);
+    GPIO_PinAFConfig(GPIOA, GPIO_PinSource7, GPIO_AF_SPI1);
 
     // Initialize other pins
-    sck_.init(SPI1_GPIO, SPI1_SCK_PIN, GPIO::PERIPH_OUT);
-    miso_.init(SPI1_GPIO, SPI1_MISO_PIN, GPIO::PERIPH_OUT);
-    mosi_.init(SPI1_GPIO, SPI1_MOSI_PIN, GPIO::PERIPH_OUT);
+    sck_.init(GPIOA, GPIO_Pin_5, GPIO::PERIPH_OUT);
+    miso_.init(GPIOA, GPIO_Pin_6, GPIO::PERIPH_OUT);
+    mosi_.init(GPIOA, GPIO_Pin_7, GPIO::PERIPH_OUT);
 
     dev = SPI1;
 
