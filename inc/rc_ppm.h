@@ -20,6 +20,4 @@ public:
   bool lost();
 };
 
-extern RC_PPM* RC_PPM_Ptr;
-
 #endif // RC_PPM_H

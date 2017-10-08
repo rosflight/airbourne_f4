@@ -36,18 +36,17 @@ VCP* vcpPtr = NULL;
 
 static void _putc(void *p, char c)
 {
-    (void)p; // avoid compiler warning about unused variable
-    vcpPtr->put_byte(c);
+  (void)p; // avoid compiler warning about unused variable
+  vcpPtr->put_byte(c);
 }
 
 int main() {
 
   systemInit();
 
-//  VCP vcp;
-//  vcpPtr = &vcp;
-
-//  init_printf(NULL, _putc);
+  VCP vcp;
+  vcpPtr = &vcp;
+  init_printf(NULL, _putc);
 
   LED warn(LED1_GPIO, LED1_PIN);
   LED info(LED2_GPIO, LED2_PIN);
@@ -62,20 +61,20 @@ int main() {
     {
       info.off();
       warn.on();
-//      printf("rc lost\n");
+      printf("rc lost\n");
     }
     else
     {
       warn.off();
       info.on();
-//      printf("%d, %d, %d, %d, %d, %d\n",
-//             (uint32_t)(1000*rc.read(0)),
-//             (uint32_t)(1000*rc.read(1)),
-//             (uint32_t)(1000*rc.read(2)),
-//             (uint32_t)(1000*rc.read(3)),
-//             (uint32_t)(1000*rc.read(4)),
-//             (uint32_t)(1000*rc.read(5)));
+      printf("%d, %d, %d, %d, %d, %d\n",
+             (uint32_t)(1000*rc.read(0)),
+             (uint32_t)(1000*rc.read(1)),
+             (uint32_t)(1000*rc.read(2)),
+             (uint32_t)(1000*rc.read(3)),
+             (uint32_t)(1000*rc.read(4)),
+             (uint32_t)(1000*rc.read(5)));
     }
+    delay(20);
   }
-  delay(20);
 }
