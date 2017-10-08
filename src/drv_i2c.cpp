@@ -13,7 +13,7 @@
   }
 
 //global i2c ptrs used by the event interrupts
-I2C* I2CDev_1Ptr;
+I2C* I2C1_Ptr;
 I2C* I2C2_Ptr;
 
 I2C::I2C(I2C_TypeDef *I2C) {
@@ -29,7 +29,7 @@ I2C::I2C(I2C_TypeDef *I2C) {
     GPIO_PinAFConfig(I2C1_GPIO, I2C1_SDA_PIN_SOURCE, GPIO_AF_I2C1);
     sda_.init(I2C1_GPIO, I2C1_SDA_PIN, GPIO::PERIPH_IN_OUT);
     scl_.init(I2C1_GPIO, I2C1_SCL_PIN, GPIO::PERIPH_IN_OUT);
-    I2CDev_1Ptr = this;
+    I2C1_Ptr = this;
     DMA_stream_ = DMA1_Stream0;
     DMA_channel_ = DMA_Channel_1;
     DMA_Stream_TCFLAG_ = DMA_FLAG_TCIF0;
@@ -457,14 +457,31 @@ void DMA1_Stream2_IRQHandler(void)
   }
 }
 
+void DMA1_Stream0_IRQHandler(void)
+{
+  if (DMA_GetFlagStatus(DMA1_Stream0, DMA_FLAG_TCIF0))
+  {
+    /* Clear transmission complete flag */
+    DMA_ClearFlag(DMA1_Stream0, DMA_FLAG_TCIF0);
+
+    I2C_DMACmd(I2C1, DISABLE);
+    /* Send I2C1 STOP Condition */
+    I2C_GenerateSTOP(I2C1, ENABLE);
+    /* Disable DMA channel*/
+    DMA_Cmd(DMA1_Stream0, DISABLE);
+
+    I2C1_Ptr->transfer_complete_cb();
+  }
+}
+
 
 // C-based IRQ functions (defined in the STD lib somewhere
 void I2C1_ER_IRQHandler(void) {
-  I2CDev_1Ptr->handle_error();
+  I2C1_Ptr->handle_error();
 }
 
 void I2C1_EV_IRQHandler(void) {
-  I2CDev_1Ptr->handle_event();
+  I2C1_Ptr->handle_event();
 }
 
 void I2C2_ER_IRQHandler(void) {
