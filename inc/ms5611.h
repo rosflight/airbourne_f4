@@ -24,13 +24,14 @@ private:
     PROM_RD  = 0xA0 // Prom read command
   };
 
-  enum : uint8_t
+  typedef enum
   {
     START_TEMP = 0,
     READ_TEMP = 1,
     START_PRESS = 2,
     READ_PRESS = 3,
-  };
+  } state_t;
+  state_t state_;
 
   static const uint8_t ADDR = 0x77;
 
@@ -52,18 +53,16 @@ private:
   float temperature_;
   uint16_t prom[8];
   uint32_t next_update_ms_;
+  bool new_data_;
 
 public:
   MS5611(I2C* _i2c);
   bool init();
   void update();
-  void read();
+  void read(float *press, float *temp);
 
   void temp_read_cb();
   void pres_read_cb();
-
-
-
 };
 
 #endif // MS5611_H

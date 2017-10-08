@@ -9,8 +9,8 @@ VCP* vcpPtr = NULL;
 
 static void _putc(void *p, char c)
 {
-    (void)p; // avoid compiler warning about unused variable
-    vcpPtr->put_byte(c);
+  (void)p; // avoid compiler warning about unused variable
+  vcpPtr->put_byte(c);
 }
 
 int main() {
@@ -30,30 +30,26 @@ int main() {
   I2C i2c1(I2C2);
   MS5611 baro(&i2c1);
 
-  if (!baro.init()) {
-    warn.on();
-    delay(100);
-    warn.off();
+  if (!baro.init())
+  {
+    while(1)
+    {
+      warn.toggle();
+      delay(100);
+    }
   }
 
-  float mag_data[3] = {0., 0., 0.};
-  while(1) {
+  float pressure, temperature;
+  while(1)
+  {
     info.toggle();
     baro.update();
-//    if (baro.read(mag_data))
-    {
-      warn.off();
-      printf("%d, %d, %d\n",
-             (int32_t)(mag_data[0]),
-             (int32_t)(mag_data[1]),
-             (int32_t)(mag_data[2]));
+    baro.read(&pressure, &temperature);
+    printf("%d Pa, %d.%d K\n",
+           (int32_t)(pressure),
+           (int32_t)(temperature),
+           (int32_t)(temperature*100)%100);
 
-    }
-//    else
-    {
-      warn.on();
-      printf("error\n");
-    }
     delay(10);
   }
 }
