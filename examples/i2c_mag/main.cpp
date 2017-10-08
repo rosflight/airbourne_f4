@@ -39,6 +39,7 @@ int main() {
   float mag_data[3] = {0., 0., 0.};
   while(1) {
     info.toggle();
+    mag.update();
     if (mag.read(mag_data))
     {
       warn.off();

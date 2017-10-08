@@ -62,8 +62,13 @@ public:
   HMC5883L(I2C* i2c_drv);
 
   bool init();
+  void update();
   bool read(float (&mag_data)[3]);
+  void convert(void);
 
 private:
-  I2C* i2c;
+  I2C* i2c_;
+  uint8_t i2c_buf_[6];
+  float data_[3];
+  uint32_t last_update_ms_;
 };

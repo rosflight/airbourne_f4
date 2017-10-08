@@ -130,6 +130,7 @@ CXXSOURCES = $(SRC_DIR)/gpio.cpp \
              $(SRC_DIR)/drv_led.cpp \
              $(SRC_DIR)/hmc5883l.cpp \
              $(PRINTF_DIR)/printf.cpp \
+             $(SRC_DIR)/advanced.cpp \
              main.cpp
 
 INCLUDE_DIRS =  $(SRC_DIR) \

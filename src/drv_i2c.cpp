@@ -14,7 +14,7 @@
 
 //global i2c ptrs used by the event interrupts
 I2C* I2CDev_1Ptr;
-I2C* I2CDev_2Ptr;
+I2C* I2C2_Ptr;
 
 I2C::I2C(I2C_TypeDef *I2C) {
   dev = I2C;
@@ -44,7 +44,7 @@ I2C::I2C(I2C_TypeDef *I2C) {
     GPIO_PinAFConfig(I2C2_GPIO, I2C2_SDA_PIN_SOURCE, GPIO_AF_I2C2);
     sda_.init(I2C2_GPIO, I2C2_SDA_PIN, GPIO::PERIPH_IN_OUT);
     scl_.init(I2C2_GPIO, I2C2_SCL_PIN, GPIO::PERIPH_IN_OUT);
-    I2CDev_2Ptr = this;
+    I2C2_Ptr = this;
     DMA_stream_ = DMA1_Stream2;
     DMA_channel_ = DMA_Channel_7;
     DMA_Stream_TCFLAG_ = DMA_FLAG_TCIF2;
@@ -133,10 +133,13 @@ void I2C::unstick()
 }
 
 
-bool I2C::read(uint8_t addr, uint8_t reg, uint8_t num_bytes, uint8_t* data)
+bool I2C::read(uint8_t addr, uint8_t reg, uint8_t num_bytes, uint8_t* data, std::function<void(void)> callback)
 {
   busy_ = true;
   addr_ = addr << 1;
+  cb_ = callback;
+
+  cb_();
 
   DMA_DeInit(DMA_stream_);
   DMA_InitStructure_.DMA_BufferSize = (uint16_t)(num_bytes);
@@ -203,6 +206,8 @@ bool I2C::read(uint8_t addr, uint8_t reg, uint8_t num_bytes, uint8_t* data)
 void I2C::transfer_complete_cb()
 {
   busy_ = false;
+  if (cb_ != NULL);
+    cb_();
 }
 
 
@@ -462,7 +467,7 @@ void DMA1_Stream2_IRQHandler(void)
     /* Disable DMA channel*/
     DMA_Cmd(DMA1_Stream2, DISABLE);
 
-    I2CDev_1Ptr->transfer_complete_cb();
+    I2C2_Ptr->transfer_complete_cb();
   }
 }
 
@@ -477,11 +482,11 @@ void I2C1_EV_IRQHandler(void) {
 }
 
 void I2C2_ER_IRQHandler(void) {
-  I2CDev_2Ptr->handle_error();
+  I2C2_Ptr->handle_error();
 }
 
 void I2C2_EV_IRQHandler(void) {
-  I2CDev_2Ptr->handle_event();
+  I2C2_Ptr->handle_event();
 }
 
 }

@@ -8,6 +8,8 @@
  */
 #pragma once
 
+#include <functional>
+
 #include "revo_f4.h"
 
 #include "gpio.h"
@@ -40,13 +42,16 @@ private:
   uint32_t DMA_channel_;
   uint32_t DMA_Stream_TCFLAG_;
 
+
+
 public:
+  std::function<void(void)> cb_;
   I2C(I2C_TypeDef *I2C);
 
   void init();
   void unstick();
   void hardware_failure();
-  bool read(uint8_t addr, uint8_t reg, uint8_t num_bytes, uint8_t* data);
+  bool read(uint8_t addr, uint8_t reg, uint8_t num_bytes, uint8_t* data, std::function<void(void)> callback);
 
   bool write(uint8_t addr, uint8_t reg, uint8_t data);
   bool read(uint8_t addr, uint8_t reg, uint8_t *data);
@@ -61,4 +66,4 @@ public:
 
 //global i2c ptrs used by the event interrupts
 extern I2C* I2CDev_1Ptr;
-extern I2C* I2CDev_2Ptr;
+extern I2C* I2C2_Ptr;
