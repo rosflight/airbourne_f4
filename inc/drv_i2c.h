@@ -48,7 +48,7 @@ public:
   void init();
   void unstick();
   void hardware_failure();
-  int8_t read(uint8_t addr, uint8_t reg, uint8_t num_bytes, uint8_t* data, std::function<void(void)> callback);
+  int8_t read(uint8_t addr, uint8_t reg, uint8_t num_bytes, uint8_t* data, std::function<void(void)> callback, bool blocking = false);
 
   int8_t write(uint8_t addr, uint8_t reg, uint8_t data);
   int8_t read(uint8_t addr, uint8_t reg, uint8_t *data);

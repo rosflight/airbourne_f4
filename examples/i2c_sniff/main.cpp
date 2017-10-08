@@ -30,8 +30,8 @@ int main() {
   {
     for (int i = 0; i < 128; i++)
     {
-      uint8_t data;
-      if (i2c1.read(i, 0xFF, &data) > 1)
+      uint8_t data = 0;
+      if (i2c1.write(i, 0xFF, data) > 0)
       {
         printf("found device at 0x%X\n", i);
       }

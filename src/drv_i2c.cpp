@@ -137,7 +137,7 @@ void I2C::unstick()
 }
 
 
-int8_t I2C::read(uint8_t addr, uint8_t reg, uint8_t num_bytes, uint8_t* data, std::function<void(void)> callback)
+int8_t I2C::read(uint8_t addr, uint8_t reg, uint8_t num_bytes, uint8_t* data, std::function<void(void)> callback, bool blocking=false)
 {
   if (busy_)
     return -1;
@@ -160,6 +160,11 @@ int8_t I2C::read(uint8_t addr, uint8_t reg, uint8_t num_bytes, uint8_t* data, st
   I2C_GenerateSTART(dev_, ENABLE);
 
   I2C_ITConfig(dev_, I2C_IT_EVT | I2C_IT_ERR, ENABLE);
+
+  if (blocking)
+  {
+    while(busy_);
+  }
   return 1;
 }
 
@@ -167,7 +172,7 @@ int8_t I2C::read(uint8_t addr, uint8_t reg, uint8_t num_bytes, uint8_t* data, st
 void I2C::transfer_complete_cb()
 {
   busy_ = false;
-  if (cb_ != NULL);
+  if (cb_)
     cb_();
 }
 

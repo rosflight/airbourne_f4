@@ -1,6 +1,6 @@
 #include "system.h"
 #include "drv_i2c.h"
-#include "hmc5883l.h"
+#include "ms5611.h"
 #include "drv_led.h"
 #include "vcp.h"
 #include "printf.h"
@@ -28,9 +28,9 @@ int main() {
 
   info.on();
   I2C i2c1(I2C2);
-  HMC5883L mag(&i2c1);
+  MS5611 baro(&i2c1);
 
-  if (!mag.init()) {
+  if (!baro.init()) {
     warn.on();
     delay(100);
     warn.off();
@@ -39,8 +39,8 @@ int main() {
   float mag_data[3] = {0., 0., 0.};
   while(1) {
     info.toggle();
-    mag.update();
-    if (mag.read(mag_data))
+    baro.update();
+//    if (baro.read(mag_data))
     {
       warn.off();
       printf("%d, %d, %d\n",
@@ -49,7 +49,7 @@ int main() {
              (int32_t)(mag_data[2]));
 
     }
-    else
+//    else
     {
       warn.on();
       printf("error\n");
