@@ -157,43 +157,7 @@ bool I2C::read(uint8_t addr, uint8_t reg, uint8_t num_bytes, uint8_t* data, std:
 
   I2C_GenerateSTART(dev, ENABLE);
 
-//  while_check (!I2C_CheckEvent(dev, I2C_EVENT_MASTER_MODE_SELECT));
-
-//  I2C_Send7bitAddress(dev, addr_, I2C_Direction_Transmitter);
-
   I2C_ITConfig(dev, I2C_IT_EVT, ENABLE);
-
-//  while_check (!I2C_CheckEvent(dev, I2C_EVENT_MASTER_TRANSMITTER_MODE_SELECTED));
-
-//  I2C_Cmd(dev, ENABLE);
-
-//  I2C_SendData(dev, reg);
-
-//  while_check (!I2C_CheckEvent(dev, I2C_EVENT_MASTER_BYTE_TRANSMITTED));
-
-//  I2C_ITConfig(dev, I2C_IT_EVT, ENABLE);
-
-//  I2C_AcknowledgeConfig(dev, ENABLE);
-//  I2C_DMALastTransferCmd(dev, ENABLE);
-
-//  I2C_GenerateSTART(dev, ENABLE);
-
-//  while_check (!I2C_CheckEvent(dev, I2C_EVENT_MASTER_MODE_SELECT));
-
-
-
-
-
-
-//  I2C_Send7bitAddress(dev, addr_, I2C_Direction_Receiver);
-
-//  DMA_SetCurrDataCounter(DMA_stream_, num_bytes);
-//  I2C_DMACmd(dev, ENABLE);
-//  DMA_ITConfig(DMA_stream_, DMA_IT_TC, ENABLE);
-
-//  DMA_Cmd(DMA_stream_, ENABLE);
-
-
 
   return true;
 }
@@ -274,34 +238,14 @@ void I2C::handle_hardware_failure() {
 
 
 // This is the I2C_IT_ERR handler
-void I2C::handle_error(){
-  //grab this device's status registers
-  volatile uint32_t sr1 = dev->SR1;
-  volatile uint32_t sr2 = dev->SR2;
-
-  // If AF, BERR or ARLO, abandon the current job and commence new if there are jobs
-  if (sr1 & (I2C_SR1_AF | I2C_SR1_ARLO | I2C_SR1_BERR))
-  {
-    I2C_ITConfig(dev, I2C_IT_BUF, DISABLE);
-    if (!(sr1 & I2C_SR1_ARLO) && !(dev->CR1 & I2C_CR1_STOP)) // If we dont have an ARLO error, ensure sending of a stop
-    {
-      if (dev->CR1 & I2C_CR1_START) // We are currently trying to send a start, this is very bad as start,stop will hang the peripheral
-      {
-        while (dev->CR1 & I2C_CR1_START); // Wait for any start to finish sending
-        I2C_GenerateSTOP(dev, ENABLE); // Send stop to finalise bus transaction
-        while (dev->CR1 & I2C_CR1_STOP); // Wait for stop to finish sending
-        unstick();												// Reset and configure the hardware
-      }
-      else
-      {
-        I2C_GenerateSTOP(dev, ENABLE); // Stop to free up the bus
-        I2C_ITConfig(dev, I2C_IT_EVT | I2C_IT_ERR, DISABLE); // Disable EVT and ERR interrupts while bus inactive. They'll be reenabled
-      }
-    }
-  }
+bool I2C::handle_error()
+{
+  I2C_Cmd(dev, DISABLE);
+  while_check (I2C_GetFlagStatus(dev, I2C_FLAG_BUSY));
+  I2C_ITConfig(dev, I2C_IT_EVT | I2C_IT_ERR, DISABLE); // Disable EVT and ERR interrupts while bus inactive. They'll be reenabled
 
   //reset errors
-  dev->SR1 &= ~(I2C_SR1_OVR | I2C_SR1_AF | I2C_SR1_ARLO | I2C_SR1_BERR);
+  I2C_ClearFlag(dev, I2C_SR1_OVR | I2C_SR1_AF | I2C_SR1_ARLO | I2C_SR1_BERR);
   busy_ = false;
 }
 

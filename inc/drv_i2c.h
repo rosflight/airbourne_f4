@@ -59,7 +59,7 @@ public:
   inline uint16_t num_errors() { return error_count_; }
 
   //interrupt handlers
-  void handle_error();
+  bool handle_error();
   bool handle_event();
   void transfer_complete_cb();
 };
