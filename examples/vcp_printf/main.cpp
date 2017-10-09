@@ -29,12 +29,12 @@
 #include "system.h"
 #include "vcp.h"
 
-VCP* vcpPtr = NULL;
+VCP* uartPtr = NULL;
 
 void rx_callback(uint8_t byte)
 {
-  vcpPtr->put_byte(byte);
-  vcpPtr->flush();
+  uartPtr->put_byte(byte);
+  uartPtr->flush();
 }
 
 int main()
@@ -42,7 +42,7 @@ int main()
   systemInit();
 
   VCP vcp;
-  vcpPtr = &vcp;
+  uartPtr = &vcp;
   vcp.register_rx_callback(&rx_callback);
 
   while(1)

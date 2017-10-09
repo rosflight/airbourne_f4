@@ -53,11 +53,11 @@ SPI::SPI(SPI_TypeDef *SPI) {
     DMA_InitStructure_.DMA_MemoryDataSize = DMA_MemoryDataSize_Byte;
     DMA_InitStructure_.DMA_MemoryInc = DMA_MemoryInc_Enable;
     DMA_InitStructure_.DMA_Mode = DMA_Mode_Normal;
-
-    DMA_InitStructure_.DMA_PeripheralBaseAddr = (uint32_t)(&(SPI1->DR));
     DMA_InitStructure_.DMA_PeripheralBurst = DMA_PeripheralBurst_Single;
     DMA_InitStructure_.DMA_PeripheralDataSize = DMA_PeripheralDataSize_Byte;
     DMA_InitStructure_.DMA_MemoryDataSize = DMA_MemoryDataSize_Byte;
+
+    DMA_InitStructure_.DMA_PeripheralBaseAddr = (uint32_t)(&(SPI1->DR));
     DMA_InitStructure_.DMA_PeripheralInc = DMA_PeripheralInc_Disable;
     DMA_InitStructure_.DMA_Priority = DMA_Priority_High;
 

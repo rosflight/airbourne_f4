@@ -6,12 +6,12 @@
 #include "vcp.h"
 #include "printf.h"
 
-VCP* vcpPtr = NULL;
+VCP* uartPtr = NULL;
 
 static void _putc(void *p, char c)
 {
     (void)p; // avoid compiler warning about unused variable
-    vcpPtr->put_byte(c);
+    uartPtr->put_byte(c);
 }
 
 int main() {
@@ -19,7 +19,7 @@ int main() {
   systemInit();
 
   VCP vcp;
-  vcpPtr = &vcp;
+  uartPtr = &vcp;
 
   init_printf(NULL, _putc);
 
