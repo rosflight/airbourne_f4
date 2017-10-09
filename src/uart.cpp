@@ -16,6 +16,8 @@ UART::UART(USART_TypeDef *_uart)
     UARTIRQ_ = USART1_IRQn;
     RxDMAIRQ_ = DMA2_Stream2_IRQn;
     TxDMAIRQ_ = DMA2_Stream7_IRQn;
+    Rx_DMA_Stream_ = DMA2_Stream2;
+    Tx_DMA_Stream_ = DMA2_Stream7;
     DMA_Channel_ = DMA_Channel_4;
     UART1Ptr = this;
   }
@@ -87,19 +89,18 @@ void UART::init_DMA()
   DMA_ITConfig(Tx_DMA_Stream_, DMA_IT_TC, ENABLE);
   DMA_ITConfig(Rx_DMA_Stream_, DMA_IT_TC, ENABLE);
 
-  // Turn on the DMA
-  DMA_Cmd(Rx_DMA_Stream_, ENABLE);
-  DMA_Cmd(Tx_DMA_Stream_, ENABLE);
-
   // set the buffer pointers to where the DMA is starting (starts at 256 and counts down)
   rx_buffer_tail_ = DMA_GetCurrDataCounter(Rx_DMA_Stream_);
   rx_buffer_head_ = DMA_GetCurrDataCounter(Rx_DMA_Stream_);
 
   // Initialize the Circular Buffers
   rx_buffer_head_ = RX_BUFFER_SIZE; // DMA counts down on receive
-  rx_buffer_tail_ = RX_BUFFER_SIZE;
+  rx_buffer_tail_ = TX_BUFFER_SIZE;
   tx_buffer_head_ = 0;
   tx_buffer_tail_ = 0;
+
+  memset(rx_buffer_, 0, RX_BUFFER_SIZE);
+  memset(tx_buffer_, 0, TX_BUFFER_SIZE);
 }
 
 
@@ -130,7 +131,7 @@ void UART::write(uint8_t* ch, uint8_t len)
     tx_buffer_head_ = (tx_buffer_head_ + 1) % TX_BUFFER_SIZE;
   }
 
-  if (DMA_GetCmdStatus(Tx_DMA_Stream_) == ENABLE)
+  if (DMA_GetCmdStatus(Tx_DMA_Stream_) == DISABLE)
   {
     startDMA();
   }
@@ -244,6 +245,37 @@ bool UART::flush()
     return false;
 }
 
+void UART::DMA_Rx_IRQ_callback()
+{
+  // DMA took care of putting the data on the buffer
+  // Just call the callback until we have not more data
+  // Update the head position from the DMA
+  rx_buffer_head_ =  DMA_GetCurrDataCounter(Rx_DMA_Stream_);
+  if(receive_CB_ != nullptr)
+  {
+    while(rx_buffer_head_ != rx_buffer_tail_)
+    {
+      // read a new byte and decrement the tail
+      uint8_t byte = rx_buffer_[RX_BUFFER_SIZE - rx_buffer_tail_];
+      receive_CB_(byte);
+      if(rx_buffer_tail_-- == 0)
+      {
+        // wrap to the top if at the bottom
+        rx_buffer_tail_ = RX_BUFFER_SIZE;
+      }
+    }
+  }
+}
+
+void UART::DMA_Tx_IRQ_callback()
+{
+  // If there is more data to be sent
+  if(tx_buffer_head_ != tx_buffer_tail_)
+  {
+    startDMA();
+  }
+}
+
 void UART::register_rx_callback(std::function<void(uint8_t)> cb)
 {
   receive_CB_ = cb;
@@ -252,4 +284,29 @@ void UART::register_rx_callback(std::function<void(uint8_t)> cb)
 void UART::unregister_rx_callback()
 {
   receive_CB_ = nullptr;
+}
+
+extern "C"
+{
+
+void DMA2_Stream2_IRQHandler(void)
+{
+  if (DMA_GetITStatus(DMA2_Stream2, DMA_IT_TCIF2))
+  {
+    DMA_ClearITPendingBit(DMA2_Stream2, DMA_IT_TCIF2);
+    DMA_Cmd(DMA2_Stream2, DISABLE);
+    UART1Ptr->DMA_Rx_IRQ_callback();
+  }
+}
+
+void DMA2_Stream7_IRQHandler(void)
+{
+  if (DMA_GetITStatus(DMA2_Stream7, DMA_IT_TCIF7))
+  {
+    DMA_ClearITPendingBit(DMA2_Stream7, DMA_IT_TCIF7);
+    DMA_Cmd(DMA2_Stream7, DISABLE);
+    UART1Ptr->DMA_Tx_IRQ_callback();
+  }
+}
+
 }

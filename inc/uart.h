@@ -28,6 +28,9 @@ public:
   void end_write();
   void register_rx_callback(std::function<void(uint8_t)> cb);
   void unregister_rx_callback();
+  void DMA_Tx_IRQ_callback();
+  void DMA_Rx_IRQ_callback();
+  void USART_IRQ_callback();
 
 private:
   void init_UART(uint32_t baudrate_);
@@ -37,7 +40,7 @@ private:
 
   uint32_t baudrate_;
   uint8_t rx_buffer_[RX_BUFFER_SIZE];
-  uint8_t tx_buffer_[RX_BUFFER_SIZE];
+  uint8_t tx_buffer_[TX_BUFFER_SIZE];
   uint16_t rx_buffer_head_;
   uint16_t rx_buffer_tail_;
   uint16_t tx_buffer_head_;
@@ -55,15 +58,10 @@ private:
   IRQn_Type TxDMAIRQ_;
   IRQn_Type RxDMAIRQ_;
   IRQn_Type UARTIRQ_;
-  uint32_t DMA_TX_IT_BIT_;
-  uint32_t DMA_RX_IT_BIT_;
-
   // from serial.h
   GPIO rx_pin_;
   GPIO tx_pin_;
   std::function<void(uint8_t)> receive_CB_;
-
-
 };
 
 #endif // UART_H

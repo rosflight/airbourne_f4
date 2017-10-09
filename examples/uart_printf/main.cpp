@@ -45,10 +45,13 @@ int main()
   uartPtr = &uart;
   uart.register_rx_callback(rx_callback);
 
+  uint8_t size = 30;
   while(1)
   {
-    //uint8_t hello_string[] = "waddup\n";
-    //vcp.write(hello_string, 7);
+    uint8_t hello_string[size];
+    for (uint8_t i = 0; i < size; i++)
+      hello_string[i] = i;
+    uart.write(hello_string, size);
     delay(200);
   }
 }
