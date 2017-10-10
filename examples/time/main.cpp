@@ -25,15 +25,22 @@ int main() {
 
   LED warn(LED1_GPIO, LED1_PIN);
   LED info(LED2_GPIO, LED2_PIN);
+
+  GPIO test;
+  test.init(GPIOB, GPIO_Pin_0, GPIO::OUTPUT);
+
   info.on();
 
   int i = 0;
-  int delays[6] = {1000000, 100, 5000, 500000, 70000, 1000};
+  int delays[4] = {2000, 2000, 2000, 10000};
+  uint64_t next_pulse = 0;
   while(1)
   {
-    warn.toggle();
-    info.toggle();
-    printf("time = %d ms, %ul us\n", millis(), micros());
-    delayMicroseconds(delays[i++ % 6]);
+    // To check the timing, just hook up a saelae or a oscilloscope to PWM 1 out.
+    if (micros() > next_pulse)
+    {
+      next_pulse += delays[i++ % 4];
+      test.toggle();
+    }
   }
 }

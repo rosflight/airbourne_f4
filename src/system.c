@@ -31,7 +31,7 @@ void SysTick_Handler(void)
 // Return system uptime in microseconds (rollover in 1.5 days)
 uint64_t micros(void)
 {
-    return ((uint64_t)sysTickUptime * 3125ul)/100ul;  // The convsersion is 31.25, so doing fixed-point math to be exact
+    return (uint64_t)(sysTickUptime * 31.25);  // The convsersion is 62.5, so doing fixed-point math to be exact
 }
 
 // Return system uptime in milliseconds (rollover in 1.5 days)
@@ -42,6 +42,7 @@ uint32_t millis(void)
 
 void systemInit(void)
 {
+    SystemInit();
     /* Accounts for OP Bootloader, set the Vector Table base address as specified in .ld file */
     extern void *isr_vector_table_base;
     NVIC_SetVectorTable((uint32_t)&isr_vector_table_base, 0x0);
