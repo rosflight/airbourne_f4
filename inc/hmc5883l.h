@@ -16,7 +16,7 @@
 #define HMC58X3_CRB 			0x01
 #define HMC58X3_MODE 			0x02
 #define HMC58X3_DATA 			0x03
-#define HMC58X3_STATUS 			0x09
+#define HMC58X3_STATUS 	  0x09
 #define HMC58X3_ID1 			0x0A
 #define HMC58X3_ID2 			0x0B
 #define HMC58X3_ID3 			0x0C
@@ -62,8 +62,13 @@ public:
   HMC5883L(I2C* i2c_drv);
 
   bool init();
+  void update();
   bool read(float (&mag_data)[3]);
+  void convert(void);
 
 private:
-  I2C* i2c;
+  I2C* i2c_;
+  uint8_t i2c_buf_[6];
+  float data_[3];
+  uint32_t last_update_ms_;
 };

@@ -1,5 +1,6 @@
 #include "drv_spi.h"
 
+
 SPI* SPIptr;
 
 SPI::SPI(SPI_TypeDef *SPI) {
@@ -11,19 +12,19 @@ SPI::SPI(SPI_TypeDef *SPI) {
   {
     SPIptr = this;
     // Configure the Select Pin
-    nss_.init(SPI1_GPIO, SPI1_NSS_PIN, GPIO::OUTPUT);
+    nss_.init(GPIOA, GPIO_Pin_4, GPIO::OUTPUT);
 
     disable();
 
     // Set the AF configuration for the other pins
-    GPIO_PinAFConfig(SPI1_GPIO, SPI1_SCK_PIN_SOURCE, GPIO_AF_SPI1);
-    GPIO_PinAFConfig(SPI1_GPIO, SPI1_MISO_PIN_SOURCE, GPIO_AF_SPI1);
-    GPIO_PinAFConfig(SPI1_GPIO, SPI1_MOSI_PIN_SOURCE, GPIO_AF_SPI1);
+    GPIO_PinAFConfig(GPIOA, GPIO_PinSource5, GPIO_AF_SPI1);
+    GPIO_PinAFConfig(GPIOA, GPIO_PinSource6, GPIO_AF_SPI1);
+    GPIO_PinAFConfig(GPIOA, GPIO_PinSource7, GPIO_AF_SPI1);
 
     // Initialize other pins
-    sck_.init(SPI1_GPIO, SPI1_SCK_PIN, GPIO::PERIPH_OUT);
-    miso_.init(SPI1_GPIO, SPI1_MISO_PIN, GPIO::PERIPH_OUT);
-    mosi_.init(SPI1_GPIO, SPI1_MOSI_PIN, GPIO::PERIPH_OUT);
+    sck_.init(GPIOA, GPIO_Pin_5, GPIO::PERIPH_OUT);
+    miso_.init(GPIOA, GPIO_Pin_6, GPIO::PERIPH_OUT);
+    mosi_.init(GPIOA, GPIO_Pin_7, GPIO::PERIPH_OUT);
 
     dev = SPI1;
 
@@ -52,11 +53,11 @@ SPI::SPI(SPI_TypeDef *SPI) {
     DMA_InitStructure_.DMA_MemoryDataSize = DMA_MemoryDataSize_Byte;
     DMA_InitStructure_.DMA_MemoryInc = DMA_MemoryInc_Enable;
     DMA_InitStructure_.DMA_Mode = DMA_Mode_Normal;
-
-    DMA_InitStructure_.DMA_PeripheralBaseAddr = (uint32_t)(&(SPI1->DR));
     DMA_InitStructure_.DMA_PeripheralBurst = DMA_PeripheralBurst_Single;
     DMA_InitStructure_.DMA_PeripheralDataSize = DMA_PeripheralDataSize_Byte;
     DMA_InitStructure_.DMA_MemoryDataSize = DMA_MemoryDataSize_Byte;
+
+    DMA_InitStructure_.DMA_PeripheralBaseAddr = (uint32_t)(&(SPI1->DR));
     DMA_InitStructure_.DMA_PeripheralInc = DMA_PeripheralInc_Disable;
     DMA_InitStructure_.DMA_Priority = DMA_Priority_High;
 
@@ -158,7 +159,6 @@ uint8_t SPI::transfer_byte(uint8_t data)
 
 bool SPI::transfer(uint8_t* out_data, uint8_t num_bytes, uint8_t* in_data)
 {
-  uint16_t spiTimeout;
   busy_ = true;
 
   // Configure the DMA

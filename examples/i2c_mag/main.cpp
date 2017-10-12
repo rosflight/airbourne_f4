@@ -5,12 +5,12 @@
 #include "vcp.h"
 #include "printf.h"
 
-VCP* vcpPtr = NULL;
+VCP* uartPtr = NULL;
 
 static void _putc(void *p, char c)
 {
     (void)p; // avoid compiler warning about unused variable
-    vcpPtr->put_byte(c);
+    uartPtr->put_byte(c);
 }
 
 int main() {
@@ -18,14 +18,16 @@ int main() {
   systemInit();
 
   VCP vcp;
-  vcpPtr = &vcp;
+  uartPtr = &vcp;
   init_printf(NULL, _putc);
 
   LED warn(LED1_GPIO, LED1_PIN);
   LED info(LED2_GPIO, LED2_PIN);
 
+  delay(500);
+
   info.on();
-  I2C i2c1(I2C1);
+  I2C i2c1(I2C2);
   HMC5883L mag(&i2c1);
 
   if (!mag.init()) {
@@ -34,9 +36,10 @@ int main() {
     warn.off();
   }
 
-  float mag_data[3];
+  float mag_data[3] = {0., 0., 0.};
   while(1) {
     info.toggle();
+    mag.update();
     if (mag.read(mag_data))
     {
       warn.off();
@@ -51,6 +54,6 @@ int main() {
       warn.on();
       printf("error\n");
     }
-    delay(100);
+    delay(10);
   }
 }

@@ -26,7 +26,7 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-TARGET = mag
+TARGET = baro
 
 BOARD ?= REVO
 
@@ -128,7 +128,7 @@ CXXSOURCES = $(SRC_DIR)/gpio.cpp \
              $(SRC_DIR)/drv_i2c.cpp \
              $(SRC_DIR)/vcp.cpp \
              $(SRC_DIR)/drv_led.cpp \
-             $(SRC_DIR)/hmc5883l.cpp \
+             $(SRC_DIR)/ms5611.cpp \
              $(PRINTF_DIR)/printf.cpp \
              $(SRC_DIR)/advanced.cpp \
              main.cpp

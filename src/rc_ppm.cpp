@@ -12,11 +12,22 @@ void RC_PPM::init()
   last_capture_ = 0;
   last_pulse_ms_ = 0;
 
+  // Connect the global pointer
+  RC_PPM_Ptr = this;
+
   // Set up the Pin
   pin_.init(GPIOB, GPIO_Pin_0, GPIO::PERIPH_IN);
 
-  // Connect the global pointer
-  RC_PPM_Ptr = this;
+  // Connect Pin to the timer peripherial
+  GPIO_PinAFConfig(GPIOB, GPIO_PinSource0, GPIO_AF_TIM3);
+
+  // Configure the timer
+  TIM_TimeBaseInitTypeDef TIM_init_struct;
+  TIM_init_struct.TIM_Period = 0xFFFF; // It'll get reset by the CC
+  TIM_init_struct.TIM_ClockDivision = TIM_CKD_DIV1; // No clock division
+  TIM_init_struct.TIM_Prescaler = (SystemCoreClock / (2000000)) - 1; // prescaler (0-indexed), set to 1 MHz
+  TIM_init_struct.TIM_CounterMode = TIM_CounterMode_Up; // count up
+  TIM_TimeBaseInit(TIM3, &TIM_init_struct);
 
   // Configure the Input Compare Peripheral
   TIM_ICInitTypeDef TIM_IC_init_struct;
@@ -27,24 +38,19 @@ void RC_PPM::init()
   TIM_IC_init_struct.TIM_ICSelection = TIM_ICSelection_DirectTI;
   TIM_ICInit(TIM3, &TIM_IC_init_struct);
 
-  // Configure the associated timer
-  TIM_TimeBaseInitTypeDef TIM_init_struct;
-  TIM_init_struct.TIM_Period = 0x10000; // It'll get reset by the CC
-  TIM_init_struct.TIM_ClockDivision = TIM_CKD_DIV1; // No clock division
-  TIM_init_struct.TIM_Prescaler = (SystemCoreClock / (1000000)) - 1;; // prescaler (0-indexed), set to 1 MHz
-  TIM_init_struct.TIM_CounterMode = TIM_CounterMode_Up; // count up
-  TIM_TimeBaseInit(TIM3, &TIM_init_struct);
-
-  // Start Counting!
-  TIM_Cmd(TIM3, ENABLE);
-
   // Set up the interrupt for the Timer
   NVIC_InitTypeDef NVIC_InitStructure;
   NVIC_InitStructure.NVIC_IRQChannel = TIM3_IRQn;
-  NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 1;
-  NVIC_InitStructure.NVIC_IRQChannelSubPriority = 1;
+  NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0x02;
+  NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0x01;
   NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
   NVIC_Init(&NVIC_InitStructure);
+
+  // Enable the CC interrupt
+  TIM_ITConfig(TIM3, TIM_IT_CC3, ENABLE);
+
+  // Start Counting!
+  TIM_Cmd(TIM3, ENABLE);
 }
 
 float RC_PPM::read(uint8_t channel)
@@ -59,9 +65,9 @@ bool RC_PPM::lost()
 
 void RC_PPM::pulse_callback()
 {
-  if(TIM_GetITStatus(TIM3, TIM_IT_CC1))
+  if(TIM_GetITStatus(TIM3, TIM_IT_CC3))
   {
-    TIM_ClearITPendingBit(TIM3, TIM_IT_CC1);
+    TIM_ClearITPendingBit(TIM3, TIM_IT_CC3);
     last_pulse_ms_ = millis();
 
     current_capture_ = TIM_GetCapture3(TIM3);
@@ -82,19 +88,15 @@ void RC_PPM::pulse_callback()
       }
       chan_++;
     }
+    if (chan_ > PWM_NUM_RC_INPUTS)
+    {
+      TIM_SetCounter(TIM3, 0);
+    }
   }
 }
 
 extern "C"
 {
-
-void TIM3_CC_IRQHandler(void)
-{
-  if(RC_PPM_Ptr != NULL)
-  {
-    RC_PPM_Ptr->pulse_callback();
-  }
-}
 
 void TIM3_IRQHandler(void)
 {

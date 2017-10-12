@@ -27,54 +27,28 @@
 
 /* Includes */
 #include "system.h"
-#include "vcp.h"
-#include "printf.h"
-#include "rc_ppm.h"
-#include "drv_led.h"
+#include "uart.h"
 
-VCP* uartPtr = NULL;
+UART* uartPtr = NULL;
 
-static void _putc(void *p, char c)
+void rx_callback(uint8_t byte)
 {
-  (void)p; // avoid compiler warning about unused variable
-  uartPtr->put_byte(c);
+  uartPtr->put_byte(byte);
+  uartPtr->flush();
 }
 
-int main() {
-
+int main()
+{
   systemInit();
 
-  VCP vcp;
-  uartPtr = &vcp;
-  init_printf(NULL, _putc);
-
-  LED warn(LED1_GPIO, LED1_PIN);
-  LED info(LED2_GPIO, LED2_PIN);
-
-  RC_PPM rc;
-
-  rc.init();
+  UART uart(USART1);
+  uartPtr = &uart;
+  uart.register_rx_callback(rx_callback);
 
   while(1)
   {
-    if (rc.lost())
-    {
-      info.off();
-      warn.on();
-      printf("rc lost\n");
-    }
-    else
-    {
-      warn.off();
-      info.on();
-      printf("%d, %d, %d, %d, %d, %d\n",
-             (uint32_t)(1000*rc.read(0)),
-             (uint32_t)(1000*rc.read(1)),
-             (uint32_t)(1000*rc.read(2)),
-             (uint32_t)(1000*rc.read(3)),
-             (uint32_t)(1000*rc.read(4)),
-             (uint32_t)(1000*rc.read(5)));
-    }
-    delay(20);
+    //uint8_t hello_string[] = "waddup\n";
+    //vcp.write(hello_string, 7);
+    delay(200);
   }
 }

@@ -1,85 +1,111 @@
 #include "drv_i2c.h"
 
+#define while_check(cond) \
+  {\
+    int32_t timeout_var = 5000; \
+    while ((cond) && timeout_var) \
+      timeout_var--; \
+    if (!timeout_var) \
+    { \
+      handle_hardware_failure();\
+      return false; \
+    }\
+  }
+
 //global i2c ptrs used by the event interrupts
-I2C* I2CDev_1Ptr;
-I2C* I2CDev_2Ptr;
+I2C* I2C1_Ptr;
+I2C* I2C2_Ptr;
 
 I2C::I2C(I2C_TypeDef *I2C) {
-  dev = I2C;
+  dev_ = I2C;
   //enable peripheral clocks as we need them
-  if (dev == I2C1)
+  if (dev_ == I2C1)
   {
     RCC_APB1PeriphClockCmd(RCC_APB1Periph_I2C1, ENABLE);
+    RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_DMA1, ENABLE);
+
+    //configure the gpio pins
+    GPIO_PinAFConfig(GPIOB, GPIO_PinSource8, GPIO_AF_I2C1);
+    GPIO_PinAFConfig(GPIOB, GPIO_PinSource9, GPIO_AF_I2C1);
+    sda_.init(GPIOB, GPIO_Pin_9, GPIO::PERIPH_IN_OUT);
+    scl_.init(GPIOB, GPIO_Pin_8, GPIO::PERIPH_IN_OUT);
+    I2C1_Ptr = this;
+    DMA_stream_ = DMA1_Stream0;
+    DMA_channel_ = DMA_Channel_1;
+    DMA_Stream_TCFLAG_ = DMA_FLAG_TCIF0;
+    DMA_IRQn_ = DMA1_Stream0_IRQn;
+    I2C_EV_IRQn_ = I2C1_EV_IRQn;
+    I2C_ER_IRQn_ = I2C1_ER_IRQn;
   }
-  else if (dev == I2C2)
+  else if (dev_ == I2C2)
   {
     RCC_APB1PeriphClockCmd(RCC_APB1Periph_I2C2, ENABLE);
-  }
-  init();
-}
+    RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_DMA1, ENABLE);
 
-void I2C::init(void) {
-  GPIO_InitTypeDef gpio_init_struct;
-  I2C_InitTypeDef i2c_init_struct;
-  NVIC_InitTypeDef nvic_init_struct;
-  uint8_t er_irq;
-  uint8_t ev_irq;
-
-  if (dev == I2C1)
-  {
     //configure the gpio pins
-    GPIO_PinAFConfig(I2C1_GPIO, I2C1_SCL_PIN_SOURCE, GPIO_AF_I2C1);
-    GPIO_PinAFConfig(I2C1_GPIO, I2C1_SDA_PIN_SOURCE, GPIO_AF_I2C1);
-    sda_.init(I2C1_GPIO, I2C1_SDA_PIN, GPIO::PERIPH_IN_OUT);
-    scl_.init(I2C1_GPIO, I2C1_SCL_PIN, GPIO::PERIPH_IN_OUT);
-    er_irq = I2C1_ER_IRQn;
-    ev_irq = I2C1_EV_IRQn;
-    I2CDev_1Ptr = this;
-  }
-  else if (dev == I2C2)
-  {
-    //configure the gpio pins
-    GPIO_PinAFConfig(I2C2_GPIO, I2C2_SCL_PIN_SOURCE, GPIO_AF_I2C2);
-    GPIO_PinAFConfig(I2C2_GPIO, I2C2_SDA_PIN_SOURCE, GPIO_AF_I2C2);
-    sda_.init(I2C2_GPIO, I2C2_SDA_PIN, GPIO::PERIPH_IN_OUT);
-    scl_.init(I2C2_GPIO, I2C2_SCL_PIN, GPIO::PERIPH_IN_OUT);
-    er_irq = I2C2_ER_IRQn;
-    ev_irq = I2C2_EV_IRQn;
-    I2CDev_2Ptr = this;
+    GPIO_PinAFConfig(GPIOB, GPIO_PinSource10, GPIO_AF_I2C2);
+    GPIO_PinAFConfig(GPIOB, GPIO_PinSource11, GPIO_AF_I2C2);
+    sda_.init(GPIOB, GPIO_Pin_11, GPIO::PERIPH_IN_OUT);
+    scl_.init(GPIOB, GPIO_Pin_10, GPIO::PERIPH_IN_OUT);
+    I2C2_Ptr = this;
+    DMA_stream_ = DMA1_Stream2;
+    DMA_channel_ = DMA_Channel_7;
+    DMA_Stream_TCFLAG_ = DMA_FLAG_TCIF2;
+    DMA_IRQn_ = DMA1_Stream2_IRQn;
+    I2C_EV_IRQn_ = I2C2_EV_IRQn;
+    I2C_ER_IRQn_ = I2C2_ER_IRQn;
   }
 
   unstick(); //unstick will properly initialize pins
 
+  //initialze the i2c itself
+  I2C_DeInit(dev_);
 
-  if (dev == I2C1 || dev == I2C2)
-  {
-    //initialze the i2c itself
-    I2C_DeInit(dev);
+  I2C_InitTypeDef I2C_InitStructure;
+  I2C_StructInit(&I2C_InitStructure);
+  I2C_InitStructure.I2C_ClockSpeed = 400000;
+  I2C_InitStructure.I2C_Mode = I2C_Mode_I2C;
+  I2C_InitStructure.I2C_DutyCycle = I2C_DutyCycle_2;
+  I2C_InitStructure.I2C_OwnAddress1 = 0; //The first device address
+  I2C_InitStructure.I2C_Ack = I2C_Ack_Disable;
+  I2C_InitStructure.I2C_AcknowledgedAddress = I2C_AcknowledgedAddress_7bit;
+  I2C_Init(dev_, &I2C_InitStructure);
 
-    I2C_StructInit(&i2c_init_struct);
-    i2c_init_struct.I2C_ClockSpeed = 400000;
-    i2c_init_struct.I2C_Mode = I2C_Mode_I2C;
-    i2c_init_struct.I2C_DutyCycle = I2C_DutyCycle_2;
-    i2c_init_struct.I2C_OwnAddress1 = 0; //The first device address
-    i2c_init_struct.I2C_Ack = I2C_Ack_Disable;
-    i2c_init_struct.I2C_AcknowledgedAddress = I2C_AcknowledgedAddress_7bit;
+  // Interrupts
+  NVIC_InitTypeDef NVIC_InitStructure;
+  NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0x02;
+  NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0x01;
+  NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
+  NVIC_InitStructure.NVIC_IRQChannel = I2C_EV_IRQn_;
+  NVIC_Init(&NVIC_InitStructure);
 
-    I2C_Init(dev, &i2c_init_struct);
-    I2C_Cmd(dev, ENABLE);
+  // I2C Event Interrupt
+  NVIC_InitStructure.NVIC_IRQChannel = I2C_ER_IRQn_;
+  NVIC_Init(&NVIC_InitStructure);
 
-    //initialize the interrupts
-    nvic_init_struct.NVIC_IRQChannelPreemptionPriority = 2;
-    nvic_init_struct.NVIC_IRQChannelSubPriority = 1;
-    nvic_init_struct.NVIC_IRQChannelCmd	= ENABLE;
+  // DMA Event Interrupt
+  NVIC_InitStructure.NVIC_IRQChannel = DMA_IRQn_;
+  NVIC_Init(&NVIC_InitStructure);
 
-    nvic_init_struct.NVIC_IRQChannel = er_irq;
-    NVIC_Init(&nvic_init_struct);
+  DMA_Cmd(DMA_stream_, DISABLE);
+  DMA_DeInit(DMA_stream_);
+  DMA_InitStructure_.DMA_FIFOMode = DMA_FIFOMode_Enable;
+  DMA_InitStructure_.DMA_FIFOThreshold = DMA_FIFOThreshold_Full ;
+  DMA_InitStructure_.DMA_MemoryBurst = DMA_MemoryBurst_Single ;
+  DMA_InitStructure_.DMA_MemoryDataSize = DMA_MemoryDataSize_Byte;
+  DMA_InitStructure_.DMA_PeripheralDataSize = DMA_PeripheralDataSize_Byte;
+  DMA_InitStructure_.DMA_PeripheralInc = DMA_PeripheralInc_Disable;
+  DMA_InitStructure_.DMA_MemoryInc = DMA_MemoryInc_Enable;
+  DMA_InitStructure_.DMA_Mode = DMA_Mode_Normal;
+  DMA_InitStructure_.DMA_Channel = DMA_channel_;
 
-    //I2C Event Interrupt
-    nvic_init_struct.NVIC_IRQChannel = ev_irq;
-    NVIC_Init(&nvic_init_struct);
+  DMA_InitStructure_.DMA_PeripheralBaseAddr = (uint32_t)(&(dev_->DR));
+  DMA_InitStructure_.DMA_PeripheralBurst = DMA_PeripheralBurst_Single;
+  DMA_InitStructure_.DMA_MemoryDataSize = DMA_MemoryDataSize_Byte;
+  DMA_InitStructure_.DMA_Priority = DMA_Priority_High;
+  DMA_InitStructure_.DMA_DIR = DMA_DIR_PeripheralToMemory;
 
-  }
+  I2C_Cmd(dev_, ENABLE);
 }
 
 void I2C::unstick()
@@ -92,311 +118,330 @@ void I2C::unstick()
 
   for (int i = 0; i < 8; ++i)
   {
-    delayMicroseconds(3);
+    delayMicroseconds(1);
     scl_.toggle();
   }
 
   sda_.write(GPIO::LOW);
-  delayMicroseconds(3);
+  delayMicroseconds(1);
   scl_.write(GPIO::LOW);
-  delayMicroseconds(3);
+  delayMicroseconds(1);
 
   scl_.write(GPIO::HIGH);
-  delayMicroseconds(3);
+  delayMicroseconds(1);
   sda_.write(GPIO::HIGH);
-  delayMicroseconds(3);
+  delayMicroseconds(1);
 
   scl_.set_mode(GPIO::PERIPH_IN_OUT);
   sda_.set_mode(GPIO::PERIPH_IN_OUT);
+  current_status_ = IDLE;
 }
 
-bool I2C::read(uint8_t addr, uint8_t reg, uint8_t len, uint8_t *data) {
+
+int8_t I2C::read(uint8_t addr, uint8_t reg, uint8_t num_bytes, uint8_t* data, std::function<void(void)> callback, bool blocking)
+{
+  if (current_status_ != IDLE)
+    return BUSY;
+  current_status_ = READING;
   addr_ = addr << 1;
+  cb_ = callback;
   reg_ = reg;
-  len_ = len;
-  data_buffer_ = data;
-  index_ = 0;
-  reading_ = true;
-  busy_ = true;
-  error_ = false;
-  subaddress_sent_ = (reg_ && 0xFF);
+  subaddress_sent_ = (reg_ == 0xFF);
+  len_ = num_bytes;
+  done_ = false;
 
-  uint32_t timeout = I2C_TIMEOUT_US;
+  DMA_DeInit(DMA_stream_);
+  DMA_InitStructure_.DMA_BufferSize = (uint16_t)(len_);
+  DMA_InitStructure_.DMA_Memory0BaseAddr = (uint32_t) data;
+  DMA_Init(DMA_stream_, &DMA_InitStructure_);
 
-  //dont do anything if the device is restarting
-  if (!(dev->CR2 & I2C_IT_EVT))
+  I2C_Cmd(dev_, ENABLE);
+
+  while_check (I2C_GetFlagStatus(dev_, I2C_FLAG_BUSY));
+
+  I2C_GenerateSTART(dev_, ENABLE);
+
+  I2C_ITConfig(dev_, I2C_IT_EVT | I2C_IT_ERR, ENABLE);
+
+  if (blocking)
   {
-    //check if we're supposed to send a start
-    if (!(dev->CR1 & I2C_CR1_START))
-    {
-      // Wait for any stop to finish
-      while (dev->CR1 & I2C_CR1_STOP && --timeout > 0);
-      if (timeout == 0)
-      {
-        handle_hardware_failure();
-        return false;
-      }
-      // Start the new job
-      I2C_GenerateSTART(dev, ENABLE);
-    }
-    // Allow the interrupts to fire off again
-    I2C_ITConfig(dev, I2C_IT_EVT | I2C_IT_ERR, ENABLE);
+    while(current_status_ != IDLE);
   }
-
-  //probably want to remove for fully interupt-based
-  timeout = I2C_TIMEOUT_US;
-  while(busy_ && --timeout > 0);
-  if (timeout == 0)
-  {
-    handle_hardware_failure();
-    return false;
-  }
-
-  return true;
+  return SUCCESS;
 }
 
-bool I2C::write(uint8_t addr, uint8_t reg, uint8_t len, uint8_t *data) {
+
+void I2C::transfer_complete_cb()
+{
+  current_status_ = IDLE;
+  if (cb_)
+    cb_();
+}
+
+
+// blocking, single register read (for configuring devices)
+int8_t I2C::read(uint8_t addr, uint8_t reg, uint8_t *data)
+{
+  if (current_status_ != IDLE)
+    return BUSY;
+  int8_t return_code = ERROR;
+
+  while_check (I2C_GetFlagStatus(dev_, I2C_FLAG_BUSY));
+
+  I2C_Cmd(dev_, ENABLE);
+  if (reg != 0xFF)
+  {
+    I2C_GenerateSTART(dev_, ENABLE);
+    while_check (!I2C_CheckEvent(dev_, I2C_EVENT_MASTER_MODE_SELECT));
+    I2C_Send7bitAddress(dev_, addr << 1, I2C_Direction_Transmitter);
+    uint32_t timeout = 500;
+    while (!I2C_CheckEvent(dev_, I2C_EVENT_MASTER_TRANSMITTER_MODE_SELECTED) && --timeout);
+    if (!timeout)
+    {
+      I2C_GenerateSTOP(dev_, ENABLE);
+      I2C_Cmd(dev_, DISABLE);
+      return ERROR;
+    }
+    I2C_Cmd(dev_, ENABLE);
+    I2C_SendData(dev_, reg);
+    while_check (!I2C_CheckEvent(dev_, I2C_EVENT_MASTER_BYTE_TRANSMITTED));
+  }
+
+  // Read the byte
+  I2C_AcknowledgeConfig(dev_, DISABLE);
+  I2C_GenerateSTART(dev_, ENABLE);
+  while_check (!I2C_CheckEvent(dev_, I2C_EVENT_MASTER_MODE_SELECT));
+  I2C_Cmd(dev_, ENABLE);
+  I2C_Send7bitAddress(dev_, addr << 1, I2C_Direction_Receiver);
+  uint32_t timeout = 500;
+  while (!I2C_CheckEvent(dev_, I2C_EVENT_MASTER_BYTE_RECEIVED) && --timeout);
+  if (timeout)
+  {
+    return_code = SUCCESS;
+    *data = I2C_ReceiveData(dev_);
+  }
+  I2C_GenerateSTOP(dev_, ENABLE);
+  I2C_Cmd(dev_, DISABLE);
+
+  return return_code;
+}
+
+// asynchronous write, for commanding adc conversions
+int8_t I2C::write(uint8_t addr, uint8_t reg, uint8_t data, std::function<void(void)> callback)
+{
+  if (current_status_ != IDLE)
+    return BUSY;
+
+  current_status_ = WRITING;
   addr_ = addr << 1;
+  cb_ = callback;
   reg_ = reg;
-  len_ = len;
-  data_buffer_ 	 = data;
-  index_ = 0;
-  reading_ = false;
-  busy_ = true;
-  error_ = false;
-  subaddress_sent_ = (reg_ && 0xFF);
+  subaddress_sent_ = (reg_ == 0xFF);
+  len_ = 1;
+  done_ = false;
+  data_ = data;
 
-  uint32_t timeout = I2C_TIMEOUT_US;
+  I2C_Cmd(dev_, ENABLE);
 
-  //dont do anything if the device is restarting
-  if (!(dev->CR2 & I2C_IT_EVT))
+  while_check (I2C_GetFlagStatus(dev_, I2C_FLAG_BUSY));
+
+  I2C_GenerateSTART(dev_, ENABLE);
+
+  I2C_ITConfig(dev_, I2C_IT_EVT | I2C_IT_ERR, ENABLE);
+
+  while (current_status_ != IDLE);
+
+  return SUCCESS;
+}
+
+// blocking, single register write (for configuring devices)
+int8_t I2C::write(uint8_t addr, uint8_t reg, uint8_t data)
+{
+  if (current_status_ != IDLE)
+    return BUSY;
+  while_check (I2C_GetFlagStatus(dev_, I2C_FLAG_BUSY));
+  I2C_Cmd(dev_, ENABLE);
+
+  // start the transfer
+  I2C_GenerateSTART(dev_, ENABLE);
+  while_check (!I2C_CheckEvent(dev_, I2C_EVENT_MASTER_MODE_SELECT));
+  I2C_Send7bitAddress(dev_, addr << 1, I2C_Direction_Transmitter);
+  uint32_t timeout = 500;
+  while (!I2C_CheckEvent(dev_, I2C_EVENT_MASTER_TRANSMITTER_MODE_SELECTED) && --timeout);
+  if (!timeout)
   {
-    //check if we're supposed to send a start
-    if (!(dev->CR1 & I2C_CR1_START))
-    {
-      // Wait for any stop to finish
-      while (dev->CR1 & I2C_CR1_STOP && --timeout > 0);
-      if (timeout == 0)
-      {
-        handle_hardware_failure();
-        return false;
-      }
-      // Start the new job
-      I2C_GenerateSTART(dev, ENABLE);
-    }
-    // Allow the interrupts to fire off again
-    I2C_ITConfig(dev, I2C_IT_EVT | I2C_IT_ERR, ENABLE);
+    I2C_GenerateSTOP(dev_, ENABLE);
+    I2C_Cmd(dev_, DISABLE);
+    return ERROR;
+  }
+  I2C_Cmd(dev_, ENABLE);
+
+  // Send the register
+  if (reg != 0xFF)
+  {
+    I2C_SendData(dev_, reg);
+    while_check (!I2C_CheckEvent(dev_, I2C_EVENT_MASTER_BYTE_TRANSMITTED));
   }
 
-  //probably want to remove for fully interupt-based
-  timeout = I2C_TIMEOUT_US;
-  while(busy_ && --timeout > 0);
-  if (timeout == 0)
-  {
-    handle_hardware_failure();
-    return false;
-  }
+  // Write the byte with a NACK
+  I2C_AcknowledgeConfig(dev_, DISABLE);
+  I2C_SendData(dev_, data);
+  while_check (!I2C_CheckEvent(dev_, I2C_EVENT_MASTER_BYTE_TRANSMITTED));
+  I2C_GenerateSTOP(dev_, ENABLE  );
+  I2C_Cmd(dev_, DISABLE);
+  return SUCCESS;
 
-  return true;
 }
 
-bool I2C::read(uint8_t addr, uint8_t reg, uint8_t *data) {
-  return read(addr, reg, 1, data);
-}
-
-bool I2C::write(uint8_t addr, uint8_t reg, uint8_t data) {
-  return write(addr, reg, 1, &data);
-}
-
+// if for some reason, a step in an I2C read or write fails, call this
 void I2C::handle_hardware_failure() {
   error_count_++;
-  init(); //unstick and reinitialize the hardware
+  unstick(); //unstick and reinitialize the hardware
 }
 
-void I2C::handle_error(){
-  //grab this device's status registers
-  volatile uint32_t sr1 = dev->SR1;
-  volatile uint32_t sr2 = dev->SR2;
 
-  // If AF, BERR or ARLO, abandon the current job and commence new if there are jobs
-  if (sr1 & (I2C_SR1_AF | I2C_SR1_ARLO | I2C_SR1_BERR))
-  {
-    I2C_ITConfig(dev, I2C_IT_BUF, DISABLE);
-    if (!(sr1 & I2C_SR1_ARLO) && !(dev->CR1 & I2C_CR1_STOP)) // If we dont have an ARLO error, ensure sending of a stop
-    {
-      if (dev->CR1 & I2C_CR1_START) // We are currently trying to send a start, this is very bad as start,stop will hang the peripheral
-      {
-        while (dev->CR1 & I2C_CR1_START); // Wait for any start to finish sending
-        I2C_GenerateSTOP(dev, ENABLE); // Send stop to finalise bus transaction
-        while (dev->CR1 & I2C_CR1_STOP); // Wait for stop to finish sending
-        init();												// Reset and configure the hardware
-      }
-      else
-      {
-        I2C_GenerateSTOP(dev, ENABLE); // Stop to free up the bus
-        I2C_ITConfig(dev, I2C_IT_EVT | I2C_IT_ERR, DISABLE); // Disable EVT and ERR interrupts while bus inactive. They'll be reenabled
-      }
-    }
-  }
+// This is the I2C_IT_ERR handler
+bool I2C::handle_error()
+{
+  I2C_Cmd(dev_, DISABLE);
+  while_check (I2C_GetFlagStatus(dev_, I2C_FLAG_BUSY));
+
+  // Turn off the interrupts
+  I2C_ITConfig(dev_, I2C_IT_EVT | I2C_IT_ERR, DISABLE);
 
   //reset errors
-  dev->SR1 &= ~(I2C_SR1_OVR | I2C_SR1_AF | I2C_SR1_ARLO | I2C_SR1_BERR);
-  busy_ = false;
+  I2C_ClearFlag(dev_, I2C_SR1_OVR | I2C_SR1_AF | I2C_SR1_ARLO | I2C_SR1_BERR);
+  current_status_ = IDLE;
 }
 
-void I2C::handle_event() {
-  //grab the bottom 8 bits of this device's status register
-  uint8_t sr1 = dev->SR1;
+// This is the I2C_IT_EV handler
+bool I2C::handle_event()
+{
+  uint32_t last_event = I2C_GetLastEvent(dev_);
 
-
-  if (sr1 & I2C_SR1_SB) // EV5 (in ref manual) - Start just sent
+  // We just sent a byte
+  if (last_event == I2C_EVENT_MASTER_BYTE_TRANSMITTED)
   {
-    dev->CR1 &= ~I2C_CR1_POS; // Reset the POS bit so ACK/NACK applied to the current byte
-    I2C_AcknowledgeConfig(dev, ENABLE);	// Make sure ACK is on
-    index_ = 0;
-    if (reading_ && (subaddress_sent_ || reg_ == 0xFF))
+    // If we are reading, then we just sent a subaddress and need to send
+    // a repeated start, and enable the DMA NACK
+    if (current_status_ == READING)
     {
+      I2C_AcknowledgeConfig(dev_, ENABLE);
+      I2C_DMALastTransferCmd(dev_, ENABLE);
+      I2C_GenerateSTART(dev_, ENABLE);
+    }
+    // We are in write mode and are done, need to clean up
+    else
+    {
+      I2C_GenerateSTOP(dev_, ENABLE);
+      I2C_ITConfig(dev_, I2C_IT_EVT, DISABLE);
+      transfer_complete_cb();
+    }
+  }
+
+  // We just sent the address in write mode
+  if (last_event == I2C_EVENT_MASTER_TRANSMITTER_MODE_SELECTED)
+  {
+    // We need to send the subaddress
+    if (!subaddress_sent_)
+    {
+      I2C_SendData(dev_, reg_);
       subaddress_sent_ = true;
-      if (len_ == 2)
+      if (current_status_ == WRITING)
       {
-        dev->CR1 |= I2C_CR1_POS; // if doing a 2-byte read, set NACK to apply to the final byte
+        I2C_SendData(dev_, data_);
+        done_ = true;
       }
-      I2C_Send7bitAddress(dev, addr_, I2C_Direction_Receiver);	// start a read
     }
-    else // We are either writing or the subaddress hasn't been sent and we need to write it
+    // We need to send our data (no subaddress)
+    else
     {
-      I2C_Send7bitAddress(dev, addr_, I2C_Direction_Transmitter); //start a write
-      if (!subaddress_sent_)
-      {
-        index_ = -1;  // Send the subaddress
-      }
+      I2C_SendData(dev_, data_);
+      done_ = true;
     }
   }
 
-  else if (sr1 & I2C_SR1_ADDR) // EV6 - Address just sent
+  // We are in receiving mode, preparing to receive the big DMA dump
+  if (last_event == I2C_EVENT_MASTER_RECEIVER_MODE_SELECTED)
   {
-    __DMB();
-    if (reading_ && subaddress_sent_)
-    {
-      if (len_ == 1) // EV6_1, set the stop
-      {
-        I2C_AcknowledgeConfig(dev, DISABLE);
-        __DMB();
-        (void)dev->SR2; // read SR2 to clear the ADDR bit
-        I2C_GenerateSTOP(dev, ENABLE);
-        I2C_ITConfig(dev, I2C_IT_BUF, ENABLE);  // enable EVT_7
-      }
-      else // receiving greater than one byte
-      {
-        (void)dev->SR2; 		// read SR2 to clear the ADDR bit
-        __DMB();
-        if (len_ == 2)
-        {
-          I2C_AcknowledgeConfig(dev, DISABLE);
-          I2C_ITConfig(dev, I2C_IT_BUF, DISABLE); // Disable TXE to allow the buffer to fill
-        }
-        else if (len_ == 3) // Receiving three bytes
-        {
-          I2C_ITConfig(dev, I2C_IT_BUF, DISABLE);  // Make sure RXNE disabled so we get a BTF in two bytes time
-        }
-        else  // Receiving greater than three bytes
-        {
-          I2C_ITConfig(dev, I2C_IT_BUF, ENABLE);  //enables EVT_7
-        }
-      }
-    }
-    else // sending subaddress, or transmitting
-    {
-      (void)dev->SR2; // read SR2 to clear the ADDR bit
-      __DMB();
-      I2C_ITConfig(dev, I2C_IT_BUF, ENABLE);  //enables EVT_7
-    }
+    I2C_ITConfig(dev_, I2C_IT_EVT, DISABLE);
+    DMA_SetCurrDataCounter(DMA_stream_, len_);
+    I2C_DMACmd(dev_, ENABLE);
+    DMA_ITConfig(DMA_stream_, DMA_IT_TC, ENABLE);
+    DMA_Cmd(DMA_stream_, ENABLE);
   }
 
-  else if (sr1 & I2C_SR1_BTF) // EV7_2, EV7_3, EV8_2 - Byte Transfer Finished
+  // Start just sent
+  if (last_event == I2C_EVENT_MASTER_MODE_SELECT)
   {
-    if (reading_ && subaddress_sent_) // EV7_2, EV7_3
+    // we either don't need to send, or already sent the subaddress
+    if (subaddress_sent_ && current_status_ == READING)
     {
-      if (len_ > 2) // EV7_2
-      {
-        I2C_AcknowledgeConfig(dev, DISABLE); // Turn off ACK
-        data_buffer_[index_++] = I2C_ReceiveData(dev);	// Read second to last byte
-        I2C_GenerateSTOP(dev, ENABLE); // Program the Stop
-        data_buffer_[index_++] = I2C_ReceiveData(dev); // Read last byte
-        I2C_ITConfig(dev, I2C_IT_BUF, ENABLE);	// Enable for final EV7
-      }
-      else // EV7_3
-      {
-        I2C_GenerateSTOP(dev, ENABLE); // Program the Stop
-        data_buffer_[index_++] = I2C_ReceiveData(dev);	// Read data
-        data_buffer_[index_++] = I2C_ReceiveData(dev);	// Read data
-        index_++;
-      }
+      // Set up a receive
+      I2C_Send7bitAddress(dev_, addr_, I2C_Direction_Receiver);
     }
-    else // EV8_2, which may be due to a subaddress sent or a write completion
+    // We need to either send the subaddress or our datas
+    else
     {
-      if (subaddress_sent_ || (!reading_))
-      {
-        I2C_GenerateSTOP(dev, ENABLE);
-        index_++; // Indicate that the job is finished
-      }
-      else // we just wrote the subaddress
-      {
-        I2C_GenerateSTART(dev, ENABLE); // We need a repeated start here
-        subaddress_sent_ = true;
-      }
+      // Set up a write
+      I2C_Send7bitAddress(dev_, addr_, I2C_Direction_Transmitter);
     }
-    while (dev->CR1 & I2C_CR1_START); // Wait for the start to clear, to avoid BTF
-  }
-
-  else if (sr1 & I2C_SR1_RXNE)	// Byte received - EV7
-  {
-    data_buffer_[index_++] = I2C_ReceiveData(dev);
-    if (len_ == (index_ + 3))
-      I2C_ITConfig(dev, I2C_IT_BUF, DISABLE); // Disable RxNE
-    if (len_ == index_)	// We have completed a final EV7
-      index_++; // To show job is complete
-  }
-
-  else if (sr1 & I2C_SR1_TXE) // Byte transmitted - EV8/EV8_1
-  {
-    if (index_ != -1) // We've already sent subaddress
-    {
-      I2C_SendData(dev, data_buffer_[index_++]);
-      if (len_ == index_) // We have sent all the data
-        I2C_ITConfig(dev, I2C_IT_BUF, DISABLE); // Disable TXE to allow the buffer to flush
-    }
-    else // we need to send the subaddress
-    {
-      index_++;
-      I2C_SendData(dev, reg_);	// Send the subaddress
-      if (reading_ || !len_) // If receiving or sending 0 bytes, flush now
-        I2C_ITConfig(dev, I2C_IT_BUF, DISABLE);	// Disable TXE to allow the buffer to flush
-    }
-  }
-
-  if (index_ == len_ + 1) // We have completed the current jobs
-  {
-    subaddress_sent_ = false; // Reset this here
-    I2C_ITConfig(dev, I2C_IT_EVT | I2C_IT_ERR, DISABLE); // Disable EVT and ERR interrupts while bus inactive
-    busy_ = false;
   }
 }
 
+extern "C"
+{
 
-// C-based IRQ functions (defined in the STD lib somewhere
-extern "C" void I2C1_ER_IRQHandler(void) {
-  I2CDev_1Ptr->handle_error();
+// C-based IRQ functions (defined in the STD lib somewhere)
+void DMA1_Stream2_IRQHandler(void)
+{
+
+  if (DMA_GetFlagStatus(DMA1_Stream2, DMA_FLAG_TCIF2))
+  {
+    /* Clear transmission complete flag */
+    DMA_ClearFlag(DMA1_Stream2, DMA_FLAG_TCIF2);
+
+    I2C_DMACmd(I2C2, DISABLE);
+    /* Send I2C1 STOP Condition */
+    I2C_GenerateSTOP(I2C2, ENABLE);
+    /* Disable DMA channel*/
+    DMA_Cmd(DMA1_Stream2, DISABLE);
+
+    I2C2_Ptr->transfer_complete_cb();
+  }
 }
 
-extern "C" void I2C1_EV_IRQHandler(void) {
-  I2CDev_1Ptr->handle_event();
+void DMA1_Stream0_IRQHandler(void)
+{
+  if (DMA_GetFlagStatus(DMA1_Stream0, DMA_FLAG_TCIF0))
+  {
+    /* Clear transmission complete flag */
+    DMA_ClearFlag(DMA1_Stream0, DMA_FLAG_TCIF0);
+
+    I2C_DMACmd(I2C1, DISABLE);
+    /* Send I2C1 STOP Condition */
+    I2C_GenerateSTOP(I2C1, ENABLE);
+    /* Disable DMA channel*/
+    DMA_Cmd(DMA1_Stream0, DISABLE);
+
+    I2C1_Ptr->transfer_complete_cb();
+  }
 }
 
-extern "C" void I2C2_ER_IRQHandler(void) {
-  I2CDev_2Ptr->handle_error();
+void I2C1_ER_IRQHandler(void) {
+  I2C1_Ptr->handle_error();
 }
 
-extern "C" void I2C2_EV_IRQHandler(void) {
-  I2CDev_2Ptr->handle_event();
+void I2C1_EV_IRQHandler(void) {
+  I2C1_Ptr->handle_event();
+}
+
+void I2C2_ER_IRQHandler(void) {
+  I2C2_Ptr->handle_error();
+}
+
+void I2C2_EV_IRQHandler(void) {
+  I2C2_Ptr->handle_event();
+}
+
 }

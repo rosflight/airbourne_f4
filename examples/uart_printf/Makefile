@@ -26,7 +26,7 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-TARGET = mag
+TARGET = uartprintf
 
 BOARD ?= REVO
 
@@ -60,8 +60,13 @@ USBOTG_DIR    = $(ROOT)/lib/STM32_USB_OTG_Driver
 USBCDC_DIR    = $(ROOT)/lib/STM32_USB_Device_Library/Class/cdc
 VCP_DIR       = $(ROOT)/lib/vcp
 STARTUP_DIR   = $(ROOT)/lib/startup
-PRINTF_DIR    = $(ROOT)/lib/printf
 BIN_DIR       = obj
+
+# Add directories with source files to the VPATH so object files don't end up all over the place
+VPATH  := $(VPATH):$(SRC_DIR)
+VPATH  := $(VPATH):$(SRC_DIR)/vcp
+VPATH	 := $(VPATH):$(USBCORE_DIR)/src:$(USBOTG_DIR)/src:$(USBCDC_DIR)/src
+
 
 #################################
 # Source Files
@@ -98,7 +103,7 @@ VPATH		:= $(VPATH):$(USBCORE_DIR)/src:$(USBOTG_DIR)/src:$(USBCDC_DIR)/src
 USBCORE_SRC = $(notdir $(wildcard $(USBCORE_DIR)/src/*.c))
 USBOTG_SRC = $(notdir $(wildcard $(USBOTG_DIR)/src/*.c))
 USBCDC_SRC = $(notdir $(wildcard $(USBCDC_DIR)/src/*.c))
-EXCLUDES	= usb_bsp_template.c \
+EXCLUDES   = usb_bsp_template.c \
             usb_conf_template.c \
             usb_hcd_int.c \
             usb_hcd.c \
@@ -125,12 +130,7 @@ CSOURCES =  $(CMSIS_SRC) \
 
 
 CXXSOURCES = $(SRC_DIR)/gpio.cpp \
-             $(SRC_DIR)/drv_i2c.cpp \
-             $(SRC_DIR)/vcp.cpp \
-             $(SRC_DIR)/drv_led.cpp \
-             $(SRC_DIR)/hmc5883l.cpp \
-             $(PRINTF_DIR)/printf.cpp \
-             $(SRC_DIR)/advanced.cpp \
+             $(SRC_DIR)/uart.cpp \
              main.cpp
 
 INCLUDE_DIRS =  $(SRC_DIR) \
@@ -142,7 +142,6 @@ INCLUDE_DIRS =  $(SRC_DIR) \
                 $(CMSIS_DIR)/CM4/CoreSupport \
                 $(CMSIS_DIR)/CM4/DeviceSupport/ST/STM32F4xx \
                 $(CMSIS_DIR)/CM4/DeviceSupport/ST/STM32F4xx/Include \
-                $(PRINTF_DIR) \
                 $(VCP_DIR)
 
 #################################
