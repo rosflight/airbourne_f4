@@ -78,7 +78,7 @@ void VCP::end_write(){}
 
 void VCP::register_rx_callback(void (*rx_callback_ptr)(uint8_t data))
 {
-  rx_callback = rx_callback_ptr;
+  rx_callback_ = rx_callback_ptr;
   Register_CDC_RxCallback(rx_callback_ptr);
 }
 

@@ -39,6 +39,8 @@ private:
 
   void send_disconnect_signal();
 
+  void (*rx_callback_)(uint8_t data);
+
   uint8_t bulk_mode_buffer[64];
   uint8_t bulk_mode_buffer_index;
   bool bulk_mode;
