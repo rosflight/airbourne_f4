@@ -15,7 +15,7 @@ public:
   } RC_type_t;
 
 private:
-  uint32_t pulse_[PWM_NUM_RC_INPUTS];
+  uint32_t pulse_[8];
 
 public:
   virtual void init() = 0;

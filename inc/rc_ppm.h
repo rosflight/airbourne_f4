@@ -10,7 +10,7 @@ private:
   uint8_t chan_ = 0;
   uint16_t current_capture_ = 0;
   uint16_t last_capture_ = 0;
-  uint16_t rc_raw_[PWM_NUM_RC_INPUTS];
+  uint16_t rc_raw_[8];
   uint32_t last_pulse_ms_;
 
 public:

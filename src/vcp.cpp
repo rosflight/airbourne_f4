@@ -13,7 +13,7 @@ VCP::VCP()
   USBD_Init(&USB_OTG_dev, USB_OTG_FS_CORE_ID, &USR_desc, &USBD_CDC_cb, &USR_cb);
 }
 
-void VCP::write(uint8_t*ch, uint8_t len)
+void VCP::write(const uint8_t*ch, uint8_t len)
 {
   uint32_t start = millis();
   while (len > 0)

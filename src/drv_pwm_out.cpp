@@ -106,3 +106,7 @@ void PWM_OUT::disable() {
 void PWM_OUT::write(float value) {
   *CCR_ = min_cyc_ + (uint16_t)((max_cyc_ - min_cyc_) * value);
 }
+
+void PWM_OUT::writeUs(uint16_t value) {
+  *CCR_ = value;
+}

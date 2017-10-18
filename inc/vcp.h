@@ -17,11 +17,11 @@ extern "C" {
 }
 
 
-class VCP : Serial
+class VCP
 {
 public:
   VCP();
-  void write(uint8_t*ch, uint8_t len);
+  void write(const uint8_t *ch, uint8_t len);
   uint32_t rx_bytes_waiting();
   uint32_t tx_bytes_free();
   uint8_t read_byte();
@@ -44,6 +44,9 @@ private:
   uint8_t bulk_mode_buffer[64];
   uint8_t bulk_mode_buffer_index;
   bool bulk_mode;
+
+  GPIO rx_pin_;
+  GPIO tx_pin_;
 };
 
 #endif 

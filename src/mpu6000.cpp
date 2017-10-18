@@ -79,7 +79,7 @@ void MPU6000::data_transfer_callback()
   gyro_[2]  = (float)((int16_t)((raw[13] << 8) | raw[14])) * gyro_scale_;
 }
 
-void MPU6000::read(float (&accel_data)[3], float (&gyro_data)[3], float* temp_data)
+void MPU6000::read(float* accel_data, float* gyro_data, float* temp_data, uint64_t* time_us)
 {
   accel_data[0] = acc_[0];
   accel_data[1] = acc_[1];
@@ -88,6 +88,7 @@ void MPU6000::read(float (&accel_data)[3], float (&gyro_data)[3], float* temp_da
   gyro_data[1] = gyro_[1];
   gyro_data[2] = gyro_[2];
   *temp_data = temp_;
+  *time_us = imu_timestamp_;
 }
 
 void MPU6000::exti_cb()
