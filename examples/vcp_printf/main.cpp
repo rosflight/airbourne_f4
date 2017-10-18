@@ -42,6 +42,7 @@ int main()
   systemInit();
 
   VCP vcp;
+  vcp.init();
   uartPtr = &vcp;
   vcp.register_rx_callback(&rx_callback);
 

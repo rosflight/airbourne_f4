@@ -18,6 +18,7 @@ int main() {
   systemInit();
 
   VCP vcp;
+  vcp.init();
   uartPtr = &vcp;
   init_printf(NULL, _putc);
 
@@ -27,10 +28,11 @@ int main() {
   delay(500);
 
   info.on();
-  I2C_dev i2c1(I2C1);
-  MS5611 baro(&i2c1);
+  I2C i2c1;
+  i2c1.init(I2C1);
+  MS5611 baro;
 
-  if (!baro.init())
+  if (!baro.init(&i2c1))
   {
     while(1)
     {

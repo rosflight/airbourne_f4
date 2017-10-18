@@ -17,6 +17,7 @@ int main() {
   systemInit();
 
   VCP vcp;
+  vcp.init();
   uartPtr = &vcp;
   init_printf(NULL, _putc);
 
@@ -24,7 +25,8 @@ int main() {
   LED info(LED2_GPIO, LED2_PIN);
 
   info.on();
-  I2C_dev i2c1(I2C2);
+  I2C i2c1;
+  i2c1.init(I2C1);
 
   while(1)
   {

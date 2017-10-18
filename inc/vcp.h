@@ -20,7 +20,7 @@ extern "C" {
 class VCP
 {
 public:
-  VCP();
+  void init();
   void write(const uint8_t *ch, uint8_t len);
   uint32_t rx_bytes_waiting();
   uint32_t tx_bytes_free();

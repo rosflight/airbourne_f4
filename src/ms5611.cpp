@@ -1,14 +1,10 @@
 #include "ms5611.h"
 
 
-MS5611::MS5611(I2C* _i2c)
+bool MS5611::init(I2C* _i2c)
 {
   i2c_ = _i2c;
   baro_present_ = false;
-}
-
-bool MS5611::init()
-{
   while (millis() < 10);  // wait for chip to power on
 
   uint8_t byte;

@@ -18,6 +18,7 @@ int main() {
   systemInit();
 
   VCP vcp;
+  vcp.init();
   uartPtr = &vcp;
   init_printf(NULL, _putc);
 
@@ -27,10 +28,13 @@ int main() {
   delay(500);
 
   info.on();
-  I2C i2c1(I2C2);
-  HMC5883L mag(&i2c1);
+  I2C i2c1;
+  i2c1.init(I2C1);
+  HMC5883L mag;
 
-  if (!mag.init()) {
+
+  if (!mag.init(&i2c1))
+  {
     warn.on();
     delay(100);
     warn.off();

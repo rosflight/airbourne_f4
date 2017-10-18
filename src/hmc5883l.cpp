@@ -1,11 +1,9 @@
 #include "hmc5883l.h"
 
-HMC5883L::HMC5883L(I2C *i2c_drv) {
-  i2c_ = i2c_drv;
+bool HMC5883L::init(I2C *i2c_drv)
+{
   mag_present_ = false;
-}
-
-bool HMC5883L::init() {
+  i2c_ = i2c_drv;
   // Wait for the chip to power up
   while (millis() < 500);
 

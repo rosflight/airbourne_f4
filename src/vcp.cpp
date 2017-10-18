@@ -2,7 +2,7 @@
 
 #define USB_TIMEOUT  50
 
-VCP::VCP()
+void VCP::init()
 {
   // Initialize the GPIOs for the pins
   rx_pin_.init(GPIOA, GPIO_Pin_11, GPIO::PERIPH_IN_OUT);

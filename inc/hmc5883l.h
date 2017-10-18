@@ -60,9 +60,7 @@
 class HMC5883L
 {
 public:
-  HMC5883L(I2C* i2c_drv);
-
-  bool init();
+  bool init(I2C* i2c_drv);
   void update();
   bool read(float mag_data[]);
   void convert(void);

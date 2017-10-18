@@ -57,8 +57,7 @@ private:
   bool baro_present_;
 
 public:
-  MS5611(I2C* _i2c);
-  bool init();
+  bool init(I2C* _i2c);
   void update();
   void read(float *press, float *temp);
   bool present();

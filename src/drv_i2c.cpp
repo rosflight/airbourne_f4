@@ -16,7 +16,8 @@
 I2C* I2C1_Ptr;
 I2C* I2C2_Ptr;
 
-I2C::I2C(I2C_TypeDef *I2C) {
+void I2C::init(I2C_TypeDef *I2C)
+{
   dev_ = I2C;
   //enable peripheral clocks as we need them
   if (dev_ == I2C1)
