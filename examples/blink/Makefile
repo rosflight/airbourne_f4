@@ -73,20 +73,7 @@ VPATH	 := $(VPATH):$(CMSIS_DIR)/CM4/CoreSupport:$(CMSIS_DIR)/CM4/DeviceSupport/S
 CMSIS_SRC	 	= $(notdir $(wildcard $(CMSIS_DIR)/CM4/CoreSupport/*.c \
 				  $(CMSIS_DIR)/CM4/DeviceSupport/ST/STM32F4xx/*.c))
 STDPERIPH_SRC	= $(notdir $(wildcard $(STDPERIPH_DIR)/src/*.c))
-USBCORE_SRC 	= $(notdir $(wildcard $(USBCORE_DIR)/src/*.c))
-USBOTG_SRC 		= $(notdir $(wildcard $(USBOTG_DIR)/src/*.c))
-USBCDC_SRC 		= $(notdir $(wildcard $(USBCDC_DIR)/src/*.c))
-VCP_SRC 		= $(notdir $(wildcard $(SRC_DIR)/vcp/*.c))
 PROCESSOR_SRC 	= $(notdir $(wildcard $(SRC_DIR)/*.c))
-
-EXCLUDES = usb_bsp_template.c \
-		   usb_conf_template.c \
-		   usb_hcd_int.c \
-		   usb_hcd.c \
-		   usb_otg.c \
-		   usbd_cdc_if_template.c
-USBCDC_SRC := $(filter-out ${EXCLUDES}, $(USBCDC_SRC))
-USBOTG_SRC := $(filter-out ${EXCLUDES}, $(USBOTG_SRC))
 
 
 CSOURCES =  $(CMSIS_SRC) \
@@ -98,7 +85,8 @@ CSOURCES =  $(CMSIS_SRC) \
 			$(PROCESSOR_SRC) \
 			main.cpp
 
-CXXSOURCES   = 	$(SRC_DIR)/drv_led.cpp 
+CXXSOURCES   = 	$(SRC_DIR)/drv_led.cpp \
+                $(SRC_DIR)/gpio.cpp
 
 INCLUDE_DIRS = 	$(SRC_DIR) \
 				$(ROOT)/inc \
