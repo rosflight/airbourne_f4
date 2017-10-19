@@ -23,8 +23,10 @@ int main() {
 
   init_printf(NULL, _putc);
 
-  LED warn(LED1_GPIO, LED1_PIN);
-  LED info(LED2_GPIO, LED2_PIN);
+  LED warn;
+  warn.init(LED1_GPIO, LED1_PIN);
+  LED info;
+  info.init(LED2_GPIO, LED2_PIN);
   info.on();
 
   int i = 0;

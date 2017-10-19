@@ -5,7 +5,8 @@
 int main() {
 	systemInit();
 
-	LED info(LED2_GPIO, LED2_PIN);
+	LED info;
+	info.init(LED2_GPIO, LED2_PIN);
 
 	PWM_OUT esc_out[PWM_NUM_OUTPUTS];
 	for (int i = 0; i < PWM_NUM_OUTPUTS; ++i)
