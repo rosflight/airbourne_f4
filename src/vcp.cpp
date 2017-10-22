@@ -6,10 +6,10 @@ VCP* VCPPtr = NULL;
 
 void rx_callback_C_converter(uint8_t byte)
 {
-  VCPPtr->receive_CB_(byte);
+  VCPPtr->rx_callback_(byte);
 }
 
-VCP::VCP()
+void VCP::init()
 {
   // Initialize the GPIOs for the pins
   rx_pin_.init(GPIOA, GPIO_Pin_11, GPIO::PERIPH_IN_OUT);
@@ -20,7 +20,7 @@ VCP::VCP()
   USBD_Init(&USB_OTG_dev, USB_OTG_FS_CORE_ID, &USR_desc, &USBD_CDC_cb, &USR_cb);
 }
 
-void VCP::write(uint8_t*ch, uint8_t len)
+void VCP::write(const uint8_t*ch, uint8_t len)
 {
   uint32_t start = millis();
   while (len > 0)
@@ -85,7 +85,6 @@ void VCP::end_write(){}
 
 void VCP::register_rx_callback(std::function<void(uint8_t)> cb)
 {
-  receive_CB_ = cb;
   Register_CDC_RxCallback(&rx_callback_C_converter);
 }
 

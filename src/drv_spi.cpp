@@ -3,8 +3,8 @@
 
 SPI* SPIptr;
 
-SPI::SPI(SPI_TypeDef *SPI) {
-
+void SPI::init(SPI_TypeDef *SPI)
+{
   GPIO_InitTypeDef gpio_init_struct;
   SPI_InitTypeDef  spi_init_struct;
 
@@ -122,11 +122,11 @@ void SPI::register_complete_cb(void (*cb)())
 }
 
 void SPI::enable() {
-  nss_.write(GPIO::HIGH);
+  nss_.write(GPIO::LOW);
 }
 
 void SPI::disable() {
-  nss_.write(GPIO::LOW);
+  nss_.write(GPIO::HIGH);
 }
 
 uint8_t SPI::transfer_byte(uint8_t data)

@@ -23,12 +23,19 @@ int main() {
 
   init_printf(NULL, _putc);
 
+<<<<<<< HEAD
   LED warn(LED1_GPIO, LED1_PIN);
   LED info(LED2_GPIO, LED2_PIN);
 
   GPIO test;
   test.init(GPIOB, GPIO_Pin_0, GPIO::OUTPUT);
 
+=======
+  LED warn;
+  warn.init(LED1_GPIO, LED1_PIN);
+  LED info;
+  info.init(LED2_GPIO, LED2_PIN);
+>>>>>>> master
   info.on();
 
   int i = 0;

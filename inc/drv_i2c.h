@@ -9,12 +9,14 @@
 #pragma once
 
 #include <functional>
+#include <stdint.h>
 
 #include "revo_f4.h"
 
 #include "gpio.h"
 
-class I2C {
+class I2C
+{
 private:
   void handle_hardware_failure();
 
@@ -59,9 +61,8 @@ private:
 
 public:
   std::function<void(void)> cb_;
-  I2C(I2C_TypeDef *I2C);
 
-  void init();
+  void init(I2C_TypeDef *I2C_dev);
   void unstick();
   void hardware_failure();
   int8_t read(uint8_t addr, uint8_t reg, uint8_t num_bytes, uint8_t* data, std::function<void(void)> callback, bool blocking = false);

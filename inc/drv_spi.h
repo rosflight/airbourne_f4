@@ -12,9 +12,12 @@
 
 #include "gpio.h"
 
-class SPI {
+class SPI
+{
+
 public:
-  SPI(SPI_TypeDef *SPI);
+
+  void init(SPI_TypeDef *SPI);
 
   void set_divisor(uint16_t new_divisor);
   void enable();

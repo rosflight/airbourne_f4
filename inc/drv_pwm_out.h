@@ -11,6 +11,7 @@ public:
   void enable();
   void disable();
   void write(float value);
+  void writeUs(uint16_t value);
 
 private:
   volatile uint32_t* CCR_;

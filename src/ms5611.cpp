@@ -1,13 +1,10 @@
 #include "ms5611.h"
 
 
-MS5611::MS5611(I2C *_i2c)
+bool MS5611::init(I2C* _i2c)
 {
   i2c_ = _i2c;
-}
-
-bool MS5611::init()
-{
+  baro_present_ = false;
   while (millis() < 10);  // wait for chip to power on
 
   uint8_t byte;
@@ -16,6 +13,7 @@ bool MS5611::init()
   uint8_t ack = i2c_->read(ADDR, PROM_RD, &byte);
   if (!ack)
   {
+    baro_present_ = false;
     return false;
   }
 
@@ -34,7 +32,14 @@ bool MS5611::init()
 
   update();
 
+  baro_present_ = true;
+
   return true;
+}
+
+bool MS5611::present()
+{
+  return baro_present_;
 }
 
 void MS5611::update()

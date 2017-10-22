@@ -54,12 +54,13 @@ private:
   uint16_t prom[8];
   uint32_t next_update_ms_;
   bool new_data_;
+  bool baro_present_;
 
 public:
-  MS5611(I2C* _i2c);
-  bool init();
+  bool init(I2C* _i2c);
   void update();
   void read(float *press, float *temp);
+  bool present();
 
   void temp_read_cb();
   void pres_read_cb();

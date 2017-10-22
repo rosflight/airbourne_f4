@@ -17,11 +17,12 @@ extern "C" {
 }
 
 
-class VCP //: Serial
+
+class VCP
 {
 public:
-  VCP();
-  void write(uint8_t*ch, uint8_t len);
+  void init();
+  void write(const uint8_t *ch, uint8_t len);
   uint32_t rx_bytes_waiting();
   uint32_t tx_bytes_free();
   uint8_t read_byte();
@@ -36,7 +37,7 @@ public:
   void unregister_rx_callback();
   bool in_bulk_mode();
 
-  std::function<void(uint8_t)> receive_CB_;
+  std::function<void(uint8_t)> rx_callback_;
 
 private:
 
@@ -44,6 +45,7 @@ private:
 
   GPIO rx_pin_;
   GPIO tx_pin_;
+
 
   uint8_t bulk_mode_buffer[64];
   uint8_t bulk_mode_buffer_index;

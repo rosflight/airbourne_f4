@@ -1,14 +1,16 @@
-#include "system.h"
+#include "revo_f4.h"
 #include "drv_led.h"
 
 int main()
 {
   systemInit();
 
-  LED warn(LED1_GPIO, LED1_PIN);
-  LED info(LED2_GPIO, LED2_PIN);
+  LED warn;
+  warn.init(LED1_GPIO, LED1_PIN);
+  LED info;
+  info.init(LED2_GPIO, LED2_PIN);
 
-  warn.on();
+  warn.off();
   while(1)
   {
     delay(200);
