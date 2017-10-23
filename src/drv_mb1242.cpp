@@ -1,3 +1,4 @@
+#include <functional>
 #include "drv_mb1242.h"
 
 I2CSonar::I2CSonar (I2C& i2cIn) : i2c(i2cIn)
