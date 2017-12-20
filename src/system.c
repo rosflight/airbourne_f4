@@ -42,12 +42,6 @@ uint32_t millis(void)
 
 void systemInit(void)
 {
-//    SystemInit();
-    /* Accounts for OP Bootloader, set the Vector Table base address as specified in .ld file */
-    extern void *isr_vector_table_base;
-
-    NVIC_SetVectorTable((uint32_t)&isr_vector_table_base, 0x0);
-
     NVIC_PriorityGroupConfig(NVIC_PriorityGroup_2); //2 bit preemption, 2 bit sub priority
 
     // Configure Systick
