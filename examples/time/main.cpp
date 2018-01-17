@@ -19,6 +19,7 @@ int main() {
   systemInit();
 
   VCP vcp;
+  vcp.init();
   uartPtr = &vcp;
 
   init_printf(NULL, _putc);
@@ -27,15 +28,15 @@ int main() {
   warn.init(LED1_GPIO, LED1_PIN);
   LED info;
   info.init(LED2_GPIO, LED2_PIN);
-  info.on();
+  info.off();
+  warn.on();
 
   int i = 0;
-  int delays[6] = {1000000, 100, 5000, 500000, 70000, 1000};
   while(1)
   {
     warn.toggle();
     info.toggle();
-    printf("time = %d ms, %ul us\n", millis(), micros());
-    delayMicroseconds(delays[i++ % 6]);
+    printf("time = %d s, %d ms, %u us\n", i++, millis(), micros());
+    delay(1000);
   }
 }
