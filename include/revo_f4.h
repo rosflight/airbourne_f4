@@ -17,11 +17,8 @@
 #define LED2_PIN	GPIO_Pin_5
 
 /////////////////////// PWM CONFIG ///////////////////////
-#define PWM_MAX_US 2000
-#define PWM_MIN_US 1000
 #define PWM_NUM_CHANNELS 13
-#define PWM_NUM_OUTPUTS 10
-#define PWM_NUM_RC_INPUTS 8
+#define PWM_NUM_OUTPUTS 11
 const pwm_hardware_struct_t pwm_config[PWM_NUM_CHANNELS] =
 {
   {GPIOB, GPIO_Pin_0,  GPIO_PinSource0,  TIM3,  TIM_Channel_3, GPIO_AF_TIM3}, // PWM1

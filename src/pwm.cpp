@@ -1,4 +1,4 @@
-#include "drv_pwm_out.h"
+#include "pwm.h"
 
 PWM_OUT::PWM_OUT(){}
 
