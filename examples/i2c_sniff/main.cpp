@@ -1,6 +1,6 @@
 #include "system.h"
-#include "drv_i2c.h"
-#include "drv_led.h"
+#include "i2c.h"
+#include "led.h"
 #include "vcp.h"
 #include "printf.h"
 

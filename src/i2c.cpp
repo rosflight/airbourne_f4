@@ -1,4 +1,4 @@
-#include "drv_i2c.h"
+#include "i2c.h"
 
 #define while_check(cond) \
   {\
