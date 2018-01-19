@@ -54,7 +54,7 @@ A2L=arm-none-eabi-addr2line
 ROOT          = ../..
 SRC_DIR       = $(ROOT)/src
 CMSIS_DIR     = $(ROOT)/lib/CMSIS
-STDPERIPH_DIR	= $(ROOT)/lib/STM32F4xx_StdPeriph_Driver
+STDPERIPH_DIR = $(ROOT)/lib/STM32F4xx_StdPeriph_Driver
 USBCORE_DIR   = $(ROOT)/lib/STM32_USB_Device_Library/Core
 USBOTG_DIR    = $(ROOT)/lib/STM32_USB_OTG_Driver
 USBCDC_DIR    = $(ROOT)/lib/STM32_USB_Device_Library/Class/cdc
@@ -68,7 +68,7 @@ BIN_DIR       = obj
 #################################
 VPATH := $(VPATH):$(STARTUP_DIR)
 LDSCRIPT = $(STARTUP_DIR)/stm32_flash_f405_1024k.ld
-ASOURCES = $(STARTUP_DIR)/startup_stm32f40_41xxx.s
+ASOURCES = startup_stm32f40_41xxx.s
 
 # Search path and source files for the CMSIS sources
 VPATH	 := $(VPATH):$(CMSIS_DIR)/CM4/CoreSupport
@@ -120,12 +120,12 @@ CSOURCES =  $(CMSIS_SRC) \
             $(USBCDC_SRC) \
             $(PROCESSOR_SRC) \
             $(VCP_SRC) \
-            $(SRC_DIR)/system.c \
-            $(SRC_DIR)/system_stm32f4xx.c
+            system.c \
+            system_stm32f4xx.c
 
 
-CXXSOURCES = $(SRC_DIR)/gpio.cpp \
-             $(SRC_DIR)/drv_led.cpp \
+CXXSOURCES = gpio.cpp \
+             drv_led.cpp \
              main.cpp
 
 INCLUDE_DIRS =  $(SRC_DIR) \
@@ -139,6 +139,8 @@ INCLUDE_DIRS =  $(SRC_DIR) \
                 $(CMSIS_DIR)/CM4/DeviceSupport/ST/STM32F4xx/Include \
                 $(PRINTF_DIR) \
                 $(VCP_DIR)
+
+$(info VPATH = $(VPATH))
 
 #################################
 # Object List
