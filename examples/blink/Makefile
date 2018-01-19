@@ -125,11 +125,11 @@ CSOURCES =  $(CMSIS_SRC) \
 
 
 CXXSOURCES = gpio.cpp \
-             drv_led.cpp \
+             led.cpp \
              main.cpp
 
 INCLUDE_DIRS =  $(SRC_DIR) \
-                $(ROOT)/inc \
+                $(ROOT)/include \
                 $(STDPERIPH_DIR)/inc \
                 $(USBOTG_DIR)/inc \
                 $(USBCORE_DIR)/inc \
