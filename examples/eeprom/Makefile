@@ -26,7 +26,7 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-TARGET = spi
+TARGET = eeprom
 
 BOARD ?= REVO
 
@@ -130,13 +130,13 @@ CSOURCES =  $(CMSIS_SRC) \
 
 CXXSOURCES = $(PRINTF_SRC) \
 			 gpio.cpp \
-             drv_led.cpp \
+             led.cpp \
              main.cpp \
              vcp.cpp \
-             
+             eeprom.cpp
 
 INCLUDE_DIRS =  $(SRC_DIR) \
-                $(ROOT)/inc \
+                $(ROOT)/include \
                 $(STDPERIPH_DIR)/inc \
                 $(USBOTG_DIR)/inc \
                 $(USBCORE_DIR)/inc \

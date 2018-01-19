@@ -1,9 +1,9 @@
 #include <string>
 #include "revo_f4.h"
 
-#include "drv_spi.h"
+#include "spi.h"
 #include "mpu6000.h"
-#include "drv_led.h"
+#include "led.h"
 #include "vcp.h"
 #include "printf.h"
 #include "eeprom.h"
