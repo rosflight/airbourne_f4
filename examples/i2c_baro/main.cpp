@@ -1,7 +1,7 @@
 #include "system.h"
-#include "drv_i2c.h"
+#include "i2c.h"
 #include "ms5611.h"
-#include "drv_led.h"
+#include "led.h"
 #include "vcp.h"
 #include "printf.h"
 

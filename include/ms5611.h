@@ -2,7 +2,7 @@
 #define MS5611_H
 
 #include "system.h"
-#include "drv_i2c.h"
+#include "i2c.h"
 
 
 class MS5611
