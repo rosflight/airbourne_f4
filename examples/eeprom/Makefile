@@ -26,7 +26,7 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-TARGET = eeprom
+TARGET = spi
 
 BOARD ?= REVO
 
@@ -54,7 +54,7 @@ A2L=arm-none-eabi-addr2line
 ROOT          = ../..
 SRC_DIR       = $(ROOT)/src
 CMSIS_DIR     = $(ROOT)/lib/CMSIS
-STDPERIPH_DIR	= $(ROOT)/lib/STM32F4xx_StdPeriph_Driver
+STDPERIPH_DIR = $(ROOT)/lib/STM32F4xx_StdPeriph_Driver
 USBCORE_DIR   = $(ROOT)/lib/STM32_USB_Device_Library/Core
 USBOTG_DIR    = $(ROOT)/lib/STM32_USB_OTG_Driver
 USBCDC_DIR    = $(ROOT)/lib/STM32_USB_Device_Library/Class/cdc
@@ -68,7 +68,7 @@ BIN_DIR       = obj
 #################################
 VPATH := $(VPATH):$(STARTUP_DIR)
 LDSCRIPT = $(STARTUP_DIR)/stm32_flash_f405_1024k.ld
-ASOURCES = $(STARTUP_DIR)/startup_stm32f40_41xxx.s
+ASOURCES = startup_stm32f40_41xxx.s
 
 # Search path and source files for the CMSIS sources
 VPATH	 := $(VPATH):$(CMSIS_DIR)/CM4/CoreSupport
@@ -111,6 +111,10 @@ USBOTG_SRC := $(filter-out ${EXCLUDES}, $(USBOTG_SRC))
 VPATH := $(VPATH):$(VCP_DIR)
 VCP_SRC = $(notdir $(wildcard $(VCP_DIR)/*.c))
 
+# Add printf source files
+VPATH := $(VPATH):$(PRINTF_DIR)
+PRINTF_SRC = printf.cpp
+
 # Make a list of source files and includes
 VPATH := $(VPATH):$(SRC_DIR)
 CSOURCES =  $(CMSIS_SRC) \
@@ -120,16 +124,16 @@ CSOURCES =  $(CMSIS_SRC) \
             $(USBCDC_SRC) \
             $(PROCESSOR_SRC) \
             $(VCP_SRC) \
-            $(SRC_DIR)/system.c \
-            $(SRC_DIR)/system_stm32f4xx.c
+            system.c \
+            system_stm32f4xx.c
 
 
-CXXSOURCES = $(SRC_DIR)/gpio.cpp \
-             $(SRC_DIR)/vcp.cpp \
-             $(SRC_DIR)/drv_led.cpp \
-             $(SRC_DIR)/eeprom.cpp \
-             $(PRINTF_DIR)/printf.cpp \
-             main.cpp
+CXXSOURCES = $(PRINTF_SRC) \
+			 gpio.cpp \
+             drv_led.cpp \
+             main.cpp \
+             vcp.cpp \
+             
 
 INCLUDE_DIRS =  $(SRC_DIR) \
                 $(ROOT)/inc \
@@ -143,6 +147,8 @@ INCLUDE_DIRS =  $(SRC_DIR) \
                 $(PRINTF_DIR) \
                 $(VCP_DIR)
 
+$(info VPATH = $(VPATH))
+
 #################################
 # Object List
 #################################
@@ -155,6 +161,7 @@ OBJECTS+=$(addsuffix .o,$(addprefix $(BIN_DIR)/$(TARGET)/,$(basename $(CXXSOURCE
 #################################
 TARGET_ELF=$(BIN_DIR)/$(TARGET).elf
 TARGET_HEX=$(BIN_DIR)/$(TARGET).hex
+TARGET_BIN=$(BIN_DIR)/$(TARGET).bin
 
 #################################
 # Debug Config
@@ -182,7 +189,7 @@ FILE_SIZE_FLAGS += -ffunction-sections -fdata-sections -fno-exceptions
 CXX_FILE_SIZE_FLAGS = $(C_FILE_SIZE_FLAGS) -fno-rtti
 
 MCFLAGS=-mcpu=cortex-m4 -mthumb -march=armv7e-m -mfloat-abi=hard -mfpu=fpv4-sp-d16 -fsingle-precision-constant -Wdouble-promotion
-DEFS=-DSTM32F40_41xxx -D__CORTEX_M4 -D__FPU_PRESENT -DWORDS_STACK_SIZE=200 -DUSE_STDPERIPH_DRIVER -DTARGET_$(BOARD) -DHSE_VALUE=8000000
+DEFS=-DSTM32F40_41xxx -D__CORTEX_M4 -D__FPU_PRESENT -DWORDS_STACK_SIZE=200 -DUSE_STDPERIPH_DRIVER -DTARGET_$(BOARD)
 CFLAGS=-c $(MCFLAGS) $(DEFS) $(OPTIMIZE) $(DEBUG_FLAGS) $(FILE_SIZE_FLAGS) $(addprefix -I,$(INCLUDE_DIRS)) -std=c99
 CXXFLAGS=-c $(MCFLAGS) $(DEFS) $(OPTIMIZE) $(DEBUG_FLAGS) $(CXX_FILE_SIZE_FLAGS) $(CXX_STRICT_FLAGS) $(addprefix -I,$(INCLUDE_DIRS)) -std=c++11
 LDFLAGS =-T $(LDSCRIPT) $(MCFLAGS) -lm -lc --specs=nano.specs --specs=rdimon.specs $(ARCH_FLAGS)  $(LTO_FLAGS)  $(DEBUG_FLAGS) -static  -Wl,-gc-sections
@@ -190,6 +197,9 @@ LDFLAGS =-T $(LDSCRIPT) $(MCFLAGS) -lm -lc --specs=nano.specs --specs=rdimon.spe
 #################################
 # Build
 #################################
+$(TARGET_BIN): $(TARGET_HEX)
+	$(CP) -I ihex -O binary $< $@
+
 $(TARGET_HEX): $(TARGET_ELF)
 	$(CP) -O ihex --set-start 0x8000000 $< $@
 
@@ -221,8 +231,5 @@ $(BIN_DIR)/$(TARGET)/%.o: %.s
 clean:
 	rm -f $(OBJECTS) $(TARGET_ELF) $(TARGET_HEX) $(BIN_DIR)/output.map
 
-flash: $(TARGET_HEX)
-	stty -F $(SERIAL_DEVICE) raw speed 921600 -crtscts cs8 -parenb -cstopb -ixon
-	stm32flash -w $(TARGET_HEX) -v -g 0x0 -b 921600 $(SERIAL_DEVICE)
-
-
+flash: $(TARGET_BIN)
+	dfu-util -a 0 -s 0x08000000 -D $(TARGET_BIN)
