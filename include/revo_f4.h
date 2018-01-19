@@ -4,6 +4,11 @@
 
 #include "system.h"
 
+///
+/// This file defines the hardware configuration used in the C++ abstraction layer
+/// All chip-specific configuration should happen here
+///
+
 /////////////////////// SERIAL CONFIG ///////////////////////
 
 
@@ -49,6 +54,5 @@ const pwm_hardware_struct_t pwm_config[PWM_NUM_CHANNELS] =
 /////////////////////// I2C CONFIG ///////////////////////
 #define HMC5883L_I2C		I2C1
 #define MS5611_I2C      I2C1
-
 
 #endif // REVO_F4_H

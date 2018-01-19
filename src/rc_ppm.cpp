@@ -5,7 +5,7 @@ RC_PPM* RC_PPM_Ptr = NULL;
 void RC_PPM::init()
 {
   // Initialize Variables
-  for (int i = 0; i < PWM_NUM_RC_INPUTS; i++)
+  for (int i = 0; i < 8; i++)
     rc_raw_[i] = 0;
   chan_ = 0;
   current_capture_ = 0;
@@ -82,13 +82,13 @@ void RC_PPM::pulse_callback()
     else
     {
       // If it's a valid reading, then save it!
-      if(diff > 750 && diff < 2250 && chan_ < PWM_NUM_RC_INPUTS)
+      if(diff > 750 && diff < 2250 && chan_ < 8)
       {
         rc_raw_[chan_] = diff;
       }
       chan_++;
     }
-    if (chan_ > PWM_NUM_RC_INPUTS)
+    if (chan_ > 8)
     {
       TIM_SetCounter(TIM3, 0);
     }
