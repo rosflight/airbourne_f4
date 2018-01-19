@@ -1,4 +1,4 @@
-#include "drv_spi.h"
+#include "spi.h"
 
 
 SPI* SPIptr;

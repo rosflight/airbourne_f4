@@ -10,7 +10,7 @@
 #define MPU6000_H
 
 #include "system.h"
-#include "drv_spi.h"
+#include "spi.h"
 
 // Bits
 #define MPU_BIT_SLEEP 					0x40
