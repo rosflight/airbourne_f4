@@ -37,6 +37,24 @@
 #include "misc.h"
 
 typedef struct {
+	SPI_TypeDef* dev;
+	GPIO_TypeDef* GPIO;
+	uint8_t SCK_PinSource;
+	uint16_t SCK_Pin;
+	uint8_t MOSI_PinSource;
+	uint16_t MOSI_Pin;
+	uint8_t MISO_PinSource;
+	uint16_t MISO_Pin;
+	uint8_t GPIO_AF;
+	IRQn_Type DMA_IRQn;
+	DMA_Stream_TypeDef* Tx_DMA_Stream;
+	DMA_Stream_TypeDef* Rx_DMA_Stream;
+	uint32_t DMA_Channel;
+	uint32_t Tx_DMA_TCIF;
+	uint32_t Rx_DMA_TCIF;
+} spi_hardware_struct_t;
+
+typedef struct {
 	GPIO_TypeDef* gpio;
 	uint16_t gpio_pin;
 	uint8_t gpio_pin_source;

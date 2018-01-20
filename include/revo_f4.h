@@ -13,7 +13,33 @@
 
 
 /////////////////////// SPI CONFIG ///////////////////////
-#define MPU6000_SPI SPI1
+#define NUM_SPI 1
+//typedef struct {
+//	SPI_TypeDef* dev;
+//	GPIO_TypeDef* GPIO;
+//	uint8_t SCK_PinSource;
+//	uint16_t SCK_Pin;
+//	uint8_t MOSI_PinSource;
+//	uint16_t MOSI_Pin;
+//	uint8_t MISO_PinSource;
+//	uint16_t MISO_Pin;
+//	uint8_t GPIO_AF;
+//	IRQn_Type DMA_IRQn;
+//	DMA_Stream_TypeDef* Tx_DMA_Stream;
+//	DMA_Stream_TypeDef* Rx_DMA_Stream;
+//	uint32_t DMA_Channel;
+//	uint32_t Tx_DMA_TCIF;
+//	uint32_t Rx_DMA_TCIF;
+//} spi_hardware_struct_t;
+const spi_hardware_struct_t spi_config[NUM_SPI] =
+{
+  {SPI1, GPIOA, GPIO_PinSource5, GPIO_Pin_5, GPIO_PinSource6, GPIO_Pin_6, GPIO_PinSource7, GPIO_Pin_7, \
+   GPIO_AF_SPI1, DMA2_Stream3_IRQn, DMA2_Stream3, DMA2_Stream2, DMA_Channel_3, DMA_FLAG_TCIF2, DMA_FLAG_TCIF3},
+};
+#define MPU6000_SPI 0
+#define MPU6000_CS_GPIO GPIOA
+#define MPU6000_CS_PIN GPIO_Pin_4
+
 
 /////////////////////// LED CONFIG ///////////////////////
 #define LED1_GPIO	GPIOB

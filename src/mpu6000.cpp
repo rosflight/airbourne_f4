@@ -11,10 +11,10 @@ void data_transfer_cb(void)
 
 void MPU6000::write(uint8_t reg, uint8_t data)
 {
-  spi->enable();
+  spi->enable(cs_);
   spi->transfer_byte(reg);
   spi->transfer_byte(data);
-  spi->disable();
+  spi->disable(cs_);
   delayMicroseconds(1);
 }
 
@@ -22,6 +22,9 @@ void MPU6000::init(SPI* spi_drv)
 {
   IMU_Ptr = this;
   spi = spi_drv;
+
+  // Configure Chip Select Pin
+  cs_.init(MPU6000_CS_GPIO, MPU6000_CS_PIN, GPIO::OUTPUT);
 
   write(MPU_RA_PWR_MGMT_1, MPU_BIT_H_RESET);
   delay(150);
@@ -94,7 +97,7 @@ void MPU6000::exti_cb()
 {
   imu_timestamp_ = micros();
   raw[0] = MPU_RA_ACCEL_XOUT_H | 0x80;
-  spi->transfer(raw, 15, raw);
+  spi->transfer(cs_, raw, 15, raw);
 }
 
 extern "C"
