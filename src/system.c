@@ -51,6 +51,8 @@ void systemInit(void)
     //TODO: Should these be abstracted with the board-specific (ie revo_f4.h) file?
     RCC_AHB2PeriphClockCmd(RCC_AHB2Periph_OTG_FS, DISABLE);
     RCC_APB2PeriphClockCmd(RCC_APB2Periph_SPI1, ENABLE);
+    RCC_APB1PeriphClockCmd(RCC_APB1Periph_SPI2, ENABLE);
+    RCC_APB1PeriphClockCmd(RCC_APB1Periph_SPI3, ENABLE);
     RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_DMA2, ENABLE);
     RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_DMA1, ENABLE);
     RCC_APB1PeriphClockCmd(RCC_APB1Periph_I2C1, ENABLE);
@@ -67,6 +69,8 @@ void systemInit(void)
     RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM3, ENABLE);
     RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM5, ENABLE);
     RCC_APB2PeriphClockCmd(RCC_APB2Periph_TIM9, ENABLE);
+    RCC_APB2PeriphClockCmd(RCC_APB2Periph_TIM8, ENABLE);
+    RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM12, ENABLE);
 
     RCC_APB2PeriphClockCmd(RCC_APB2Periph_USART1, ENABLE);
 }
