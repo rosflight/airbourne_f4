@@ -34,6 +34,7 @@
 #include "stm32f4xx_i2c.h"
 #include "stm32f4xx_tim.h"
 #include "stm32f4xx_dma.h"
+#include "stm32f4xx_usart.h"
 #include "misc.h"
 
 typedef struct {
@@ -62,6 +63,24 @@ typedef struct {
 	uint8_t tim_channel;
 	uint8_t tim_af_config;
 } pwm_hardware_struct_t;
+
+typedef struct {
+	USART_TypeDef* dev;
+	GPIO_TypeDef* GPIO;
+	uint16_t Rx_Pin;
+	uint16_t Tx_Pin;
+	uint8_t Rx_PinSource;
+	uint8_t Tx_PinSource;
+	uint8_t GPIO_AF;
+	IRQn_Type USART_IRQn;
+	IRQn_Type Rx_DMA_IRQn;
+	IRQn_Type Tx_DMA_IRQn;
+	DMA_Stream_TypeDef* Rx_DMA_Stream;
+	DMA_Stream_TypeDef* Tx_DMA_Stream;
+	uint32_t DMA_CHannel;
+	uint32_t DMA_Rx_IT_Bit;
+	uint32_t DMA_Tx_IT_Bit;
+} uart_hardware_struct_t;
 
 #ifdef __cplusplus
 extern "C" {

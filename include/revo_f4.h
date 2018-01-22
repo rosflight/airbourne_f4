@@ -9,11 +9,38 @@
 /// All chip-specific configuration should happen here
 ///
 
-/////////////////////// SERIAL CONFIG ///////////////////////
+/////////////////////// UART CONFIG ///////////////////////
+#define NUM_UART 1
+//typedef struct {
+//	USART_TypeDef* dev;
+//	GPIO_TypeDef* GPIO;
+//	uint16_t Rx_Pin;
+//	uint16_t Tx_Pin;
+//	uint8_t Rx_PinSource;
+//	uint8_t Tx_PinSource;
+//	uint8_t GPIO_AF;
+//	IRQn_Type USART_IRQn;
+//	IRQn_Type Rx_DMA_IRQn;
+//	IRQn_Type Tx_DMA_IRQn;
+//	DMA_Stream_TypeDef* Rx_DMA_Stream;
+//	DMA_Stream_TypeDef* Tx_DMA_Stream;
+//	uint32_t DMA_CHannel;
+//	uint32_t DMA_Rx_IT_Bit;
+//	uint32_t DMA_Tx_IT_Bit;
+//} uart_hardware_struct_t;
+const uart_hardware_struct_t uart_config[NUM_UART] =
+{
+  {USART1, GPIOA, GPIO_Pin_10, GPIO_Pin_9, GPIO_PinSource10, GPIO_PinSource9,
+   GPIO_AF_USART1, USART1_IRQn, DMA2_Stream2_IRQn, DMA2_Stream7_IRQn, DMA2_Stream2,
+   DMA2_Stream7, DMA_Channel_4, DMA_IT_TCIF2, DMA_IT_TCIF7},
+  {USART2, GPIOA, GPIO_Pin_10, GPIO_Pin_9, GPIO_PinSource10, GPIO_PinSource9,
+   GPIO_AF_USART1, USART1_IRQn, DMA2_Stream2_IRQn, DMA2_Stream7_IRQn, DMA2_Stream2,
+   DMA2_Stream7, DMA_Channel_4, DMA_IT_TCIF2, DMA_IT_TCIF7},
+};
 
 
 /////////////////////// SPI CONFIG ///////////////////////
-#define NUM_SPI 1
+#define NUM_SPI 3
 //typedef struct {
 //	SPI_TypeDef* dev;
 //	GPIO_TypeDef* GPIO;
@@ -33,8 +60,17 @@
 //} spi_hardware_struct_t;
 const spi_hardware_struct_t spi_config[NUM_SPI] =
 {
-  {SPI1, GPIOA, GPIO_PinSource5, GPIO_Pin_5, GPIO_PinSource6, GPIO_Pin_6, GPIO_PinSource7, GPIO_Pin_7, \
-   GPIO_AF_SPI1, DMA2_Stream3_IRQn, DMA2_Stream3, DMA2_Stream2, DMA_Channel_3, DMA_FLAG_TCIF2, DMA_FLAG_TCIF3},
+  {SPI1, GPIOA, GPIO_PinSource5, GPIO_Pin_5, GPIO_PinSource6, GPIO_Pin_6,
+   GPIO_PinSource7, GPIO_Pin_7, GPIO_AF_SPI1, DMA2_Stream3_IRQn, DMA2_Stream3,
+   DMA2_Stream2, DMA_Channel_3, DMA_FLAG_TCIF2, DMA_FLAG_TCIF3},
+
+  {SPI2, GPIOB, GPIO_PinSource13, GPIO_Pin_13, GPIO_PinSource15, GPIO_Pin_15,
+   GPIO_PinSource14, GPIO_Pin_14, GPIO_AF_SPI2, DMA1_Stream4_IRQn, DMA1_Stream4,
+   DMA1_Stream3, DMA_Channel_0, DMA_FLAG_TCIF3, DMA_FLAG_TCIF4},
+
+  {SPI3, GPIOC, GPIO_PinSource10, GPIO_Pin_10, GPIO_PinSource12, GPIO_Pin_12,
+  GPIO_PinSource11, GPIO_Pin_11, GPIO_AF_SPI3, DMA1_Stream5_IRQn, DMA1_Stream5,
+  DMA1_Stream2, DMA_Channel_0, DMA_FLAG_TCIF2, DMA_FLAG_TCIF5}
 };
 #define MPU6000_SPI 0
 #define MPU6000_CS_GPIO GPIOA
@@ -50,6 +86,14 @@ const spi_hardware_struct_t spi_config[NUM_SPI] =
 /////////////////////// PWM CONFIG ///////////////////////
 #define PWM_NUM_CHANNELS 13
 #define PWM_NUM_OUTPUTS 11
+//typedef struct {
+//	GPIO_TypeDef* gpio;
+//	uint16_t gpio_pin;
+//	uint8_t gpio_pin_source;
+//	TIM_TypeDef* tim;
+//	uint8_t tim_channel;
+//	uint8_t tim_af_config;
+//} pwm_hardware_struct_t;
 const pwm_hardware_struct_t pwm_config[PWM_NUM_CHANNELS] =
 {
   {GPIOB, GPIO_Pin_0,  GPIO_PinSource0,  TIM3,  TIM_Channel_3, GPIO_AF_TIM3}, // PWM1
