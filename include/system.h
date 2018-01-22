@@ -56,12 +56,14 @@ typedef struct {
 } spi_hardware_struct_t;
 
 typedef struct {
-	GPIO_TypeDef* gpio;
-	uint16_t gpio_pin;
-	uint8_t gpio_pin_source;
-	TIM_TypeDef* tim;
-	uint8_t tim_channel;
-	uint8_t tim_af_config;
+	GPIO_TypeDef* GPIO;
+	uint16_t GPIO_Pin;
+	uint8_t GPIO_PinSource;
+	TIM_TypeDef* TIM;
+	uint8_t TIM_Channel;
+	uint8_t GIPO_AF_TIM;
+	IRQn_Type TIM_IRQn;
+	uint16_t TIM_IT_CC;
 } pwm_hardware_struct_t;
 
 typedef struct {

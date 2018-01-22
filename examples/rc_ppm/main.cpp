@@ -56,7 +56,7 @@ int main() {
 
   RC_PPM rc;
 
-  rc.init();
+  rc.init(&pwm_config[10]);
 
   while(1)
   {

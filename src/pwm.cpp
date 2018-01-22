@@ -8,10 +8,10 @@ void PWM_OUT::init(const pwm_hardware_struct_t* pwm_init, uint16_t frequency, ui
   TIM_TimeBaseInitTypeDef tim_init_struct;
   TIM_OCInitTypeDef tim_oc_init_struct;
 
-  port_ = pwm_init->gpio;
-  pin_  = pwm_init->gpio_pin;
+  port_ = pwm_init->GPIO;
+  pin_  = pwm_init->GPIO_Pin;
 
-  GPIO_PinAFConfig(port_, pwm_init->gpio_pin_source, pwm_init->tim_af_config);
+  GPIO_PinAFConfig(port_, pwm_init->GPIO_PinSource, pwm_init->GIPO_AF_TIM);
 
   gpio_init_struct.GPIO_Pin 	= pin_;
   gpio_init_struct.GPIO_Mode 	= GPIO_Mode_AF;
@@ -20,7 +20,7 @@ void PWM_OUT::init(const pwm_hardware_struct_t* pwm_init, uint16_t frequency, ui
   gpio_init_struct.GPIO_PuPd 	= GPIO_PuPd_DOWN;
   GPIO_Init(port_, &gpio_init_struct);
 
-  TIM_TypeDef* TIMPtr = pwm_init->tim;
+  TIM_TypeDef* TIMPtr = pwm_init->TIM;
 
   //calculate timer values
   //This is dependent on how fast the SystemCoreClock is. (ie will change between stm32fX models)
@@ -46,7 +46,7 @@ void PWM_OUT::init(const pwm_hardware_struct_t* pwm_init, uint16_t frequency, ui
   tim_init_struct.TIM_Prescaler 	  = tim_prescaler - 1;
   tim_init_struct.TIM_ClockDivision = TIM_CKD_DIV1; //0x0000
   tim_init_struct.TIM_CounterMode   = TIM_CounterMode_Up;
-  TIM_TimeBaseInit(pwm_init->tim, &tim_init_struct);
+  TIM_TimeBaseInit(pwm_init->TIM, &tim_init_struct);
 
   //init output compare
   TIM_OCStructInit(&tim_oc_init_struct);
@@ -57,7 +57,7 @@ void PWM_OUT::init(const pwm_hardware_struct_t* pwm_init, uint16_t frequency, ui
   tim_oc_init_struct.TIM_OCPolarity 	= TIM_OCPolarity_Low;
   tim_oc_init_struct.TIM_OCIdleState 	= TIM_OCIdleState_Set;
 
-  switch (pwm_init->tim_channel)
+  switch (pwm_init->TIM_Channel)
   {
   case TIM_Channel_1:
     TIM_OC1Init(TIMPtr, &tim_oc_init_struct);
