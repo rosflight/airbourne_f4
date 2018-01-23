@@ -1,6 +1,6 @@
 #include "system.h"
 #include "i2c.h"
-#include "ms4525.h".h"
+#include "ms4525.h"
 #include "led.h"
 #include "vcp.h"
 #include "printf.h"
