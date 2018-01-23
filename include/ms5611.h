@@ -56,6 +56,8 @@ private:
   bool new_data_;
   bool baro_present_;
 
+  uint8_t command_buf_;
+
 public:
   bool init(I2C* _i2c);
   void update();

@@ -169,12 +169,14 @@ void MS5611::convert()
 
 void MS5611::start_temp_meas()
 {
-  i2c_->write(ADDR, ADC_CONV + ADC_D2 + ADC_4096, 1, std::bind(&MS5611::temp_start_cb, this));
+  command_buf_ = 1;
+  i2c_->write(ADDR, ADC_CONV + ADC_D2 + ADC_4096, &command_buf_, std::bind(&MS5611::temp_start_cb, this));
 }
 
 void MS5611::start_pres_meas()
 {
-  i2c_->write(ADDR, ADC_CONV + ADC_D1 + ADC_4096, 1, std::bind(&MS5611::pres_start_cb, this));
+  command_buf_ = 1;
+  i2c_->write(ADDR, ADC_CONV + ADC_D1 + ADC_4096, &command_buf_, std::bind(&MS5611::pres_start_cb, this));
 }
 
 void MS5611::read_pres_mess()

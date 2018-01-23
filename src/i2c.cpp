@@ -169,7 +169,7 @@ int8_t I2C::read(uint8_t addr, uint8_t reg, uint8_t num_bytes, uint8_t* data, st
 }
 
 // asynchronous write, for commanding adc conversions
-int8_t I2C::write(uint8_t addr, uint8_t reg, uint8_t data, std::function<void(void)> callback)
+int8_t I2C::write(uint8_t addr, uint8_t reg, uint8_t* data, std::function<void(void)> callback)
 {
   // load job into the buffer
   i2c_job_t* job = &job_buffer_[buffer_tail_];
@@ -178,7 +178,7 @@ int8_t I2C::write(uint8_t addr, uint8_t reg, uint8_t data, std::function<void(vo
   job->reg = reg;
   job->addr = addr;
   job->num_bytes = 1;
-  job->data = &data;
+  job->data = data;
   job->callback = callback;
 
   // if this was a new job, fire it off
