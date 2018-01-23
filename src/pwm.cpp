@@ -36,9 +36,9 @@ void PWM_OUT::init(const pwm_hardware_struct_t* pwm_init, uint16_t frequency, ui
   }
   uint32_t timer_freq_hz = SystemCoreClock / freq_prescale;
 
-  uint16_t cycles_per_us = timer_freq_hz / 1000000;//E^6
-  max_cyc_ = max_us * cycles_per_us;
-  min_cyc_ = min_us * cycles_per_us;
+  cycles_per_us_ = timer_freq_hz / 1000000;//E^6
+  max_cyc_ = max_us * cycles_per_us_;
+  min_cyc_ = min_us * cycles_per_us_;
 
   //init timer
   TIM_TimeBaseStructInit(&tim_init_struct);
@@ -108,5 +108,5 @@ void PWM_OUT::write(float value) {
 }
 
 void PWM_OUT::writeUs(uint16_t value) {
-  *CCR_ = value;
+  *CCR_ = value * cycles_per_us_;
 }

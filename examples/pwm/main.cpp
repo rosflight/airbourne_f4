@@ -13,21 +13,43 @@ int main() {
 	PWM_OUT esc_out[PWM_NUM_OUTPUTS];
 	for (int i = 0; i < PWM_NUM_OUTPUTS; ++i)
 	{
-				esc_out[i].init(&pwm_config[i], 490, 2000, 1000);
+		esc_out[i].init(&pwm_config[i], 490, 2000, 1000);
+		esc_out[i].write(1.0);
 	}
 
-    float throttle = 0.0;
-	while(1) {
+	// Calibrate ESC
+	while (millis() < 5000);
+
+	for (int i = 0; i < PWM_NUM_OUTPUTS; ++i)
+	{
+		esc_out[i].write(0.0);
+	}
+
+	while (millis() < 1000);
+
+
+	bool use_us_driver = true;;
+	uint32_t throttle = 1000;
+	while(1)
+	{
 		for (int i = 0; i < PWM_NUM_OUTPUTS; ++i)
 		{
-			esc_out[i].write(throttle);
+			if (use_us_driver)
+			{
+				esc_out[i].writeUs(throttle);
+			}
+			else
+			{
+				esc_out[i].write((float)(throttle - 1000) / 1000.0);
+			}
 		}
-        throttle += 0.001;
-        if (throttle > 1.0)
+		throttle += 1;
+		if (throttle > 2000)
 		{
-			throttle = 0.0;
-            info.toggle();
+			throttle = 0;
+			info.toggle();
+			use_us_driver = !use_us_driver;
 		}
-        delay(2);
+		delay(2);
 	}
 }

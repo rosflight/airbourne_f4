@@ -18,6 +18,7 @@ private:
 
   uint16_t max_cyc_;
   uint16_t min_cyc_;
+  uint32_t cycles_per_us_;
 
   GPIO_TypeDef* port_;
   uint16_t pin_;
