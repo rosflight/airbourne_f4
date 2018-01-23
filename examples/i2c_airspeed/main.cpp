@@ -31,7 +31,7 @@ int main() {
 
   info.on();
   I2C i2c1;
-  i2c1.init(I2C1);
+  i2c1.init(I2C2);
   MS4525 airspeed;
 
 
@@ -50,15 +50,15 @@ int main() {
     {
       airspeed.read(diff_press, temp);
       warn.off();
-      printf("%d, %d\n",
-             (int32_t)(diff_press*1000),
-             (int32_t)(temp*1000));
+      printf("%d.%dPa, %d.%dC\n",
+             (int32_t)(diff_press), (int32_t)(diff_press*1000)%1000,
+             (int32_t)(temp), (int32_t)(temp*1000)%1000);
     }
     else
     {
       warn.on();
       printf("error\n");
     }
-    delay(10);
+    delay(50);
   }
 }

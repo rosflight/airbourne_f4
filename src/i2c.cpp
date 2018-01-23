@@ -160,6 +160,12 @@ int8_t I2C::read(uint8_t addr, uint8_t reg, uint8_t num_bytes, uint8_t* data, st
 
   while_check (I2C_GetFlagStatus(dev_, I2C_FLAG_BUSY));
 
+  // If we don't need to send the subaddress, then go ahead and spool up the DMA NACK
+  if (subaddress_sent_)
+  {
+    I2C_AcknowledgeConfig(dev_, ENABLE);
+    I2C_DMALastTransferCmd(dev_, ENABLE);
+  }
   I2C_GenerateSTART(dev_, ENABLE);
 
   I2C_ITConfig(dev_, I2C_IT_EVT | I2C_IT_ERR, ENABLE);
