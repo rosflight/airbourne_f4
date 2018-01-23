@@ -15,6 +15,10 @@
 
 #include "gpio.h"
 
+#ifndef I2C_JOB_BUFFER_SIZE
+#define I2C_JOB_BUFFER_SIZE 16
+#endif
+
 class I2C
 {
 private:
@@ -33,6 +37,22 @@ private:
     READING,
     WRITING
   } current_status_t;
+
+  typedef enum
+  {
+    READ,
+    WRITE
+  } job_type_t;
+
+  typedef struct
+  {
+    job_type_t type;
+    uint8_t addr;
+    uint8_t reg;
+    uint8_t num_bytes;
+    uint8_t* data;
+    std::function<void(void)> callback;
+  } i2c_job_t;
 
   I2C_TypeDef* dev_;
 
@@ -58,6 +78,13 @@ private:
   IRQn_Type DMA_IRQn_;
   IRQn_Type I2C_EV_IRQn_;
   IRQn_Type I2C_ER_IRQn_;
+
+  // I2C Job buffer
+  i2c_job_t job_buffer_[I2C_JOB_BUFFER_SIZE];
+  uint8_t buffer_head_;
+  uint8_t buffer_tail_;
+
+  bool handle_job();
 
 public:
   std::function<void(void)> cb_;
