@@ -1,6 +1,7 @@
 /cmake-build-debug/
 /.idea/
 *.o
+*.gch
 /examples/*/obj/
 /examples/*/processor/
 /examples/*/src/
