@@ -79,6 +79,46 @@ const spi_hardware_struct_t spi_config[NUM_SPI] =
 #define MPU6000_CS_GPIO GPIOA
 #define MPU6000_CS_PIN GPIO_Pin_4
 
+/////////////////////// I2C CONFIG ///////////////////////
+#define NUM_I2C 2
+const i2c_hardware_struct_t i2c_config[NUM_I2C] = {
+  {
+    .dev = I2C1,
+    .I2C_ClockSpeed = 400000,
+    .I2C_EV_IRQn = I2C1_EV_IRQn,
+    .I2C_ER_IRQn = I2C1_ER_IRQn,
+    .GPIO = GPIOB,
+    .GPIO_AF = GPIO_AF_I2C1,
+    .SCL_PinSource = GPIO_PinSource8,
+    .SCL_Pin = GPIO_Pin_8,
+    .SDA_PinSource = GPIO_PinSource9,
+    .SDA_Pin = GPIO_Pin_9,
+    .DMA_Stream = DMA1_Stream0,
+    .DMA_Channel = DMA_Channel_1,
+    .DMA_IRQn = DMA1_Stream0_IRQn,
+    .DMA_TCIF = DMA_FLAG_TCIF0
+  },
+
+  {
+    .dev = I2C2,
+    .I2C_ClockSpeed = 400000,
+    .I2C_EV_IRQn = I2C2_EV_IRQn,
+    .I2C_ER_IRQn = I2C2_ER_IRQn,
+    .GPIO = GPIOB,
+    .GPIO_AF = GPIO_AF_I2C2,
+    .SCL_PinSource = GPIO_PinSource10,
+    .SCL_Pin = GPIO_Pin_10,
+    .SDA_PinSource = GPIO_PinSource11,
+    .SDA_Pin = GPIO_Pin_11,
+    .DMA_Stream = DMA1_Stream2,
+    .DMA_Channel = DMA_Channel_7,
+    .DMA_IRQn = DMA1_Stream2_IRQn,
+    .DMA_TCIF = DMA_FLAG_TCIF2
+  }
+};
+#define HMC5883L_I2C 0
+#define MS5611_I2C 0
+#define MS4525_I2C 1
 
 /////////////////////// LED CONFIG ///////////////////////
 #define LED1_GPIO	GPIOB
@@ -117,11 +157,5 @@ const pwm_hardware_struct_t pwm_config[PWM_NUM_CHANNELS] =
 };
 #define RC_PPM_PIN 11
 #define PPM_RC_IQRHandler TIM8_BRK_TIM12_IRQHandler
-
-
-
-/////////////////////// I2C CONFIG ///////////////////////
-#define HMC5883L_I2C		I2C1
-#define MS5611_I2C      I2C1
 
 #endif // REVO_F4_H
