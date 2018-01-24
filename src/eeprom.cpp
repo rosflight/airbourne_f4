@@ -3,19 +3,20 @@
 
 #include "eeprom.h"
 
-void memory_init()
+void eeprom_init()
 {
   return;//nothing needed
 }
 //Reads the data stored in flash sector 11
-bool memory_read(void * dest, uint8_t len)
+bool eeprom_read(void * dest, uint8_t len)
 {
   memcpy(dest, FLASH_SECTOR11_START, len);
+  return true;
 }
 //writes to the 11th sector, which is used for persistant storage
-bool memory_write(const void* src, uint8_t len)
+bool eeprom_write(const void* src, uint8_t len)
 {
-  flash_write(FLASH_SECTOR11_START, src,len);
+  return flash_write(FLASH_SECTOR11_START, src,len);
 }
 //Reads from the specified location. Note that there is no error checking
 bool flash_read(void* flash_loc,void* dest, uint8_t len)
@@ -28,6 +29,7 @@ bool flash_erase()
 {
   FLASH_Unlock();
   FLASH_EraseSector(FLASH_Sector_11,VoltageRange_3);
+  return true;
 }
 //writes data to the given location. Note that there is no error checking
 bool flash_write(void const* flash_loc, void const* data, uint8_t len)
