@@ -31,7 +31,7 @@ int main() {
 
   info.on();
   I2C i2c1;
-  i2c1.init(I2C2);
+  i2c1.init(&i2c_config[MS4525_I2C]);
   MS4525 airspeed;
 
 

@@ -56,6 +56,23 @@ typedef struct {
 } spi_hardware_struct_t;
 
 typedef struct {
+	I2C_TypeDef* dev;
+	uint32_t I2C_ClockSpeed;
+	IRQn_Type I2C_EV_IRQn;
+	IRQn_Type I2C_ER_IRQn;
+	GPIO_TypeDef* GPIO;
+	uint8_t GPIO_AF;
+	uint8_t SCL_PinSource;
+	uint16_t SCL_Pin;
+	uint8_t SDA_PinSource;
+	uint16_t SDA_Pin;
+	DMA_Stream_TypeDef* DMA_Stream;
+	uint32_t DMA_Channel;
+	IRQn_Type DMA_IRQn;
+	uint32_t DMA_TCIF;
+} i2c_hardware_struct_t;
+
+typedef struct {
 	GPIO_TypeDef* GPIO;
 	uint16_t GPIO_Pin;
 	uint8_t GPIO_PinSource;

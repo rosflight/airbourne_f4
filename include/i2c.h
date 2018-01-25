@@ -34,8 +34,6 @@ private:
     WRITING
   } current_status_t;
 
-  I2C_TypeDef* dev_;
-
   GPIO scl_;
   GPIO sda_;
 
@@ -52,17 +50,13 @@ private:
   volatile uint8_t data_;
 
   DMA_InitTypeDef  DMA_InitStructure_;
-  DMA_Stream_TypeDef* DMA_stream_;
-  uint32_t DMA_channel_;
-  uint32_t DMA_Stream_TCFLAG_;
-  IRQn_Type DMA_IRQn_;
-  IRQn_Type I2C_EV_IRQn_;
-  IRQn_Type I2C_ER_IRQn_;
+
+  const i2c_hardware_struct_t *c_;
 
 public:
   std::function<void(void)> cb_;
 
-  void init(I2C_TypeDef *I2C_dev);
+  void init(const i2c_hardware_struct_t *c);
   void unstick();
   void hardware_failure();
   int8_t read(uint8_t addr, uint8_t reg, uint8_t num_bytes, uint8_t* data, std::function<void(void)> callback, bool blocking = false);
@@ -80,5 +74,6 @@ public:
 };
 
 //global i2c ptrs used by the event interrupts
-extern I2C* I2CDev_1Ptr;
+extern I2C* I2C1_Ptr;
 extern I2C* I2C2_Ptr;
+extern I2C* I2C3_Ptr;
