@@ -11,9 +11,9 @@ void M25P16::init(SPI* _spi)
   cs_.init(FLASH_CS_GPIO, FLASH_CS_PIN, GPIO::OUTPUT);
 
   // Read the chip identification;
-  uint8_t raw[20];
-  uint8_t addr = READ_IDENTIFICATION;
-  spi_->transfer(cs_, raw, 21, raw, &addr, 1);
+  uint8_t raw[21];
+  raw[0] = READ_IDENTIFICATION;
+  spi_->transfer(raw, 21, raw, &cs_);
 
   while (spi_->is_busy()) {}
 
@@ -34,15 +34,26 @@ bool M25P16::write_config(uint8_t *data, uint8_t len)
   }
 
   // Enable the write
-  spi_->transfer_byte(cs_, WRITE_ENABLE);
+  spi_->transfer_byte(WRITE_ENABLE, &cs_);
 
   // Program the data
   for (uint32_t i = 0; i < num_pages_for_config_; i++)
   {
+    // Transfer Address
     uint8_t addr[4] = {PAGE_PROGRAM, (uint8_t)(i >> 8), (uint8_t)(i & 0xFF), 0};
-    uint8_t dummy_arr[256];
-    spi_->transfer(cs_, &data[256*i], 255, dummy_arr, addr, 4);
+    spi_->enable(cs_);
+    spi_->transfer(addr, 4, NULL, NULL);
+    while (spi_->is_busy()) {}
+
+    // Transfer Page of data
+    uint16_t page_len = 256;
+    if (i < num_pages_for_config_)
+    {
+      page_len = len % 256;
+    }
+    spi_->transfer(&data[256*i], page_len, NULL, NULL);
+    spi_->disable(cs_);
     while (spi_->is_busy()) {}
   }
-  spi_->transfer_byte(cs_, WRITE_DISABLE);
+  spi_->transfer_byte(WRITE_DISABLE, &cs_);
 }

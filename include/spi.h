@@ -19,6 +19,7 @@ public:
 
   void init(const spi_hardware_struct_t *conf);
 
+  inline bool is_busy() {return busy_;}
   void set_divisor(uint16_t new_divisor);
   void enable(GPIO& cs);
   void disable(GPIO& cs);
