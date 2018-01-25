@@ -138,7 +138,7 @@ void SPI::disable(GPIO& cs) {
 
 uint8_t SPI::transfer_byte(uint8_t data, GPIO *cs)
 {
-  uint8_t byte = data;
+  uint8_t byte;
   uint16_t spiTimeout;
 
   spiTimeout = 0x1000;
@@ -148,9 +148,11 @@ uint8_t SPI::transfer_byte(uint8_t data, GPIO *cs)
     enable(*cs);
   }
 
+//  SPI_Cmd(dev, ENABLE);
+
   while (SPI_I2S_GetFlagStatus(dev, SPI_I2S_FLAG_TXE) == RESET)
   {
-    if ((spiTimeout--) == 0)
+    if ((--spiTimeout) == 0)
       return false;
   }
 
@@ -160,18 +162,18 @@ uint8_t SPI::transfer_byte(uint8_t data, GPIO *cs)
 
   while (SPI_I2S_GetFlagStatus(dev, SPI_I2S_FLAG_RXNE) == RESET)
   {
-    if ((spiTimeout--) == 0)
+    if ((--spiTimeout) == 0)
       return false;
   }
-  // Pack received data into the same array
-  data = (uint8_t)SPI_I2S_ReceiveData(dev);
 
   if (cs)
   {
     disable(*cs);
   }
 
-  return byte;
+//  SPI_Cmd(dev, DISABLE);
+
+  return (uint8_t)SPI_I2S_ReceiveData(dev);
 }
 
 bool SPI::transfer(uint8_t* out_data, uint16_t num_bytes, uint8_t* in_data, GPIO* cs)
@@ -212,6 +214,10 @@ bool SPI::transfer(uint8_t* out_data, uint16_t num_bytes, uint8_t* in_data, GPIO
     enable(*cs);
     cs_ = cs;
   }
+  else
+  {
+    cs_ = NULL;
+  }
 
   DMA_Cmd(c_->Tx_DMA_Stream, ENABLE); /* Enable the DMA SPI TX Stream */
   DMA_Cmd(c_->Rx_DMA_Stream, ENABLE); /* Enable the DMA SPI RX Stream */
@@ -220,7 +226,7 @@ bool SPI::transfer(uint8_t* out_data, uint16_t num_bytes, uint8_t* in_data, GPIO
   SPI_I2S_DMACmd(dev, SPI_I2S_DMAReq_Rx, ENABLE);
   SPI_I2S_DMACmd(dev, SPI_I2S_DMAReq_Tx, ENABLE);
 
-  SPI_Cmd(dev, ENABLE);
+//  SPI_Cmd(dev, ENABLE);
 }
 
 
@@ -237,7 +243,12 @@ void SPI::transfer_complete_cb()
   SPI_I2S_DMACmd(dev, SPI_I2S_DMAReq_Rx, DISABLE);
   SPI_I2S_DMACmd(dev, SPI_I2S_DMAReq_Tx, DISABLE);
 
-  SPI_Cmd(dev, DISABLE);
+//  SPI_Cmd(dev, DISABLE);
+
+  if (cs_ != NULL)
+  {
+    disable(*cs_);
+  }
 
   busy_ = false;
   if (transfer_cb_ != NULL)

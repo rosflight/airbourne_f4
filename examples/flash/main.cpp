@@ -14,7 +14,18 @@ static void _putc(void *p, char c)
     uartPtr->put_byte(c);
 }
 
-int main() {
+typedef struct
+{
+  uint8_t magic_BE = 0xBE;
+  uint8_t big_array[500];
+  uint8_t magic_AC = 0xAC;
+  uint8_t big_array2[500];
+  uint8_t magic_D3 = 0xD3;
+  uint8_t crc;
+} config_t;
+
+int main()
+{
 
   systemInit();
 
@@ -34,9 +45,14 @@ int main() {
 
   M25P16 flash;
   flash.init(&spi);
+
+  // Create a gigantic "config file"
+  config_t config_file;
+
   while(1)
   {
     info.toggle();
+    flash.write_config((uint8_t*)&config_file, sizeof(config_t));
     delay(10);
   }
 }

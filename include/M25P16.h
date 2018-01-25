@@ -32,11 +32,13 @@ private:
 
   uint8_t write_buffer_[260];
 
+  uint8_t get_status();
+
 public:
   M25P16();
   void init(SPI *_spi);
-  bool read_config(uint8_t* data, uint8_t len);
-  bool write_config(uint8_t* data, uint8_t len);
+  bool read_config(uint8_t* data, uint32_t len);
+  bool write_config(uint8_t* data, uint32_t len);
   void write_page(uint8_t* data);
   void read(uint8_t* data, uint8_t len);
 };
