@@ -97,7 +97,7 @@ void MPU6000::exti_cb()
 {
   imu_timestamp_ = micros();
   raw[0] = MPU_RA_ACCEL_XOUT_H | 0x80;
-  spi->transfer(cs_, raw, 15, raw);
+  spi->transfer(raw, 15, raw, &cs_);
 }
 
 extern "C"

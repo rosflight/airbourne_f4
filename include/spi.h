@@ -22,9 +22,9 @@ public:
   void set_divisor(uint16_t new_divisor);
   void enable(GPIO& cs);
   void disable(GPIO& cs);
-  bool transfer(GPIO& cs, uint8_t *out_data, uint8_t num_bytes, uint8_t* in_data);
-  uint8_t transfer_byte(uint8_t data);
-  uint8_t transfer_byte(GPIO& cs, uint8_t data);
+  bool transfer(uint8_t *out_data, uint16_t num_bytes, uint8_t* in_data, GPIO* cs = NULL);
+  bool transfer(uint8_t *out_data, uint16_t num_bytes, uint8_t* in_data);
+  uint8_t transfer_byte(uint8_t data, GPIO* cs = NULL);
   void transfer_complete_cb();
   void register_complete_cb(void (*cb)(void));
 
@@ -35,7 +35,7 @@ private:
   GPIO miso_;
   GPIO sck_;
 
-  GPIO cs_;
+  GPIO* cs_;
 
   DMA_InitTypeDef DMA_InitStructure_;
   const spi_hardware_struct_t* c_;

@@ -3,6 +3,8 @@
 
 SPI* SPI1ptr;
 
+static uint8_t dummy_buffer[256];
+
 void SPI::init(const spi_hardware_struct_t *c)
 {
   GPIO_InitTypeDef gpio_init_struct;
@@ -126,20 +128,17 @@ void SPI::disable(GPIO& cs) {
   cs.write(GPIO::HIGH);
 }
 
-uint8_t SPI::transfer_byte(GPIO& cs, uint8_t data)
-{
-  enable(cs);
-  uint8_t ret = transfer_byte(data);
-  disable(cs);
-  return ret;
-}
-
-uint8_t SPI::transfer_byte(uint8_t data)
+uint8_t SPI::transfer_byte(uint8_t data, GPIO *cs)
 {
   uint8_t byte = data;
   uint16_t spiTimeout;
 
   spiTimeout = 0x1000;
+
+  if (cs != NULL)
+  {
+    enable(*cs);
+  }
 
   while (SPI_I2S_GetFlagStatus(dev, SPI_I2S_FLAG_TXE) == RESET)
   {
@@ -159,12 +158,27 @@ uint8_t SPI::transfer_byte(uint8_t data)
   // Pack received data into the same array
   data = (uint8_t)SPI_I2S_ReceiveData(dev);
 
+  if (cs)
+  {
+    disable(*cs);
+  }
+
   return byte;
 }
 
-bool SPI::transfer(GPIO& cs, uint8_t* out_data, uint8_t num_bytes, uint8_t* in_data)
+bool SPI::transfer(uint8_t* out_data, uint16_t num_bytes, uint8_t* in_data, GPIO* cs)
 {
   busy_ = true;
+
+  // Point null arrays to dummy buffer so we have something to point to
+  if (out_data == NULL)
+  {
+    out_data = dummy_buffer;
+  }
+  if (in_data == NULL)
+  {
+    in_data = dummy_buffer;
+  }
 
   // Configure the DMA
   DMA_DeInit(c_->Tx_DMA_Stream); //SPI1_TX_DMA_STREAM
@@ -187,8 +201,11 @@ bool SPI::transfer(GPIO& cs, uint8_t* out_data, uint8_t num_bytes, uint8_t* in_d
   //  Configure the Interrupt
   DMA_ITConfig(c_->Tx_DMA_Stream, DMA_IT_TC, ENABLE);
 
-  enable(cs);
-  cs_ = cs;
+  if (cs != NULL)
+  {
+    enable(*cs);
+    cs_ = cs;
+  }
 
   DMA_Cmd(c_->Tx_DMA_Stream, ENABLE); /* Enable the DMA SPI TX Stream */
   DMA_Cmd(c_->Rx_DMA_Stream, ENABLE); /* Enable the DMA SPI RX Stream */
@@ -204,7 +221,7 @@ bool SPI::transfer(GPIO& cs, uint8_t* out_data, uint8_t num_bytes, uint8_t* in_d
 
 void SPI::transfer_complete_cb()
 {
-  disable(cs_);
+  disable(*cs_);
   DMA_ClearFlag(c_->Tx_DMA_Stream, c_->Tx_DMA_TCIF);
   DMA_ClearFlag(c_->Rx_DMA_Stream, c_->Rx_DMA_TCIF);
 

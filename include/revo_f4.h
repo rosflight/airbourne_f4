@@ -79,6 +79,10 @@ const spi_hardware_struct_t spi_config[NUM_SPI] =
 #define MPU6000_CS_GPIO GPIOA
 #define MPU6000_CS_PIN GPIO_Pin_4
 
+#define FLASH_SPI 2
+#define FLASH_CS_GPIO GPIOB
+#define FLASH_CS_PIN GPIO_Pin_3
+
 
 /////////////////////// LED CONFIG ///////////////////////
 #define LED1_GPIO	GPIOB
