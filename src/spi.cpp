@@ -176,7 +176,7 @@ uint8_t SPI::transfer_byte(uint8_t data, GPIO *cs)
   return (uint8_t)SPI_I2S_ReceiveData(dev);
 }
 
-bool SPI::transfer(uint8_t* out_data, uint16_t num_bytes, uint8_t* in_data, GPIO* cs)
+bool SPI::transfer(uint8_t* out_data, uint32_t num_bytes, uint8_t* in_data, GPIO* cs)
 {
   busy_ = true;
 
@@ -194,7 +194,7 @@ bool SPI::transfer(uint8_t* out_data, uint16_t num_bytes, uint8_t* in_data, GPIO
   DMA_DeInit(c_->Tx_DMA_Stream); //SPI1_TX_DMA_STREAM
   DMA_DeInit(c_->Rx_DMA_Stream); //SPI1_RX_DMA_STREAM
 
-  DMA_InitStructure_.DMA_BufferSize = (uint16_t)(num_bytes); // we receive 14 bytes
+  DMA_InitStructure_.DMA_BufferSize = num_bytes;
 
   /* Configure Tx DMA */
   DMA_InitStructure_.DMA_DIR = DMA_DIR_MemoryToPeripheral;
@@ -233,6 +233,13 @@ bool SPI::transfer(uint8_t* out_data, uint16_t num_bytes, uint8_t* in_data, GPIO
 
 void SPI::transfer_complete_cb()
 {
+//  uint8_t rxne, txe;
+//  do
+//  {
+//    rxne = SPI_I2S_GetFlagStatus(dev, SPI_I2S_FLAG_RXNE);
+//    txe =  SPI_I2S_GetFlagStatus(dev, SPI_I2S_FLAG_TXE);
+//  }while (rxne == RESET || txe == RESET);
+
   disable(*cs_);
   DMA_ClearFlag(c_->Tx_DMA_Stream, c_->Tx_DMA_TCIF);
   DMA_ClearFlag(c_->Rx_DMA_Stream, c_->Rx_DMA_TCIF);

@@ -20,12 +20,15 @@ void M25P16::init(SPI* _spi)
   cs_.init(FLASH_CS_GPIO, FLASH_CS_PIN, GPIO::OUTPUT);
 
   uint8_t status = get_status();
+  delay(10);
 
   // Read the chip identification;
-  uint8_t in_raw[21], out_raw[21];
+  uint8_t in_raw[5], out_raw[5];
   in_raw[0] = READ_IDENTIFICATION;
-  spi_->transfer(in_raw, 21, out_raw, &cs_);
+  spi_->enable(cs_);
+  spi_->transfer(in_raw, 5, out_raw);
   while (spi_->is_busy()) {}
+  spi_->disable(cs_);
 
   uint8_t status2 = get_status();
 

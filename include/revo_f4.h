@@ -63,17 +63,54 @@ const uart_hardware_struct_t uart_config[NUM_UART] =
 //} spi_hardware_struct_t;
 const spi_hardware_struct_t spi_config[NUM_SPI] =
 {
-  {SPI1, GPIOA, GPIO_PinSource5, GPIO_Pin_5, GPIO_PinSource6, GPIO_Pin_6,
-   GPIO_PinSource7, GPIO_Pin_7, GPIO_AF_SPI1, DMA2_Stream3_IRQn, DMA2_Stream3,
-   DMA2_Stream2, DMA_Channel_3, DMA_FLAG_TCIF2, DMA_FLAG_TCIF3},
-
-  {SPI2, GPIOB, GPIO_PinSource13, GPIO_Pin_13, GPIO_PinSource15, GPIO_Pin_15,
-   GPIO_PinSource14, GPIO_Pin_14, GPIO_AF_SPI2, DMA1_Stream4_IRQn, DMA1_Stream4,
-   DMA1_Stream3, DMA_Channel_0, DMA_FLAG_TCIF3, DMA_FLAG_TCIF4},
-
-  {SPI3, GPIOC, GPIO_PinSource10, GPIO_Pin_10, GPIO_PinSource12, GPIO_Pin_12,
-  GPIO_PinSource11, GPIO_Pin_11, GPIO_AF_SPI3, DMA1_Stream5_IRQn, DMA1_Stream5,
-  DMA1_Stream2, DMA_Channel_0, DMA_FLAG_TCIF2, DMA_FLAG_TCIF5}
+  {
+  	.dev = SPI1,
+   	.GPIO = GPIOA,
+   	.SCK_PinSource = GPIO_PinSource5,
+   	.SCK_Pin = GPIO_Pin_5,
+   	.MOSI_PinSource = GPIO_PinSource6,
+   	.MOSI_Pin = GPIO_Pin_6,
+   	.MISO_PinSource = GPIO_PinSource7,
+   	.MISO_Pin = GPIO_Pin_7,
+   	.GPIO_AF = GPIO_AF_SPI1,
+   	.DMA_IRQn = DMA2_Stream3_IRQn,
+   	.Tx_DMA_Stream = DMA2_Stream3,
+   	.Rx_DMA_Stream = DMA2_Stream2,
+   	.DMA_Channel = DMA_Channel_3,
+    .Tx_DMA_TCIF = DMA_FLAG_TCIF3,
+    .Rx_DMA_TCIF = DMA_FLAG_TCIF2
+   }, {	
+  	.dev = SPI2, 
+  	.GPIO = GPIOB, 
+  	.SCK_PinSource = GPIO_PinSource13, 
+  	.SCK_Pin = GPIO_Pin_13, 
+  	.MOSI_PinSource = GPIO_PinSource15, 
+  	.MOSI_Pin = GPIO_Pin_15,
+   	.MISO_PinSource = GPIO_PinSource14, 
+   	.MISO_Pin = GPIO_Pin_14, 
+   	.GPIO_AF = GPIO_AF_SPI2, 
+   	.DMA_IRQn = DMA1_Stream4_IRQn, 
+   	.Tx_DMA_Stream = DMA1_Stream4,
+   	.Rx_DMA_Stream = DMA1_Stream3, 
+   	.DMA_Channel = DMA_Channel_0, 
+    .Tx_DMA_TCIF = DMA_FLAG_TCIF4,
+    .Rx_DMA_TCIF = DMA_FLAG_TCIF3
+   }, {
+  	.dev = SPI3, 
+  	.GPIO = GPIOC, 
+  	.SCK_PinSource = GPIO_PinSource10, 
+  	.SCK_Pin = GPIO_Pin_10, 
+  	.MOSI_PinSource = GPIO_PinSource12, 
+  	.MOSI_Pin = GPIO_Pin_12,
+  	.MISO_PinSource = GPIO_PinSource11, 
+  	.MISO_Pin = GPIO_Pin_11, 
+  	.GPIO_AF = GPIO_AF_SPI3, 
+  	.DMA_IRQn = DMA1_Stream5_IRQn, 
+  	.Tx_DMA_Stream = DMA1_Stream5,
+  	.Rx_DMA_Stream = DMA1_Stream2, 
+  	.DMA_Channel = DMA_Channel_0, 
+    .Tx_DMA_TCIF = DMA_FLAG_TCIF5,
+    .Rx_DMA_TCIF = DMA_FLAG_TCIF2}
 };
 #define MPU6000_SPI 0
 #define MPU6000_CS_GPIO GPIOA

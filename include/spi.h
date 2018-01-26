@@ -23,7 +23,7 @@ public:
   void set_divisor(uint16_t new_divisor);
   void enable(GPIO& cs);
   void disable(GPIO& cs);
-  bool transfer(uint8_t *out_data, uint16_t num_bytes, uint8_t* in_data, GPIO* cs = NULL);
+  bool transfer(uint8_t *out_data, uint32_t num_bytes, uint8_t* in_data, GPIO* cs = NULL);
   uint8_t transfer_byte(uint8_t data, GPIO* cs = NULL);
   void transfer_complete_cb();
   void register_complete_cb(void (*cb)(void));
