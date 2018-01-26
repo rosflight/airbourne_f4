@@ -31,15 +31,17 @@ void M25P16::init(SPI* _spi)
 
 bool M25P16::read_config(uint8_t *data, uint32_t len)
 {
-  num_pages_for_config_ = len / 256;
-  if (len % 256 != 0)
-  {
-    num_pages_for_config_ ++;
-  }
+  uint8_t status = get_status();
 
   // Enable the write
-  spi_->transfer_byte(WRITE_ENABLE, &cs_);
-
+  spi_->enable(cs_);
+  uint8_t addr[4] = {READ_DATA, 0, 0, 0};
+  spi_->transfer(addr, 4, NULL, NULL);
+  while (spi_->is_busy()) {}
+  spi_->transfer(NULL, len, data, NULL);
+  while (spi_->is_busy());
+  spi_->disable(cs_);
+  return true;
 }
 
 bool M25P16::write_config(uint8_t *data, uint32_t len)
@@ -88,7 +90,7 @@ bool M25P16::write_config(uint8_t *data, uint32_t len)
 
     // Figure out how much of this page we are going to use
     uint16_t page_len = 256;
-    if (i < num_pages_for_config_)
+    if (i == num_pages_for_config_ -1)
     {
       page_len = len % 256;
     }
@@ -116,4 +118,5 @@ bool M25P16::write_config(uint8_t *data, uint32_t len)
 
   // Disable the write
   spi_->transfer_byte(WRITE_DISABLE, &cs_);
+  return true;
 }
