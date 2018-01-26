@@ -18,28 +18,27 @@ class SPI
 public:
 
   void init(const spi_hardware_struct_t *conf);
-
-  inline bool is_busy() {return busy_;}
   void set_divisor(uint16_t new_divisor);
+
   void enable(GPIO& cs);
   void disable(GPIO& cs);
-  bool transfer(uint8_t *out_data, uint32_t num_bytes, uint8_t* in_data, GPIO* cs = NULL);
+
+  bool transfer(uint8_t *out_data, uint32_t num_bytes, uint8_t* in_data, GPIO* cs = NULL, void (*cb)(void) = NULL);
   uint8_t transfer_byte(uint8_t data, GPIO* cs = NULL);
+
   void transfer_complete_cb();
-  void register_complete_cb(void (*cb)(void));
+  inline bool is_busy() {return busy_;}
 
 private:
-  bool busy_ = false;
-  SPI_TypeDef*	dev;
+  const spi_hardware_struct_t* c_;
   GPIO mosi_;
   GPIO miso_;
   GPIO sck_;
 
-  GPIO* cs_;
-  uint32_t errors_ = 0;
-
   DMA_InitTypeDef DMA_InitStructure_;
-  const spi_hardware_struct_t* c_;
 
+  uint32_t errors_ = 0;
+  GPIO* cs_;
+  bool busy_ = false;
   void (*transfer_cb_)(void) = NULL;
 };
