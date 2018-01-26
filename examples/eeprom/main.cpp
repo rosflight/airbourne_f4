@@ -34,10 +34,10 @@ int main() {
   //To write, uncomment this
   data.version=1;
   data.someOtherValue=3.14154f;
-  memory_write((&data),sizeof(data));
+  eeprom_write((&data),sizeof(data));
   
   //to read, uncomment this
-  memory_read(&data,sizeof(data));
+  eeprom_read(&data,sizeof(data));
 
 
   printf("version: %d",data.version);

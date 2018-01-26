@@ -31,7 +31,7 @@ int main() {
 
   info.on();
   I2C i2c1;
-  i2c1.init(&i2c_config[MS5611_I2C]);
+  i2c1.init(&i2c_config[BARO_I2C]);
   MS5611 baro;
 
   if (!baro.init(&i2c1))
