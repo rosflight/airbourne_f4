@@ -25,6 +25,7 @@ void MPU6000::init(SPI* spi_drv)
 
   // Configure Chip Select Pin
   cs_.init(MPU6000_CS_GPIO, MPU6000_CS_PIN, GPIO::OUTPUT);
+  spi->set_divisor(2); // 21 MHz SPI clock (within 20 +/- 10%)
 
   write(MPU_RA_PWR_MGMT_1, MPU_BIT_H_RESET);
   delay(150);
@@ -38,7 +39,13 @@ void MPU6000::init(SPI* spi_drv)
   write(MPU_RA_GYRO_CONFIG, MPU_BITS_FS_2000DPS);
   write(MPU_RA_INT_ENABLE, 0x01);
 
-  spi->set_divisor(2); // 21 MHz SPI clock (within 20 +/- 10%)
+
+
+  for (int i = 0; i < 100; i++)
+  // Read the IMU
+  raw[0] = MPU_RA_TEMP_OUT_H | 0x80;
+  spi->transfer(raw, 3, raw, &cs_);
+  while (spi->is_busy()) {}
 
   // Set up the EXTI pin
   exti_.init(GPIOC, GPIO_Pin_4, GPIO::INPUT);

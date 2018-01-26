@@ -19,20 +19,14 @@ void M25P16::init(SPI* _spi)
   spi_ = _spi;
   cs_.init(FLASH_CS_GPIO, FLASH_CS_PIN, GPIO::OUTPUT);
 
-  uint8_t status = get_status();
-  delay(10);
+  spi_->set_divisor(2);
 
   // Read the chip identification;
-  uint8_t in_raw[5], out_raw[5];
-  in_raw[0] = READ_IDENTIFICATION;
-  spi_->enable(cs_);
-  spi_->transfer(in_raw, 5, out_raw);
-  while (spi_->is_busy()) {}
-  spi_->disable(cs_);
-
-  uint8_t status2 = get_status();
-
-  int debug = 1;
+  uint8_t buf[5];
+  buf[0] = READ_IDENTIFICATION;
+  spi_->transfer(buf, 5, buf, &cs_);
+  while (spi_->is_busy());
+  spi_->transfer_byte(WRITE_ENABLE, &cs_);
 }
 
 bool M25P16::read_config(uint8_t *data, uint32_t len)
@@ -56,18 +50,13 @@ bool M25P16::write_config(uint8_t *data, uint32_t len)
     num_pages_for_config_ ++;
   }
 
-  uint8_t status = get_status();
-
   // Enable the write
   spi_->transfer_byte(WRITE_ENABLE, &cs_);
 
   // Make sure we can erase (WEL bit is set)
-  status = get_status();
+  uint8_t status = get_status();
   if (!(status & STATUS_WEL_BIT))
-  {
     return false;
-  }
-
 
   //////////////////////////////
   /// Erase Sector
@@ -76,8 +65,6 @@ bool M25P16::write_config(uint8_t *data, uint32_t len)
   spi_->transfer(sector_addr, 4, NULL, &cs_);
   while (spi_->is_busy()) {}
 
-  delay(100);
-
   // Wait for Sector Erase to complete
   bool WIP = true;
   do
@@ -85,8 +72,6 @@ bool M25P16::write_config(uint8_t *data, uint32_t len)
     status = get_status();
     if ((status & STATUS_WIP_BIT) == 0x00)
       WIP = false;
-    else
-      WIP = true;
   } while(WIP);
 
   //////////////////////////////
