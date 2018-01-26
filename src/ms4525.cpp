@@ -35,7 +35,7 @@ void MS4525::read_cb()
   next_update_ms_ += 20;
 }
 
-void MS4525::read(float &differential_pressure, float &temp)
+void MS4525::read(float* differential_pressure, float* temp)
 {
   if (new_data_)
   {
@@ -50,7 +50,7 @@ void MS4525::read(float &differential_pressure, float &temp)
     }
     new_data_ = false;
   }
-  differential_pressure = diff_press_;
-  temp = temp_;
+  (*differential_pressure) = diff_press_;
+  (*temp) = temp_;
 }
 

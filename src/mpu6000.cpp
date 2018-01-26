@@ -70,8 +70,6 @@ void MPU6000::init(SPI* spi_drv)
   // set the accel and gyro scale parameters
   accel_scale_ = (4.0 * 9.80665f) / ((float)0x7FFF);
   gyro_scale_= (2000.0 * 3.14159f/180.0f) / ((float)0x7FFF);
-
-  spi->register_complete_cb(&data_transfer_cb);
 }
 
 void MPU6000::data_transfer_callback()
@@ -104,7 +102,7 @@ void MPU6000::exti_cb()
 {
   imu_timestamp_ = micros();
   raw[0] = MPU_RA_ACCEL_XOUT_H | 0x80;
-  spi->transfer(raw, 15, raw, &cs_);
+  spi->transfer(raw, 15, raw, &cs_, &data_transfer_cb);
 }
 
 extern "C"

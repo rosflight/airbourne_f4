@@ -9,7 +9,7 @@ public:
   bool init(I2C* _i2c);
   bool present();
   void update();
-  void read(float& differential_pressure, float& temp);
+  void read(float *differential_pressure, float *temp);
 
   void read_cb();
 

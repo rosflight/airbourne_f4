@@ -31,7 +31,7 @@ int main() {
 
   info.on();
   I2C i2c1;
-  i2c1.init(&i2c_config[HMC5883L_I2C]);
+  i2c1.init(&i2c_config[MAG_I2C]);
   HMC5883L mag;
 
 

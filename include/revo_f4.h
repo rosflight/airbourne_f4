@@ -157,9 +157,9 @@ const i2c_hardware_struct_t i2c_config[NUM_I2C] = {
     .DMA_TCIF = DMA_FLAG_TCIF2
   }
 };
-#define HMC5883L_I2C 0
-#define MS5611_I2C 0
-#define MS4525_I2C 1
+#define MAG_I2C 0
+#define BARO_I2C 0
+#define EXTERNAL_I2C 1
 
 /////////////////////// LED CONFIG ///////////////////////
 #define LED1_GPIO	GPIOB
