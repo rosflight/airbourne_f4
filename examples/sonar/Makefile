@@ -130,11 +130,11 @@ CSOURCES =  $(CMSIS_SRC) \
 
 CXXSOURCES = $(PRINTF_SRC) \
 			 gpio.cpp \
-             led.cpp \
              main.cpp \
              vcp.cpp \
              i2c.cpp \
-             ms5611.cpp
+             ms5611.cpp \
+             drv_mb1242.cpp
 
 INCLUDE_DIRS =  $(SRC_DIR) \
                 $(ROOT)/include \
