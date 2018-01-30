@@ -1,7 +1,7 @@
 #ifndef I2C_SONAR_H
 #define I2C_SONAR_H
 #include <cstdint>
-#include "drv_i2c.h"
+#include "i2c.h"
 
 #define DEFAULT_ADDRESS 112
 #define DEFAULT_REGISTER 0xFF
