@@ -1,9 +1,9 @@
 #include <string>
 #include "revo_f4.h"
 
-#include "drv_spi.h"
+#include "spi.h"
 #include "mpu6000.h"
-#include "drv_led.h"
+#include "led.h"
 #include "vcp.h"
 #include "printf.h"
 #include "eeprom.h"
@@ -20,22 +20,26 @@ int main() {
 
   systemInit();
 
+  VCP vcp;
+  vcp.init();
+  vcpPtr = &vcp;
+
   struct ExampleStruct{
     int version;
     std::string name;
     float someOtherValue;
   };
   ExampleStruct data;
-  /*
+
   //To write, uncomment this
   data.version=1;
-  data.someOtherValue=3.14154;
-  memory_write((&data),sizeof(data));
-  //*/
-  //*
+  data.someOtherValue=3.14154f;
+  eeprom_write((&data),sizeof(data));
+  
   //to read, uncomment this
-  memory_read(&data,sizeof(data));
-  //*/
+  eeprom_read(&data,sizeof(data));
+
+
   printf("version: %d",data.version);
   printf("someOtherValue: %f",data.someOtherValue);
 }

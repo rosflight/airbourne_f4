@@ -1,7 +1,7 @@
 #include "system.h"
-#include "drv_i2c.h"
+#include "i2c.h"
 #include "ms5611.h"
-#include "drv_led.h"
+#include "led.h"
 #include "vcp.h"
 #include "printf.h"
 
@@ -18,19 +18,23 @@ int main() {
   systemInit();
 
   VCP vcp;
+  vcp.init();
   uartPtr = &vcp;
   init_printf(NULL, _putc);
 
-  LED warn(LED1_GPIO, LED1_PIN);
-  LED info(LED2_GPIO, LED2_PIN);
+  LED warn;
+  warn.init(LED1_GPIO, LED1_PIN);
+  LED info;
+  info.init(LED2_GPIO, LED2_PIN);
 
   delay(500);
 
   info.on();
-  I2C i2c1(I2C1);
-  MS5611 baro(&i2c1);
+  I2C i2c1;
+  i2c1.init(&i2c_config[BARO_I2C]);
+  MS5611 baro;
 
-  if (!baro.init())
+  if (!baro.init(&i2c1))
   {
     while(1)
     {

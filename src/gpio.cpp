@@ -23,12 +23,6 @@
 
 #include "gpio.h"
 
-GPIO::GPIO(){}
-GPIO::GPIO(GPIO_TypeDef* BasePort, uint16_t pin, gpio_mode_t mode)
-{
-  init(BasePort, pin, mode);
-}
-
 void GPIO::init(GPIO_TypeDef* BasePort, uint16_t pin, gpio_mode_t mode)
 {
   pin_ = pin;

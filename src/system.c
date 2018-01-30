@@ -42,15 +42,17 @@ uint32_t millis(void)
 
 void systemInit(void)
 {
-    /* Accounts for OP Bootloader, set the Vector Table base address as specified in .ld file */
-    extern void *isr_vector_table_base;
-    NVIC_SetVectorTable((uint32_t)&isr_vector_table_base, 0x0);
-
     NVIC_PriorityGroupConfig(NVIC_PriorityGroup_2); //2 bit preemption, 2 bit sub priority
+
+    // Configure Systick
+    SysTick_Config(SystemCoreClock / 32000 + 27);
+    NVIC_SetPriority(SysTick_IRQn, 0);
 
     //TODO: Should these be abstracted with the board-specific (ie revo_f4.h) file?
     RCC_AHB2PeriphClockCmd(RCC_AHB2Periph_OTG_FS, DISABLE);
     RCC_APB2PeriphClockCmd(RCC_APB2Periph_SPI1, ENABLE);
+    RCC_APB1PeriphClockCmd(RCC_APB1Periph_SPI2, ENABLE);
+    RCC_APB1PeriphClockCmd(RCC_APB1Periph_SPI3, ENABLE);
     RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_DMA2, ENABLE);
     RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_DMA1, ENABLE);
     RCC_APB1PeriphClockCmd(RCC_APB1Periph_I2C1, ENABLE);
@@ -67,10 +69,10 @@ void systemInit(void)
     RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM3, ENABLE);
     RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM5, ENABLE);
     RCC_APB2PeriphClockCmd(RCC_APB2Periph_TIM9, ENABLE);
+    RCC_APB2PeriphClockCmd(RCC_APB2Periph_TIM8, ENABLE);
+    RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM12, ENABLE);
 
-    SysTick_Config(SystemCoreClock / 32000); // Run timer at 16 kHz, so we can accurately time an 8kHz IMU
-
-    NVIC_SetPriority(SysTick_IRQn, 0);
+    RCC_APB2PeriphClockCmd(RCC_APB2Periph_USART1, ENABLE);
 }
 
 void delayMicroseconds(uint32_t us)

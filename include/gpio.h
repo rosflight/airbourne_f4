@@ -47,10 +47,6 @@ public:
     EXTERNAL_INTERRUPT
   }gpio_mode_t;
 
-
-  GPIO();
-  GPIO(GPIO_TypeDef *BasePort, uint16_t pin, gpio_mode_t mode);
-
   void init(GPIO_TypeDef* BasePort, uint16_t pin, gpio_mode_t mode);
   void write(gpio_write_t state);
   void toggle(void);

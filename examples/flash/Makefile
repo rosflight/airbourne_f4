@@ -26,7 +26,7 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-TARGET = uart_printf
+TARGET = spi
 
 BOARD ?= REVO
 
@@ -111,6 +111,10 @@ USBOTG_SRC := $(filter-out ${EXCLUDES}, $(USBOTG_SRC))
 VPATH := $(VPATH):$(VCP_DIR)
 VCP_SRC = $(notdir $(wildcard $(VCP_DIR)/*.c))
 
+# Add printf source files
+VPATH := $(VPATH):$(PRINTF_DIR)
+PRINTF_SRC = printf.cpp
+
 # Make a list of source files and includes
 VPATH := $(VPATH):$(SRC_DIR)
 CSOURCES =  $(CMSIS_SRC) \
@@ -124,10 +128,13 @@ CSOURCES =  $(CMSIS_SRC) \
             system_stm32f4xx.c
 
 
-CXXSOURCES = gpio.cpp \
+CXXSOURCES = $(PRINTF_SRC) \
+			 gpio.cpp \
              led.cpp \
              main.cpp \
-             uart.cpp
+             vcp.cpp \
+             spi.cpp \
+             M25P16.cpp
 
 INCLUDE_DIRS =  $(SRC_DIR) \
                 $(ROOT)/include \
@@ -163,7 +170,7 @@ TARGET_BIN=$(BIN_DIR)/$(TARGET).bin
 ifeq ($(DEBUG), GDB)
 $(info ************  BUILDING DEBUG SYMBOLS ************)
 DEBUG_FLAGS = -ggdb3
-OPTIMIZE = -Og
+OPTIMIZE = -O0
 else
 $(info ************  BUILDING RELEASE ************)
 DEBUG_FLAGS = -g0

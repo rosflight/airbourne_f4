@@ -1,8 +1,6 @@
 #include "revo_f4.h"
 
-#include "drv_spi.h"
-#include "mpu6000.h"
-#include "drv_led.h"
+#include "led.h"
 #include "vcp.h"
 #include "printf.h"
 
@@ -19,21 +17,24 @@ int main() {
   systemInit();
 
   VCP vcp;
+  vcp.init();
   uartPtr = &vcp;
 
   init_printf(NULL, _putc);
 
-  LED warn(LED1_GPIO, LED1_PIN);
-  LED info(LED2_GPIO, LED2_PIN);
-  info.on();
+  LED warn;
+  warn.init(LED1_GPIO, LED1_PIN);
+  LED info;
+  info.init(LED2_GPIO, LED2_PIN);
+  info.off();
+  warn.on();
 
   int i = 0;
-  int delays[6] = {1000000, 100, 5000, 500000, 70000, 1000};
   while(1)
   {
     warn.toggle();
     info.toggle();
-    printf("time = %d ms, %ul us\n", millis(), micros());
-    delayMicroseconds(delays[i++ % 6]);
+    printf("time = %d s, %d ms, %u us\n", i++, millis(), micros());
+    delay(1000);
   }
 }

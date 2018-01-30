@@ -11,12 +11,14 @@ public:
   void enable();
   void disable();
   void write(float value);
+  void writeUs(uint16_t value);
 
 private:
   volatile uint32_t* CCR_;
 
   uint16_t max_cyc_;
   uint16_t min_cyc_;
+  uint32_t cycles_per_us_;
 
   GPIO_TypeDef* port_;
   uint16_t pin_;

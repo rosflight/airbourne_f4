@@ -30,7 +30,7 @@
 #include "vcp.h"
 #include "printf.h"
 #include "rc_ppm.h"
-#include "drv_led.h"
+#include "led.h"
 
 VCP* uartPtr = NULL;
 
@@ -45,15 +45,18 @@ int main() {
   systemInit();
 
   VCP vcp;
+  vcp.init();
   uartPtr = &vcp;
   init_printf(NULL, _putc);
 
-  LED warn(LED1_GPIO, LED1_PIN);
-  LED info(LED2_GPIO, LED2_PIN);
+  LED warn;
+  warn.init(LED1_GPIO, LED1_PIN);
+  LED info;
+  info.init(LED2_GPIO, LED2_PIN);
 
   RC_PPM rc;
 
-  rc.init();
+  rc.init(&pwm_config[10]);
 
   while(1)
   {
@@ -67,13 +70,12 @@ int main() {
     {
       warn.off();
       info.on();
-      printf("%d, %d, %d, %d, %d, %d\n",
-             (uint32_t)(1000*rc.read(0)),
-             (uint32_t)(1000*rc.read(1)),
-             (uint32_t)(1000*rc.read(2)),
-             (uint32_t)(1000*rc.read(3)),
-             (uint32_t)(1000*rc.read(4)),
-             (uint32_t)(1000*rc.read(5)));
+      for (int i = 0; i < 8; i++)
+      {
+        float val = rc.read(i);
+        printf("%d.%d\t", (int32_t)((1000*val)/1000), ((int32_t)(1000*val)%1000));
+      }
+      printf("\n");
     }
     delay(20);
   }

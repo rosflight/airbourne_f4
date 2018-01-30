@@ -9,20 +9,23 @@ void data_transfer_cb(void)
   IMU_Ptr->data_transfer_callback();
 }
 
-
-
 void MPU6000::write(uint8_t reg, uint8_t data)
 {
-  spi->enable();
+  spi->enable(cs_);
   spi->transfer_byte(reg);
   spi->transfer_byte(data);
-  spi->disable();
+  spi->disable(cs_);
   delayMicroseconds(1);
 }
 
-MPU6000::MPU6000(SPI* spi_drv) {
+void MPU6000::init(SPI* spi_drv)
+{
   IMU_Ptr = this;
   spi = spi_drv;
+
+  // Configure Chip Select Pin
+  cs_.init(MPU6000_CS_GPIO, MPU6000_CS_PIN, GPIO::OUTPUT);
+  spi->set_divisor(2); // 21 MHz SPI clock (within 20 +/- 10%)
 
   write(MPU_RA_PWR_MGMT_1, MPU_BIT_H_RESET);
   delay(150);
@@ -36,7 +39,13 @@ MPU6000::MPU6000(SPI* spi_drv) {
   write(MPU_RA_GYRO_CONFIG, MPU_BITS_FS_2000DPS);
   write(MPU_RA_INT_ENABLE, 0x01);
 
-  spi->set_divisor(2); // 21 MHz SPI clock (within 20 +/- 10%)
+
+
+  for (int i = 0; i < 100; i++)
+  // Read the IMU
+  raw[0] = MPU_RA_TEMP_OUT_H | 0x80;
+  spi->transfer(raw, 3, raw, &cs_);
+  while (spi->is_busy()) {}
 
   // Set up the EXTI pin
   exti_.init(GPIOC, GPIO_Pin_4, GPIO::INPUT);
@@ -61,8 +70,6 @@ MPU6000::MPU6000(SPI* spi_drv) {
   // set the accel and gyro scale parameters
   accel_scale_ = (4.0 * 9.80665f) / ((float)0x7FFF);
   gyro_scale_= (2000.0 * 3.14159f/180.0f) / ((float)0x7FFF);
-
-  spi->register_complete_cb(&data_transfer_cb);
 }
 
 void MPU6000::data_transfer_callback()
@@ -72,14 +79,14 @@ void MPU6000::data_transfer_callback()
   acc_[1] = (float)((int16_t)((raw[3] << 8) | raw[4])) * accel_scale_;
   acc_[2] = (float)((int16_t)((raw[5] << 8) | raw[6])) * accel_scale_;
 
-  temp_  = (float)((int16_t)((raw[7] << 8) | raw[8])) / 340.0f * 36.53f;
+  temp_  = (float)((int16_t)((raw[7] << 8) | raw[8])) / 340.0f + 36.53f;
 
   gyro_[0]  = (float)((int16_t)((raw[9]  << 8) | raw[10])) * gyro_scale_;
   gyro_[1]  = (float)((int16_t)((raw[11] << 8) | raw[12])) * gyro_scale_;
   gyro_[2]  = (float)((int16_t)((raw[13] << 8) | raw[14])) * gyro_scale_;
 }
 
-void MPU6000::read(float (&accel_data)[3], float (&gyro_data)[3], float* temp_data)
+void MPU6000::read(float* accel_data, float* gyro_data, float* temp_data, uint64_t* time_us)
 {
   accel_data[0] = acc_[0];
   accel_data[1] = acc_[1];
@@ -88,13 +95,14 @@ void MPU6000::read(float (&accel_data)[3], float (&gyro_data)[3], float* temp_da
   gyro_data[1] = gyro_[1];
   gyro_data[2] = gyro_[2];
   *temp_data = temp_;
+  *time_us = imu_timestamp_;
 }
 
 void MPU6000::exti_cb()
 {
   imu_timestamp_ = micros();
   raw[0] = MPU_RA_ACCEL_XOUT_H | 0x80;
-  spi->transfer(raw, 15, raw);
+  spi->transfer(raw, 15, raw, &cs_, &data_transfer_cb);
 }
 
 extern "C"

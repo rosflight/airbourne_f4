@@ -2,7 +2,7 @@
 
 #define USB_TIMEOUT  50
 
-VCP::VCP()
+void VCP::init()
 {
   // Initialize the GPIOs for the pins
   rx_pin_.init(GPIOA, GPIO_Pin_11, GPIO::PERIPH_IN_OUT);
@@ -13,7 +13,7 @@ VCP::VCP()
   USBD_Init(&USB_OTG_dev, USB_OTG_FS_CORE_ID, &USR_desc, &USBD_CDC_cb, &USR_cb);
 }
 
-void VCP::write(uint8_t*ch, uint8_t len)
+void VCP::write(const uint8_t*ch, uint8_t len)
 {
   uint32_t start = millis();
   while (len > 0)
@@ -55,7 +55,7 @@ bool VCP::set_baud_rate(uint32_t baud){}
 
 bool VCP::tx_buffer_empty()
 {
-  return true;
+  return CDC_Send_FreeBytes() > 0;
 }
 
 bool VCP::set_mode(uint8_t mode)
@@ -78,7 +78,7 @@ void VCP::end_write(){}
 
 void VCP::register_rx_callback(void (*rx_callback_ptr)(uint8_t data))
 {
-  rx_callback = rx_callback_ptr;
+  rx_callback_ = rx_callback_ptr;
   Register_CDC_RxCallback(rx_callback_ptr);
 }
 

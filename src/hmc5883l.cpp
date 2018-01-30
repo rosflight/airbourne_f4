@@ -1,10 +1,9 @@
 #include "hmc5883l.h"
 
-HMC5883L::HMC5883L(I2C* i2c_drv) {
+bool HMC5883L::init(I2C *i2c_drv)
+{
+  mag_present_ = false;
   i2c_ = i2c_drv;
-}
-
-bool HMC5883L::init() {
   // Wait for the chip to power up
   while (millis() < 500);
 
@@ -12,6 +11,7 @@ bool HMC5883L::init() {
   uint8_t byte = 0;
   if(!i2c_->read(HMC58X3_ADDR, HMC58X3_ID1, &byte))
   {
+    mag_present_ = false;
     return false;
   }
   else
@@ -25,8 +25,14 @@ bool HMC5883L::init() {
     last_update_ms_ = 0;
     update();
 
+    mag_present_ = true;
     return true;
   }
+}
+
+bool HMC5883L::present()
+{
+  return mag_present_;
 }
 
 void HMC5883L::update()
@@ -47,7 +53,7 @@ void HMC5883L::convert(void)
   data_[2] = (float)((int16_t)((i2c_buf_[4] << 8) | i2c_buf_[5]));
 }
 
-bool HMC5883L::read(float (&mag_data)[3])
+bool HMC5883L::read(float mag_data[3])
 {
   mag_data[0] = data_[0];
   mag_data[1] = data_[1];
