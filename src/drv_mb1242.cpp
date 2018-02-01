@@ -1,43 +1,52 @@
 #include <functional>
 #include "drv_mb1242.h"
 
-I2CSonar::I2CSonar (I2C& i2cIn) : i2c(i2cIn)
+MB1242::MB1242 (I2C& _i2c) : i2c_(_i2c)
 {
-  new_data=0;
-  value=0;
-  last_update=millis()-UPDATE_WAIT_MILLIS;//this makes it so that async_update can be called right away
-    ready_to_read=1;
+  new_data_ = 0;
+  value_ = 0;
+  last_update_ = 0;
+  ready_to_read_ = 1;
+  sensor_present_ = false;
 }
-void I2CSonar::async_update()
-{
-  uint64_t now=millis();
-  if (now>last_update+UPDATE_WAIT_MILLIS)
-  {
-        last_update=now;
-    if (ready_to_read)
-      i2c.write(DEFAULT_ADDRESS, DEFAULT_REGISTER, READ_COMMAND, std::bind(&I2CSonar::cb_start_read,this));
-    else
-      i2c.read(DEFAULT_ADDRESS, DEFAULT_REGISTER, 2, buffer, std::bind(&I2CSonar::cb_finished_read,this), true);
-  }
 
-}
-float I2CSonar::async_read()
+
+void MB1242::async_update()
 {
-  this->async_update();
-  if (new_data)
+  uint64_t now = millis();
+  int8_t success;
+  if (now > last_update_ + UPDATE_WAIT_MILLIS)
   {
-    uint16_t centimeters=buffer[1]<<8|buffer[0];//Convert to a single number
-    //Calibration from BreezySTM32 by Simon D. Levy 
-    value=(1.071*(float)centimeters+3.103)/100.0;
+    last_update_ = now;
+    if (ready_to_read_)
+      success = i2c_.write(DEFAULT_ADDRESS, DEFAULT_REGISTER, READ_COMMAND, std::bind(&MB1242::cb_start_read,this), true);
+    else
+      success = i2c_.read(DEFAULT_ADDRESS, DEFAULT_REGISTER, 2, buffer_, std::bind(&MB1242::cb_finished_read,this), true);
   }
-  return value;
 }
-void I2CSonar::cb_start_read()
+
+
+float MB1242::async_read()
 {
-    ready_to_read=0;
+  if (new_data_)
+  {
+    uint16_t centimeters=buffer_[1] << 8 | buffer_[0];  //Convert to a single number
+    //Calibration from BreezySTM32 by Simon D. Levy
+    value_ = (1.071 * (float)centimeters + 3.103) / 100.0;
+  }
+  return value_;
 }
-void I2CSonar::cb_finished_read()
+
+
+void MB1242::cb_start_read()
 {
-    new_data=1;
-    ready_to_read=1;
+  ready_to_read_ = 0;
+  sensor_present_ = true;
+}
+
+
+void MB1242::cb_finished_read()
+{
+  new_data_ = 1;
+  ready_to_read_ = 1;
 }

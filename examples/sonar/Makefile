@@ -170,10 +170,9 @@ TARGET_BIN=$(BIN_DIR)/$(TARGET).bin
 ifeq ($(DEBUG), GDB)
 $(info ************  BUILDING DEBUG SYMBOLS ************)
 DEBUG_FLAGS = -ggdb3
-OPTIMIZE = -Og
+OPTIMIZE = -O0
 else
 $(info ************  BUILDING RELEASE ************)
-DEBUG_FLAGS = -g0
 OPTIMIZE = -O3
 LTO_FLAGS = -flto -fuse-linker-plugin $(OPTIMIZE)
 endif

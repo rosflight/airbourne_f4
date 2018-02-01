@@ -9,18 +9,21 @@
 #define UPDATE_WAIT_MILLIS 100
 
 
-class I2CSonar
+class MB1242
 {
 private:
-	uint32_t last_update;
-	float value;
-	bool new_data;
-	I2C i2c;
-	const uint8_t read_command=READ_COMMAND;
-	bool ready_to_read;
-	uint8_t buffer[2];
+	uint32_t last_update_;
+	float value_;
+	bool new_data_;
+	I2C i2c_;
+	const uint8_t read_command_=READ_COMMAND;
+	bool ready_to_read_;
+	uint8_t buffer_[2];
+	bool sensor_present_;
+
 public:
-	I2CSonar (I2C& i2c);
+	MB1242 (I2C& i2c_);
+	inline bool present() {return sensor_present_;}
 	float async_read();
 	void async_update();
 	void cb_start_read();

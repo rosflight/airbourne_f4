@@ -234,7 +234,8 @@ int8_t I2C::write(uint8_t addr, uint8_t reg, uint8_t data, std::function<void(vo
 
   I2C_ITConfig(c_->dev, I2C_IT_EVT | I2C_IT_ERR, ENABLE);
 
-  while (current_status_ != IDLE);
+  if (blocking)
+    while (current_status_ != IDLE);
 
   return SUCCESS;
 }
