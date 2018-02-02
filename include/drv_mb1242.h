@@ -5,7 +5,7 @@
 
 #define DEFAULT_ADDRESS 112
 #define DEFAULT_REGISTER 0xFF
-#define READ_COMMAND 81
+#define PING_COMMAND 81
 #define UPDATE_WAIT_MILLIS 100
 
 
@@ -16,8 +16,7 @@ private:
 	float value;
 	bool new_data;
 	I2C i2c;
-	const uint8_t read_command=READ_COMMAND;
-	bool ready_to_read;
+	bool ready_to_ping;
 	uint8_t buffer[2];
 public:
 	I2CSonar (I2C& i2c);
