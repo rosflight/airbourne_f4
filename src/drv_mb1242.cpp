@@ -8,6 +8,7 @@ I2CSonar::I2CSonar (I2C& i2cIn) : i2c(i2cIn)
   last_update=millis();
   ready_to_ping=1;
 }
+//Tries to either start a measurement, or read it from the sensor
 void I2CSonar::async_update()
 {
   uint64_t now=millis();
@@ -28,6 +29,7 @@ void I2CSonar::async_update()
       i2c.write(DEFAULT_ADDRESS, DEFAULT_REGISTER, PING_COMMAND, std::bind(&I2CSonar::cb_start_read,this));*/
     else
     {
+      //Something isn't working with the callback. Maybe this will work?
       i2c.read(DEFAULT_ADDRESS, DEFAULT_REGISTER, 2, buffer, NULL/*std::bind(&I2CSonar::cb_finished_read,this)*/);
       delay(100);
       cb_finished_read();
@@ -35,6 +37,7 @@ void I2CSonar::async_update()
   }
 
 }
+//Returns the most recent reading, also calling async_update
 float I2CSonar::async_read()
 {
   this->async_update();
@@ -46,10 +49,12 @@ float I2CSonar::async_read()
   }
   return value;
 }
+//callback after the measure command has been sent to the sensor
 void I2CSonar::cb_start_read()
 {
     ready_to_ping=0;
 }
+//callback after reading from the sensor has finished
 void I2CSonar::cb_finished_read()
 {
     new_data=1;
