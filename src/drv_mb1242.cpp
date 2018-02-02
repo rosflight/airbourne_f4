@@ -27,7 +27,11 @@ void I2CSonar::async_update()
     /*if (ready_to_ping)
       i2c.write(DEFAULT_ADDRESS, DEFAULT_REGISTER, PING_COMMAND, std::bind(&I2CSonar::cb_start_read,this));*/
     else
-      i2c.read(DEFAULT_ADDRESS, DEFAULT_REGISTER, 2, buffer, std::bind(&I2CSonar::cb_finished_read,this));
+    {
+      i2c.read(DEFAULT_ADDRESS, DEFAULT_REGISTER, 2, buffer, NULL/*std::bind(&I2CSonar::cb_finished_read,this)*/);
+      delay(100);
+      cb_finished_read();
+    }
   }
 
 }
