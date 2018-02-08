@@ -1,5 +1,7 @@
 #include <functional>
 #include "drv_mb1242.h"
+
+//Uncomment this to enable calibration from Simon D. Levy below
 #define MB1242_RAW
 
 I2CSonar::I2CSonar (I2C *i2cIn)
@@ -45,9 +47,9 @@ float I2CSonar::async_read()
   this->async_update();
   if (new_data)
   {
-    uint16_t centimeters=buffer[1]<<8|buffer[0];//Convert to a single number
-    //Calibration from BreezySTM32 by Simon D. Levy
+    uint16_t centimeters=buffer[0]<<8|buffer[1];//Convert to a single number
 #ifdef MB1242_RAW
+    //Calibration from BreezySTM32 by Simon D. Levy
     value=(float)centimeters*.01;
 #else
     value=(1.071*(float)centimeters+3.103)/100.0;
