@@ -1,12 +1,5 @@
 #include "i2c.h"
 
-//For testing only
-#include <string.h>
-#define STRINGIFY2(X) #X
-#define STRINGIFY(X) STRINGIFY2(X)
-#define LOG() log+=STRINGIFY(__LINE__);log+=" ";
-//end testing only
-
 #define while_check(cond) \
   {\
     int32_t timeout_var = 5000; \
@@ -92,15 +85,10 @@ void I2C::init(const i2c_hardware_struct_t *c)
   DMA_InitStructure_.DMA_DIR = DMA_DIR_PeripheralToMemory;
 
   I2C_Cmd(c->dev, ENABLE);
-
-  //for testing only
-  log="init   ";
-  //end testing only
 }
 
 void I2C::unstick()
 {
-  LOG();
   scl_.set_mode(GPIO::OUTPUT);
   sda_.set_mode(GPIO::OUTPUT);
 
@@ -146,7 +134,8 @@ int8_t I2C::read(uint8_t addr, uint8_t reg, uint8_t num_bytes, uint8_t* data, st
   DMA_InitStructure_.DMA_Memory0BaseAddr = (uint32_t) data;
   DMA_Init(c_->DMA_Stream, &DMA_InitStructure_);
 
-  I2C_Cmd(c_->dev, ENABLE);LOG();
+  I2C_Cmd(c_->dev, ENABLE);
+
   while_check (I2C_GetFlagStatus(c_->dev, I2C_FLAG_BUSY));
 
   // If we don't need to send the subaddress, then go ahead and spool up the DMA NACK
@@ -181,13 +170,13 @@ int8_t I2C::read(uint8_t addr, uint8_t reg, uint8_t *data)
   if (current_status_ != IDLE)
     return BUSY;
   int8_t return_code = ERROR;
-LOG();
+
   while_check (I2C_GetFlagStatus(c_->dev, I2C_FLAG_BUSY));
 
   I2C_Cmd(c_->dev, ENABLE);
   if (reg != 0xFF)
   {
-    I2C_GenerateSTART(c_->dev, ENABLE);LOG();
+    I2C_GenerateSTART(c_->dev, ENABLE);
     while_check (!I2C_CheckEvent(c_->dev, I2C_EVENT_MASTER_MODE_SELECT));
     I2C_Send7bitAddress(c_->dev, addr << 1, I2C_Direction_Transmitter);
     uint32_t timeout = 500;
@@ -199,13 +188,13 @@ LOG();
       return ERROR;
     }
     I2C_Cmd(c_->dev, ENABLE);
-    I2C_SendData(c_->dev, reg);LOG();
+    I2C_SendData(c_->dev, reg);
     while_check (!I2C_CheckEvent(c_->dev, I2C_EVENT_MASTER_BYTE_TRANSMITTED));
   }
 
   // Read the byte
   I2C_AcknowledgeConfig(c_->dev, DISABLE);
-  I2C_GenerateSTART(c_->dev, ENABLE);LOG();
+  I2C_GenerateSTART(c_->dev, ENABLE);
   while_check (!I2C_CheckEvent(c_->dev, I2C_EVENT_MASTER_MODE_SELECT));
   I2C_Cmd(c_->dev, ENABLE);
   I2C_Send7bitAddress(c_->dev, addr << 1, I2C_Direction_Receiver);
@@ -238,7 +227,7 @@ int8_t I2C::write(uint8_t addr, uint8_t reg, uint8_t data, std::function<void(vo
   data_ = data;
 
   I2C_Cmd(c_->dev, ENABLE);
-  LOG();
+
   while_check (I2C_GetFlagStatus(c_->dev, I2C_FLAG_BUSY));
 
   I2C_GenerateSTART(c_->dev, ENABLE);
@@ -255,11 +244,11 @@ int8_t I2C::write(uint8_t addr, uint8_t reg, uint8_t data)
 {
   if (current_status_ != IDLE)
     return BUSY;
-  LOG();while_check (I2C_GetFlagStatus(c_->dev, I2C_FLAG_BUSY));
+  while_check (I2C_GetFlagStatus(c_->dev, I2C_FLAG_BUSY));
   I2C_Cmd(c_->dev, ENABLE);
 
   // start the transfer
-  I2C_GenerateSTART(c_->dev, ENABLE);LOG();
+  I2C_GenerateSTART(c_->dev, ENABLE);
   while_check (!I2C_CheckEvent(c_->dev, I2C_EVENT_MASTER_MODE_SELECT));
   I2C_Send7bitAddress(c_->dev, addr << 1, I2C_Direction_Transmitter);
   uint32_t timeout = 500;
@@ -275,13 +264,13 @@ int8_t I2C::write(uint8_t addr, uint8_t reg, uint8_t data)
   // Send the register
   if (reg != 0xFF)
   {
-    I2C_SendData(c_->dev, reg);LOG();
+    I2C_SendData(c_->dev, reg);
     while_check (!I2C_CheckEvent(c_->dev, I2C_EVENT_MASTER_BYTE_TRANSMITTED));
   }
 
   // Write the byte with a NACK
   I2C_AcknowledgeConfig(c_->dev, DISABLE);
-  I2C_SendData(c_->dev, data);LOG();
+  I2C_SendData(c_->dev, data);
   while_check (!I2C_CheckEvent(c_->dev, I2C_EVENT_MASTER_BYTE_TRANSMITTED));
   I2C_GenerateSTOP(c_->dev, ENABLE  );
   I2C_Cmd(c_->dev, DISABLE);
@@ -292,7 +281,6 @@ int8_t I2C::write(uint8_t addr, uint8_t reg, uint8_t data)
 // if for some reason, a step in an I2C read or write fails, call this
 void I2C::handle_hardware_failure() {
   error_count_++;
-  LOG();
   unstick(); //unstick and reinitialize the hardware
 }
 
@@ -300,7 +288,7 @@ void I2C::handle_hardware_failure() {
 // This is the I2C_IT_ERR handler
 bool I2C::handle_error()
 {
-  I2C_Cmd(c_->dev, DISABLE);LOG();
+  I2C_Cmd(c_->dev, DISABLE);
   while_check (I2C_GetFlagStatus(c_->dev, I2C_FLAG_BUSY));
 
   // Turn off the interrupts
@@ -315,16 +303,6 @@ bool I2C::handle_error()
 bool I2C::handle_event()
 {
   uint32_t last_event = I2C_GetLastEvent(c_->dev);
-  //For testing only
-  LOG();
-  volatile uint32_t byte_transd = I2C_EVENT_MASTER_BYTE_TRANSMITTED;
-  volatile uint32_t trans_mode_selected = I2C_EVENT_MASTER_TRANSMITTER_MODE_SELECTED;
-  volatile uint32_t rec_mode_selected = I2C_EVENT_MASTER_RECEIVER_MODE_SELECTED;
-  volatile uint32_t master_mode_select = I2C_EVENT_MASTER_MODE_SELECT;
-  log+="(";log+=last_event>>8;log+=last_event;
-  log+=") ";
-  //End testing only
-
 
   // We just sent a byte
   if (last_event == I2C_EVENT_MASTER_BYTE_TRANSMITTED)
@@ -333,18 +311,17 @@ bool I2C::handle_event()
     // a repeated start, and enable the DMA NACK
     if (current_status_ == READING)
     {
-      I2C_AcknowledgeConfig(c_->dev, ENABLE);LOG()
+      I2C_AcknowledgeConfig(c_->dev, ENABLE);
       I2C_DMALastTransferCmd(c_->dev, ENABLE);
       I2C_GenerateSTART(c_->dev, ENABLE);
     }
     // We are in write mode and are done, need to clean up
     else
     {
-      I2C_GenerateSTOP(c_->dev, ENABLE);LOG()
+      I2C_GenerateSTOP(c_->dev, ENABLE);
       I2C_ITConfig(c_->dev, I2C_IT_EVT, DISABLE);
       transfer_complete_cb();
     }
-    return true;
   }
 
   // We just sent the address in write mode
@@ -353,7 +330,7 @@ bool I2C::handle_event()
     // We need to send the subaddress
     if (!subaddress_sent_)
     {
-      I2C_SendData(c_->dev, reg_);LOG()
+      I2C_SendData(c_->dev, reg_);
       subaddress_sent_ = true;
       if (current_status_ == WRITING)
       {
@@ -364,12 +341,10 @@ bool I2C::handle_event()
     // We need to send our data (no subaddress)
     else
     {
-      I2C_SendData(c_->dev, data_);LOG()
+      I2C_SendData(c_->dev, data_);
       done_ = true;
     }
-    return true;
   }
-
 
   // We are in receiving mode, preparing to receive the big DMA dump
   if (last_event == I2C_EVENT_MASTER_RECEIVER_MODE_SELECTED)
@@ -379,7 +354,6 @@ bool I2C::handle_event()
     I2C_DMACmd(c_->dev, ENABLE);
     DMA_ITConfig(c_->DMA_Stream, DMA_IT_TC, ENABLE);
     DMA_Cmd(c_->DMA_Stream, ENABLE);
-    return true;
   }
 
   // Start just sent
@@ -397,10 +371,7 @@ bool I2C::handle_event()
       // Set up a write
       I2C_Send7bitAddress(c_->dev, addr_, I2C_Direction_Transmitter);
     }
-    return true;
   }
-  //unstick();
-  return false;
 }
 
 extern "C"

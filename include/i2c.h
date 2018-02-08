@@ -10,9 +10,6 @@
 
 #include <functional>
 #include <stdint.h>
-//For testing only
-#include <string.h>
-//end testing only
 
 #include "revo_f4.h"
 
@@ -57,7 +54,6 @@ private:
   const i2c_hardware_struct_t *c_;
 
 public:
-  std::string log;
   std::function<void(void)> cb_;
 
   void init(const i2c_hardware_struct_t *c);
