@@ -15,7 +15,7 @@ int main() {
 
   I2C i2c1;
   i2c1.init(&i2c_config[EXTERNAL_I2C]);
-  I2CSonar sonar(i2c1);
+  I2CSonar sonar(&i2c1);
   
 
   volatile float dist;
