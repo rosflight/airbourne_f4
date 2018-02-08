@@ -24,7 +24,7 @@ int main() {
     sonar.async_update();
     delay(100);
     dist=sonar.async_read();
-    delay(500);
+    delay(100);
   }
 
 }
