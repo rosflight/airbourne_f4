@@ -13,6 +13,8 @@ I2CSonar::I2CSonar (I2C *i2cIn)
   ready_to_ping=1;
 }
 //Tries to either start a measurement, or read it from the sensor
+//Does nothing if it has done something in the last UPDATE_WAIT_MILLIS ms
+//Feel free to call it more often, though.
 void I2CSonar::async_update()
 {
   uint64_t now=millis();

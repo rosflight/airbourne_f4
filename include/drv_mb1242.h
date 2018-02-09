@@ -24,6 +24,9 @@ public:
     I2CSonar (I2C *i2c);
     float async_read();//Returns the most recent reading, converted to meters
     void async_update();//Tries to either start a measurement, or read it from the sensor
+    //async_update will do nothing if it has done something in the last UPDATE_WAIT_MILLIS ms
+    //Calling it more frequently won't break anything
+
     //Call backs. For internal use only
     void cb_start_read();//callback after the measure command has been sent to the sensor
     void cb_finished_read();//callback after reading from the sensor has finished
