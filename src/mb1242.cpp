@@ -1,6 +1,6 @@
 #include <functional>
 
-#include "drv_mb1242.h"
+#include "mb1242.h"
 
 I2CSonar::I2CSonar (I2C *i2cIn)
 {

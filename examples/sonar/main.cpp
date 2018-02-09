@@ -4,7 +4,7 @@
 #include "spi.h"
 #include "i2c.h"
 #include "mpu6000.h"
-#include "drv_mb1242.h"
+#include "mb1242.h"
 
 
 
