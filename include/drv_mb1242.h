@@ -22,7 +22,7 @@ private:
     uint8_t buffer[2];//for recieving data from the sensor
 public:
     I2CSonar (I2C *i2c);
-    float async_read();//Returns the most recent reading, also calling async_update
+    float async_read();//Returns the most recent reading, converted to meters
     void async_update();//Tries to either start a measurement, or read it from the sensor
     //Call backs. For internal use only
     void cb_start_read();//callback after the measure command has been sent to the sensor

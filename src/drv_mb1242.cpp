@@ -26,10 +26,10 @@ void I2CSonar::async_update()
   }
 
 }
-//Returns the most recent reading, also calling async_update
+//Returns the most recent reading
+//It is during this method that the reading is converted to meters, as well
 float I2CSonar::async_read()
 {
-  this->async_update();
   if (new_data)
   {
     uint16_t centimeters=buffer[0]<<8|buffer[1];//Convert to a single number
