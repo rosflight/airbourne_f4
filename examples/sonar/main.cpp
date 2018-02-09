@@ -24,6 +24,7 @@ int main() {
     sonar.async_update();
     delay(100);
     dist=sonar.async_read();
+    //I usual put a breakpoint here when testing to read the dist value
     delay(100);
   }
 
