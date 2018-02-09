@@ -1,8 +1,8 @@
 #include <functional>
 #include "drv_mb1242.h"
 
-//Uncomment this to enable calibration from Simon D. Levy below
-#define MB1242_RAW
+//Uncomment this to return raw distances instead of calibrated distances
+//#define MB1242_RAW
 
 I2CSonar::I2CSonar (I2C *i2cIn)
 {
@@ -19,25 +19,10 @@ void I2CSonar::async_update()
   if (now>last_update+UPDATE_WAIT_MILLIS)
   {
     last_update=now;
-    /*if(ready_to_ping)
-    {
-        i2c->write(DEFAULT_ADDRESS, 0xFF,PING_COMMAND);
-        cb_start_read();
-    }*/
-   /* else
-    {
-        i2c->read(DEFAULT_ADDRESS,DEFAULT_REGISTER,buffer);
-        cb_finished_read();
-    }*/
     if (ready_to_ping)
       i2c->write(DEFAULT_ADDRESS, DEFAULT_REGISTER, PING_COMMAND, std::bind(&I2CSonar::cb_start_read,this));
     else
-    {
-      //Something isn't working with the callback. Maybe this will work?
       i2c->read(DEFAULT_ADDRESS, DEFAULT_REGISTER, 2, buffer, std::bind(&I2CSonar::cb_finished_read,this));
-      /*delay(100);
-      cb_finished_read();*/
-    }
   }
 
 }
@@ -49,9 +34,9 @@ float I2CSonar::async_read()
   {
     uint16_t centimeters=buffer[0]<<8|buffer[1];//Convert to a single number
 #ifdef MB1242_RAW
-    //Calibration from BreezySTM32 by Simon D. Levy
     value=(float)centimeters*.01;
 #else
+    //Calibration from BreezySTM32 by Simon D. Levy
     value=(1.071*(float)centimeters+3.103)/100.0;
 #endif
     new_data=false;

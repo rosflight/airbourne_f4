@@ -8,7 +8,8 @@
 #define DEFAULT_REGISTER 0xFF
 #define PING_COMMAND 81
 #define UPDATE_WAIT_MILLIS 50 //minimum time between calls of async_update that actually do something
-
+//50 ms is chosen because it will read only once per two calls to async_update, at max,
+//and the spec sheet for the sonar recomends waiting 100 ms in between pings
 
 class I2CSonar
 {
@@ -23,6 +24,7 @@ public:
     I2CSonar (I2C *i2c);
     float async_read();//Returns the most recent reading, also calling async_update
     void async_update();//Tries to either start a measurement, or read it from the sensor
+    //Call backs. For internal use only
     void cb_start_read();//callback after the measure command has been sent to the sensor
     void cb_finished_read();//callback after reading from the sensor has finished
 };
