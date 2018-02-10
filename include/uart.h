@@ -39,10 +39,10 @@
 
 #include "system.h"
 
-//#include "serial.h"
+#include "serial.h"
 #include "gpio.h"
 
-class UART
+class UART : Serial
 {
 public:
   UART();

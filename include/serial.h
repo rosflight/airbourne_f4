@@ -45,14 +45,6 @@ class Serial
 public:
   enum
   {
-    POLLING = 0x00,
-    INTERRUPT = 0x01,
-    DMA_TX = 0x02,
-    DMA_RX = 0x04
-  };
-
-  enum
-  {
     UART = 0,
     VCP = 1
   };
@@ -66,15 +58,7 @@ public:
   virtual void put_byte(uint8_t ch) = 0;
   virtual bool flush() = 0;
   virtual void register_rx_callback(std::function<void(uint8_t)> cb) = 0;
-  virtual void unregister_rx_callback();
-
-protected:
-  GPIO tx_pin_;
-  GPIO rx_pin_;
-
-  uint8_t mode_;
-
-  std::function<void(uint8_t)> receive_CB_;
+  virtual void unregister_rx_callback() = 0;
 
 };
 

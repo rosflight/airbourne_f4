@@ -48,23 +48,20 @@ extern "C" {
 }
 
 
-class VCP
+class VCP : Serial
 {
 public:
   void init();
-  void write(const uint8_t *ch, uint8_t len);
+  void write(uint8_t *ch, uint8_t len);
   uint32_t rx_bytes_waiting();
   uint32_t tx_bytes_free();
   uint8_t read_byte();
   bool set_baud_rate(uint32_t baud);
   bool tx_buffer_empty();
-  bool set_mode(uint8_t mode_);
   void put_byte(uint8_t ch);
   bool flush();
-  void begin_write();
-  void end_write();
   void register_rx_callback(std::function<void(uint8_t)> cb);
-  bool in_bulk_mode();
+  void unregister_rx_callback();
 
   std::function<void(uint8_t)> cb_;
 

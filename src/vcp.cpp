@@ -53,7 +53,7 @@ void VCP::init()
   vcpPtr = this;
 }
 
-void VCP::write(const uint8_t*ch, uint8_t len)
+void VCP::write(uint8_t*ch, uint8_t len)
 {
   uint32_t start = millis();
   while (len > 0)
@@ -98,11 +98,6 @@ bool VCP::tx_buffer_empty()
   return CDC_Send_FreeBytes() > 0;
 }
 
-bool VCP::set_mode(uint8_t mode)
-{
-  (void)mode;
-}
-
 void VCP::put_byte(uint8_t ch)
 {
   CDC_Send_DATA(&ch, 1);
@@ -112,8 +107,6 @@ bool VCP::flush()
 {
   CDC_flush();
 }
-void VCP::begin_write(){}
-void VCP::end_write(){}
 
 
 void VCP::register_rx_callback(std::function<void(uint8_t)> cb)
@@ -122,10 +115,9 @@ void VCP::register_rx_callback(std::function<void(uint8_t)> cb)
   Register_CDC_RxCallback(&vcp_rx_callback);
 }
 
-
-bool VCP::in_bulk_mode()
+void VCP::unregister_rx_callback()
 {
-  return false;
+  cb_ = NULL;
 }
 
 
