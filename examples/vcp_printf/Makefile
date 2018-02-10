@@ -26,7 +26,7 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-TARGET = vcpprintf
+TARGET = vcp_printf
 
 BOARD ?= REVO
 
@@ -54,26 +54,21 @@ A2L=arm-none-eabi-addr2line
 ROOT          = ../..
 SRC_DIR       = $(ROOT)/src
 CMSIS_DIR     = $(ROOT)/lib/CMSIS
-STDPERIPH_DIR	= $(ROOT)/lib/STM32F4xx_StdPeriph_Driver
+STDPERIPH_DIR = $(ROOT)/lib/STM32F4xx_StdPeriph_Driver
 USBCORE_DIR   = $(ROOT)/lib/STM32_USB_Device_Library/Core
 USBOTG_DIR    = $(ROOT)/lib/STM32_USB_OTG_Driver
 USBCDC_DIR    = $(ROOT)/lib/STM32_USB_Device_Library/Class/cdc
 VCP_DIR       = $(ROOT)/lib/vcp
 STARTUP_DIR   = $(ROOT)/lib/startup
+PRINTF_DIR    = $(ROOT)/lib/printf
 BIN_DIR       = obj
-
-# Add directories with source files to the VPATH so object files don't end up all over the place
-VPATH  := $(VPATH):$(SRC_DIR)
-VPATH  := $(VPATH):$(SRC_DIR)/vcp
-VPATH	 := $(VPATH):$(USBCORE_DIR)/src:$(USBOTG_DIR)/src:$(USBCDC_DIR)/src
-
 
 #################################
 # Source Files
 #################################
 VPATH := $(VPATH):$(STARTUP_DIR)
 LDSCRIPT = $(STARTUP_DIR)/stm32_flash_f405_1024k.ld
-ASOURCES = $(STARTUP_DIR)/startup_stm32f40_41xxx.s
+ASOURCES = startup_stm32f40_41xxx.s
 
 # Search path and source files for the CMSIS sources
 VPATH	 := $(VPATH):$(CMSIS_DIR)/CM4/CoreSupport
@@ -125,16 +120,17 @@ CSOURCES =  $(CMSIS_SRC) \
             $(USBCDC_SRC) \
             $(PROCESSOR_SRC) \
             $(VCP_SRC) \
-            $(SRC_DIR)/system.c \
-            $(SRC_DIR)/system_stm32f4xx.c
+            system.c \
+            system_stm32f4xx.c
 
 
-CXXSOURCES = $(SRC_DIR)/gpio.cpp \
-             $(SRC_DIR)/vcp.cpp \
-             main.cpp
+CXXSOURCES = gpio.cpp \
+             led.cpp \
+             main.cpp \
+             vcp.cpp
 
 INCLUDE_DIRS =  $(SRC_DIR) \
-                $(ROOT)/inc \
+                $(ROOT)/include \
                 $(STDPERIPH_DIR)/inc \
                 $(USBOTG_DIR)/inc \
                 $(USBCORE_DIR)/inc \
@@ -142,7 +138,10 @@ INCLUDE_DIRS =  $(SRC_DIR) \
                 $(CMSIS_DIR)/CM4/CoreSupport \
                 $(CMSIS_DIR)/CM4/DeviceSupport/ST/STM32F4xx \
                 $(CMSIS_DIR)/CM4/DeviceSupport/ST/STM32F4xx/Include \
+                $(PRINTF_DIR) \
                 $(VCP_DIR)
+
+$(info VPATH = $(VPATH))
 
 #################################
 # Object List
@@ -156,6 +155,7 @@ OBJECTS+=$(addsuffix .o,$(addprefix $(BIN_DIR)/$(TARGET)/,$(basename $(CXXSOURCE
 #################################
 TARGET_ELF=$(BIN_DIR)/$(TARGET).elf
 TARGET_HEX=$(BIN_DIR)/$(TARGET).hex
+TARGET_BIN=$(BIN_DIR)/$(TARGET).bin
 
 #################################
 # Debug Config
@@ -191,6 +191,9 @@ LDFLAGS =-T $(LDSCRIPT) $(MCFLAGS) -lm -lc --specs=nano.specs --specs=rdimon.spe
 #################################
 # Build
 #################################
+$(TARGET_BIN): $(TARGET_HEX)
+	$(CP) -I ihex -O binary $< $@
+
 $(TARGET_HEX): $(TARGET_ELF)
 	$(CP) -O ihex --set-start 0x8000000 $< $@
 
@@ -222,8 +225,5 @@ $(BIN_DIR)/$(TARGET)/%.o: %.s
 clean:
 	rm -f $(OBJECTS) $(TARGET_ELF) $(TARGET_HEX) $(BIN_DIR)/output.map
 
-flash: $(TARGET_HEX)
-	stty -F $(SERIAL_DEVICE) raw speed 921600 -crtscts cs8 -parenb -cstopb -ixon
-	stm32flash -w $(TARGET_HEX) -v -g 0x0 -b 921600 $(SERIAL_DEVICE)
-
-
+flash: $(TARGET_BIN)
+	dfu-util -a 0 -s 0x08000000 -D $(TARGET_BIN)

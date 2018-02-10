@@ -9,7 +9,7 @@
 #pragma once
 
 #include "system.h"
-#include "drv_i2c.h"
+#include "i2c.h"
 
 #define HMC58X3_ADDR 			0x1E
 #define HMC58X3_CRA 			0x00

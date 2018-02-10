@@ -22,7 +22,7 @@ UART::UART(USART_TypeDef *_uart)
     UART1Ptr = this;
   }
 
-  init_UART(115200);
+  init_UART(100000);
   init_DMA();
   init_NVIC();
 

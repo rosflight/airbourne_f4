@@ -62,7 +62,7 @@ bool VCP::set_baud_rate(uint32_t baud){}
 
 bool VCP::tx_buffer_empty()
 {
-  return true;
+  return CDC_Send_FreeBytes() > 0;
 }
 
 bool VCP::set_mode(uint8_t mode)

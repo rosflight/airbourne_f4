@@ -10,7 +10,7 @@
 #define MPU6000_H
 
 #include "system.h"
-#include "drv_spi.h"
+#include "spi.h"
 
 // Bits
 #define MPU_BIT_SLEEP 					0x40
@@ -149,6 +149,7 @@ private:
   uint64_t imu_timestamp_ = 0;
   SPI* spi;
   GPIO exti_;
+  GPIO cs_;
   float accel_scale_;
   float gyro_scale_;
   float acc_[3];

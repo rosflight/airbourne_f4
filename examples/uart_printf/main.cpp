@@ -48,7 +48,7 @@ int main()
   while(1)
   {
     uint8_t hello_string[9] = "testing\n";
-//    uart.write(hello_string, 8);
+    uart.write(hello_string, 8);
     delay(200);
   }
 }

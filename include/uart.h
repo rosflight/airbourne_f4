@@ -6,7 +6,7 @@
 #define TX_BUFFER_SIZE 64
 #include <functional>
 
-#include "revo_f4.h"
+#include "system.h"
 
 //#include "serial.h"
 #include "gpio.h"

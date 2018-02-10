@@ -1,7 +1,7 @@
 #include "system.h"
-#include "drv_i2c.h"
+#include "i2c.h"
 #include "ms5611.h"
-#include "drv_led.h"
+#include "led.h"
 #include "vcp.h"
 #include "printf.h"
 
@@ -31,7 +31,7 @@ int main() {
 
   info.on();
   I2C i2c1;
-  i2c1.init(I2C1);
+  i2c1.init(&i2c_config[BARO_I2C]);
   MS5611 baro;
 
   if (!baro.init(&i2c1))

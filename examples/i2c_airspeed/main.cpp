@@ -1,6 +1,6 @@
 #include "system.h"
 #include "i2c.h"
-#include "hmc5883l.h"
+#include "ms4525.h"
 #include "led.h"
 #include "vcp.h"
 #include "printf.h"
@@ -31,35 +31,34 @@ int main() {
 
   info.on();
   I2C i2c1;
-  i2c1.init(&i2c_config[MAG_I2C]);
-  HMC5883L mag;
+  i2c1.init(&i2c_config[EXTERNAL_I2C]);
+  MS4525 airspeed;
 
 
-  if (!mag.init(&i2c1))
+  if (!airspeed.init(&i2c1))
   {
     warn.on();
     delay(100);
     warn.off();
   }
 
-  float mag_data[3] = {0., 0., 0.};
+  float diff_press, temp;
   while(1) {
     info.toggle();
-    mag.update();
-    if (mag.read(mag_data))
+    airspeed.update();
+    if (airspeed.present())
     {
+      airspeed.read(&diff_press, &temp);
       warn.off();
-      printf("%d, %d, %d\n",
-             (int32_t)(mag_data[0]),
-             (int32_t)(mag_data[1]),
-             (int32_t)(mag_data[2]));
-
+      printf("%d.%dPa, %d.%dC\n",
+             (int32_t)(diff_press), (int32_t)(diff_press*1000)%1000,
+             (int32_t)(temp), (int32_t)(temp*1000)%1000);
     }
     else
     {
       warn.on();
       printf("error\n");
     }
-    delay(10);
+    delay(50);
   }
 }

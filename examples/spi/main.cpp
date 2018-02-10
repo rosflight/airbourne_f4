@@ -1,8 +1,8 @@
 #include "revo_f4.h"
 
-#include "drv_spi.h"
+#include "spi.h"
 #include "mpu6000.h"
-#include "drv_led.h"
+#include "led.h"
 #include "vcp.h"
 #include "printf.h"
 
@@ -30,7 +30,7 @@ int main() {
   info.init(LED2_GPIO, LED2_PIN);
 
   SPI mpu_spi;
-  mpu_spi.init(MPU6000_SPI);
+  mpu_spi.init(&spi_config[MPU6000_SPI]);
 
   MPU6000 imu;
   imu.init(&mpu_spi);
