@@ -26,7 +26,7 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-TARGET = uartprintf
+TARGET = uart_printf
 
 BOARD ?= REVO
 
@@ -60,13 +60,8 @@ USBOTG_DIR    = $(ROOT)/lib/STM32_USB_OTG_Driver
 USBCDC_DIR    = $(ROOT)/lib/STM32_USB_Device_Library/Class/cdc
 VCP_DIR       = $(ROOT)/lib/vcp
 STARTUP_DIR   = $(ROOT)/lib/startup
+PRINTF_DIR    = $(ROOT)/lib/printf
 BIN_DIR       = obj
-
-# Add directories with source files to the VPATH so object files don't end up all over the place
-VPATH  := $(VPATH):$(SRC_DIR)
-VPATH  := $(VPATH):$(SRC_DIR)/vcp
-VPATH	 := $(VPATH):$(USBCORE_DIR)/src:$(USBOTG_DIR)/src:$(USBCDC_DIR)/src
-
 
 #################################
 # Source Files
@@ -103,7 +98,7 @@ VPATH		:= $(VPATH):$(USBCORE_DIR)/src:$(USBOTG_DIR)/src:$(USBCDC_DIR)/src
 USBCORE_SRC = $(notdir $(wildcard $(USBCORE_DIR)/src/*.c))
 USBOTG_SRC = $(notdir $(wildcard $(USBOTG_DIR)/src/*.c))
 USBCDC_SRC = $(notdir $(wildcard $(USBCDC_DIR)/src/*.c))
-EXCLUDES   = usb_bsp_template.c \
+EXCLUDES	= usb_bsp_template.c \
             usb_conf_template.c \
             usb_hcd_int.c \
             usb_hcd.c \
@@ -130,7 +125,10 @@ CSOURCES =  $(CMSIS_SRC) \
 
 
 CXXSOURCES = $(SRC_DIR)/gpio.cpp \
+             $(SRC_DIR)/drv_spi.cpp \
+             $(SRC_DIR)/drv_led.cpp \
              $(SRC_DIR)/uart.cpp \
+             $(PRINTF_DIR)/printf.cpp \
              main.cpp
 
 INCLUDE_DIRS =  $(SRC_DIR) \
@@ -142,6 +140,7 @@ INCLUDE_DIRS =  $(SRC_DIR) \
                 $(CMSIS_DIR)/CM4/CoreSupport \
                 $(CMSIS_DIR)/CM4/DeviceSupport/ST/STM32F4xx \
                 $(CMSIS_DIR)/CM4/DeviceSupport/ST/STM32F4xx/Include \
+                $(PRINTF_DIR) \
                 $(VCP_DIR)
 
 #################################
@@ -183,7 +182,7 @@ FILE_SIZE_FLAGS += -ffunction-sections -fdata-sections -fno-exceptions
 CXX_FILE_SIZE_FLAGS = $(C_FILE_SIZE_FLAGS) -fno-rtti
 
 MCFLAGS=-mcpu=cortex-m4 -mthumb -march=armv7e-m -mfloat-abi=hard -mfpu=fpv4-sp-d16 -fsingle-precision-constant -Wdouble-promotion
-DEFS=-DSTM32F40_41xxx -D__CORTEX_M4 -D__FPU_PRESENT -DWORDS_STACK_SIZE=200 -DUSE_STDPERIPH_DRIVER -DTARGET_$(BOARD) -DHSE_VALUE=8000000
+DEFS=-DSTM32F40_41xxx -D__CORTEX_M4 -D__FPU_PRESENT -DWORDS_STACK_SIZE=200 -DUSE_STDPERIPH_DRIVER -DTARGET_$(BOARD)
 CFLAGS=-c $(MCFLAGS) $(DEFS) $(OPTIMIZE) $(DEBUG_FLAGS) $(FILE_SIZE_FLAGS) $(addprefix -I,$(INCLUDE_DIRS)) -std=c99
 CXXFLAGS=-c $(MCFLAGS) $(DEFS) $(OPTIMIZE) $(DEBUG_FLAGS) $(CXX_FILE_SIZE_FLAGS) $(CXX_STRICT_FLAGS) $(addprefix -I,$(INCLUDE_DIRS)) -std=c++11
 LDFLAGS =-T $(LDSCRIPT) $(MCFLAGS) -lm -lc --specs=nano.specs --specs=rdimon.specs $(ARCH_FLAGS)  $(LTO_FLAGS)  $(DEBUG_FLAGS) -static  -Wl,-gc-sections
