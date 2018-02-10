@@ -17,7 +17,6 @@ extern "C" {
 }
 
 
-
 class VCP
 {
 public:
@@ -33,23 +32,21 @@ public:
   bool flush();
   void begin_write();
   void end_write();
-  void register_rx_callback(std::function<void(uint8_t)> cb);
-  void unregister_rx_callback();
+  void register_rx_callback(void (*rx_callback_ptr)(uint8_t data));
   bool in_bulk_mode();
-
-  std::function<void(uint8_t)> rx_callback_;
 
 private:
 
   void send_disconnect_signal();
 
-  GPIO rx_pin_;
-  GPIO tx_pin_;
-
+  void (*rx_callback_)(uint8_t data);
 
   uint8_t bulk_mode_buffer[64];
   uint8_t bulk_mode_buffer_index;
   bool bulk_mode;
+
+  GPIO rx_pin_;
+  GPIO tx_pin_;
 };
 
 #endif 

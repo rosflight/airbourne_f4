@@ -2,13 +2,6 @@
 
 #define USB_TIMEOUT  50
 
-VCP* VCPPtr = NULL;
-
-void rx_callback_C_converter(uint8_t byte)
-{
-  VCPPtr->rx_callback_(byte);
-}
-
 void VCP::init()
 {
   // Initialize the GPIOs for the pins
@@ -83,9 +76,10 @@ void VCP::begin_write(){}
 void VCP::end_write(){}
 
 
-void VCP::register_rx_callback(std::function<void(uint8_t)> cb)
+void VCP::register_rx_callback(void (*rx_callback_ptr)(uint8_t data))
 {
-  Register_CDC_RxCallback(&rx_callback_C_converter);
+  rx_callback_ = rx_callback_ptr;
+  Register_CDC_RxCallback(rx_callback_ptr);
 }
 
 
@@ -103,6 +97,3 @@ void VCP::send_disconnect_signal()
   tx_pin_.write(GPIO::HIGH);
   tx_pin_.set_mode(GPIO::PERIPH_IN_OUT);
 }
-
-
-
