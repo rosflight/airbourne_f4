@@ -32,14 +32,14 @@ public:
   bool flush();
   void begin_write();
   void end_write();
-  void register_rx_callback(void (*rx_callback_ptr)(uint8_t data));
+  void register_rx_callback(std::function<void(uint8_t)> cb);
   bool in_bulk_mode();
+
+  std::function<void(uint8_t)> cb_;
 
 private:
 
   void send_disconnect_signal();
-
-  void (*rx_callback_)(uint8_t data);
 
   uint8_t bulk_mode_buffer[64];
   uint8_t bulk_mode_buffer_index;
