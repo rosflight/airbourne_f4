@@ -212,7 +212,7 @@ int8_t I2C::read(uint8_t addr, uint8_t reg, uint8_t *data)
 }
 
 // asynchronous write, for commanding adc conversions
-int8_t I2C::write(uint8_t addr, uint8_t reg, uint8_t data, std::function<void(void)> callback)
+int8_t I2C::write(uint8_t addr, uint8_t reg, uint8_t data, std::function<void(void)> callback, bool blocking)
 {
   if (current_status_ != IDLE)
     return BUSY;
