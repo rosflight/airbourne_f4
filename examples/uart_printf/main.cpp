@@ -34,7 +34,6 @@ UART* uartPtr = NULL;
 void rx_callback(uint8_t byte)
 {
   uartPtr->put_byte(byte);
-  uartPtr->flush();
 }
 
 int main()
@@ -43,12 +42,21 @@ int main()
 
   UART uart(USART1);
   uartPtr = &uart;
-  uart.register_rx_callback(rx_callback);
+
+  uart.register_rx_callback(rx_callback);  // Uncomment to test callback version
 
   while(1)
   {
     uint8_t hello_string[9] = "testing\n";
-    uart.write(hello_string, 8);
+//    uart.write(hello_string, 8); // Uncomment to test Tx
     delay(200);
+
+    // Polling version (uncomment to test)
+//    while (uart.rx_bytes_waiting())
+//    {
+//      uint8_t byte = uart.read_byte();
+//      uartPtr->put_byte(byte);
+//    }
+
   }
 }
