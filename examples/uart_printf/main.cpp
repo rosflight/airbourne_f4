@@ -28,6 +28,7 @@
 /* Includes */
 #include "system.h"
 #include "uart.h"
+#include "revo_f4.h"
 
 UART* uartPtr = NULL;
 
@@ -40,7 +41,8 @@ int main()
 {
   systemInit();
 
-  UART uart(USART1);
+  UART uart;
+  uart.init(&uart_config[0], 115200);
   uartPtr = &uart;
 
   uart.register_rx_callback(rx_callback);  // Uncomment to test callback version

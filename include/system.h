@@ -96,7 +96,7 @@ typedef struct {
 	IRQn_Type Tx_DMA_IRQn;
 	DMA_Stream_TypeDef* Rx_DMA_Stream;
 	DMA_Stream_TypeDef* Tx_DMA_Stream;
-	uint32_t DMA_CHannel;
+	uint32_t DMA_Channel;
 	uint32_t DMA_Rx_IT_Bit;
 	uint32_t DMA_Tx_IT_Bit;
 } uart_hardware_struct_t;
