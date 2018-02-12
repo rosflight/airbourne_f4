@@ -134,7 +134,7 @@ CXXSOURCES = $(PRINTF_SRC) \
              vcp.cpp \
              i2c.cpp \
              ms5611.cpp \
-             drv_mb1242.cpp
+             mb1242.cpp
 
 INCLUDE_DIRS =  $(SRC_DIR) \
                 $(ROOT)/include \
