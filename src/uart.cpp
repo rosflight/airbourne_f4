@@ -1,32 +1,62 @@
+/*
+ * Copyright (c) 2017, James Jackson
+ *
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ * * Redistributions of source code must retain the above copyright notice, this
+ *   list of conditions and the following disclaimer.
+ *
+ * * Redistributions in binary form must reproduce the above copyright notice,
+ *   this list of conditions and the following disclaimer in the documentation
+ *   and/or other materials provided with the distribution.
+ *
+ * * Neither the name of the copyright holder nor the names of its
+ *   contributors may be used to endorse or promote products derived from
+ *   this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+ * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+ * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
+
 #include "uart.h"
 
 UART* UART1Ptr = NULL;
 
-UART::UART(USART_TypeDef *_uart)
-{
-  dev_ = _uart;
+UART::UART()
+{}
 
-  if (dev_ == USART1)
+
+void UART::init(const uart_hardware_struct_t* conf, uint32_t baudrate)
+{
+  c_ = conf;
+
+  rx_pin_.init(c_->GPIO, c_->Rx_Pin, GPIO::PERIPH_IN_OUT);
+  tx_pin_.init(c_->GPIO, c_->Tx_Pin, GPIO::PERIPH_IN_OUT);
+  GPIO_PinAFConfig(c_->GPIO, c_->Rx_PinSource, c_->GPIO_AF);
+  GPIO_PinAFConfig(c_->GPIO, c_->Tx_PinSource, c_->GPIO_AF);
+
+  if (c_->dev == USART1)
   {
-    rx_pin_.init(GPIOA, GPIO_Pin_9, GPIO::PERIPH_IN);
-    rx_pin_.init(GPIOA, GPIO_Pin_10, GPIO::PERIPH_IN);
-    GPIO_PinAFConfig(GPIOA, GPIO_PinSource9, GPIO_AF_USART1);
-    GPIO_PinAFConfig(GPIOA, GPIO_PinSource10, GPIO_AF_USART1);
-    RCC_APB2PeriphClockCmd(RCC_APB2Periph_USART1, ENABLE);
-    UARTIRQ_ = USART1_IRQn;
-    RxDMAIRQ_ = DMA2_Stream2_IRQn;
-    TxDMAIRQ_ = DMA2_Stream7_IRQn;
-    DMA_Channel_ = DMA_Channel_4;
     UART1Ptr = this;
   }
 
-  init_UART(115200);
+  init_UART(baudrate);
   init_DMA();
   init_NVIC();
 
   receive_CB_ = nullptr;
 }
-
 
 void UART::init_UART(uint32_t baudrate)
 {
@@ -38,11 +68,11 @@ void UART::init_UART(uint32_t baudrate)
   USART_InitStruct.USART_Parity = USART_Parity_No;
   USART_InitStruct.USART_HardwareFlowControl = USART_HardwareFlowControl_None;
   USART_InitStruct.USART_Mode = USART_Mode_Rx | USART_Mode_Tx;
-  USART_Init(dev_, &USART_InitStruct);
+  USART_Init(c_->dev, &USART_InitStruct);
 
   // Throw interrupts on byte receive
-  USART_ITConfig(dev_, USART_IT_RXNE, ENABLE);
-  USART_Cmd(dev_, ENABLE);
+  USART_ITConfig(c_->dev, USART_IT_RXNE, ENABLE);
+  USART_Cmd(c_->dev, ENABLE);
 }
 
 void UART::init_DMA()
@@ -62,44 +92,45 @@ void UART::init_DMA()
 
   DMA_InitStructure.DMA_Priority = DMA_Priority_High;
   DMA_InitStructure.DMA_PeripheralInc = DMA_PeripheralInc_Disable;
-  DMA_InitStructure.DMA_PeripheralBaseAddr = (uint32_t)(&(dev_->DR));
-  DMA_InitStructure.DMA_Channel = DMA_Channel_;
+  DMA_InitStructure.DMA_PeripheralBaseAddr = (uint32_t)(&(c_->dev->DR));
+  DMA_InitStructure.DMA_Channel = c_->DMA_Channel;
 
   // Configure the Tx DMA
-  DMA_DeInit(Tx_DMA_Stream_);
+  DMA_DeInit(c_->Tx_DMA_Stream);
   DMA_InitStructure.DMA_Mode = DMA_Mode_Normal;
   DMA_InitStructure.DMA_DIR = DMA_DIR_MemoryToPeripheral;
+  DMA_InitStructure.DMA_BufferSize = TX_BUFFER_SIZE;
   DMA_InitStructure.DMA_Memory0BaseAddr = (uint32_t) tx_buffer_;
-  DMA_Init(Tx_DMA_Stream_, &DMA_InitStructure);
+  DMA_Init(c_->Tx_DMA_Stream, &DMA_InitStructure);
 
   // Configure the Rx DMA
-  DMA_DeInit(Rx_DMA_Stream_);
+  DMA_DeInit(c_->Rx_DMA_Stream);
   DMA_InitStructure.DMA_Mode = DMA_Mode_Circular;
   DMA_InitStructure.DMA_DIR = DMA_DIR_PeripheralToMemory;
+  DMA_InitStructure.DMA_BufferSize = RX_BUFFER_SIZE;
   DMA_InitStructure.DMA_Memory0BaseAddr = (uint32_t) rx_buffer_;
-  DMA_Init(Rx_DMA_Stream_, &DMA_InitStructure);
+  DMA_Init(c_->Rx_DMA_Stream, &DMA_InitStructure);
+
+  // Turn on the Rx DMA Stream
+  DMA_Cmd(c_->Rx_DMA_Stream, ENABLE);
 
   //  Hook up the DMA to the uart
-  USART_DMACmd(dev_ , USART_DMAReq_Tx, ENABLE);
-  USART_DMACmd(dev_, USART_DMAReq_Rx, ENABLE);
+  USART_DMACmd(c_->dev, USART_DMAReq_Tx, ENABLE);
+  USART_DMACmd(c_->dev, USART_DMAReq_Rx, ENABLE);
 
   // Turn on the transfer complete interrupt source from the DMA
-  DMA_ITConfig(Tx_DMA_Stream_, DMA_IT_TC, ENABLE);
-  DMA_ITConfig(Rx_DMA_Stream_, DMA_IT_TC, ENABLE);
-
-  // Turn on the DMA
-  DMA_Cmd(Rx_DMA_Stream_, ENABLE);
-  DMA_Cmd(Tx_DMA_Stream_, ENABLE);
-
-  // set the buffer pointers to where the DMA is starting (starts at 256 and counts down)
-  rx_buffer_tail_ = DMA_GetCurrDataCounter(Rx_DMA_Stream_);
-  rx_buffer_head_ = DMA_GetCurrDataCounter(Rx_DMA_Stream_);
+  DMA_ITConfig(c_->Tx_DMA_Stream, DMA_IT_TC, ENABLE);
+  DMA_ITConfig(c_->Rx_DMA_Stream, DMA_IT_TC, ENABLE);
 
   // Initialize the Circular Buffers
-  rx_buffer_head_ = RX_BUFFER_SIZE; // DMA counts down on receive
-  rx_buffer_tail_ = RX_BUFFER_SIZE;
+  // set the buffer pointers to where the DMA is starting (starts at 256 and counts down)
+  rx_buffer_tail_ = DMA_GetCurrDataCounter(c_->Rx_DMA_Stream);
+  rx_buffer_head_ = rx_buffer_tail_;
   tx_buffer_head_ = 0;
   tx_buffer_tail_ = 0;
+
+  memset(rx_buffer_, 0, RX_BUFFER_SIZE);
+  memset(tx_buffer_, 0, TX_BUFFER_SIZE);
 }
 
 
@@ -107,17 +138,17 @@ void UART::init_NVIC()
 {
   // Configure the Interrupt
   NVIC_InitTypeDef NVIC_InitStruct;
-  NVIC_InitStruct.NVIC_IRQChannel = UARTIRQ_;
+  NVIC_InitStruct.NVIC_IRQChannel = c_->USART_IRQn;
   NVIC_InitStruct.NVIC_IRQChannelPreemptionPriority = 2;
   NVIC_InitStruct.NVIC_IRQChannelSubPriority = 1;
   NVIC_InitStruct.NVIC_IRQChannelCmd = ENABLE;
   NVIC_Init(&NVIC_InitStruct);
 
-  NVIC_InitStruct.NVIC_IRQChannel = TxDMAIRQ_;
+  NVIC_InitStruct.NVIC_IRQChannel = c_->Tx_DMA_IRQn;
   NVIC_Init(&NVIC_InitStruct);
 
-  //  NVIC_InitStruct.NVIC_IRQChannel = RxDMAIRQ_;
-  //  NVIC_Init(&NVIC_InitStruct);
+  NVIC_InitStruct.NVIC_IRQChannel = c_->Rx_DMA_IRQn;
+  NVIC_Init(&NVIC_InitStruct);
 }
 
 
@@ -130,7 +161,7 @@ void UART::write(uint8_t* ch, uint8_t len)
     tx_buffer_head_ = (tx_buffer_head_ + 1) % TX_BUFFER_SIZE;
   }
 
-  if (DMA_GetCmdStatus(Tx_DMA_Stream_) == ENABLE)
+  if (DMA_GetCmdStatus(c_->Tx_DMA_Stream) == DISABLE)
   {
     startDMA();
   }
@@ -139,23 +170,23 @@ void UART::write(uint8_t* ch, uint8_t len)
 void UART::startDMA()
 {
   // Set the start of the transmission to the oldest data
-  Tx_DMA_Stream_->M0AR = (uint32_t)&tx_buffer_[tx_buffer_tail_];
+  c_->Tx_DMA_Stream->M0AR = (uint32_t)&tx_buffer_[tx_buffer_tail_];
   if(tx_buffer_head_ > tx_buffer_tail_)
   {
     // Set the length of the transmission to the data on the buffer
     // if contiguous, this is easy
-    DMA_SetCurrDataCounter(Tx_DMA_Stream_, tx_buffer_head_ - tx_buffer_tail_);
+    DMA_SetCurrDataCounter(c_->Tx_DMA_Stream, tx_buffer_head_ - tx_buffer_tail_);
     tx_buffer_tail_ = tx_buffer_head_;
   }
   else
   {
     // We will have to send the data in two groups, first the tail,
     // then the head we will do later
-    DMA_SetCurrDataCounter(Tx_DMA_Stream_, TX_BUFFER_SIZE - tx_buffer_tail_);
+    DMA_SetCurrDataCounter(c_->Tx_DMA_Stream, TX_BUFFER_SIZE - tx_buffer_tail_);
     tx_buffer_tail_ = 0;
   }
   // Start the Transmission
-  DMA_Cmd(Tx_DMA_Stream_, ENABLE);
+  DMA_Cmd(c_->Tx_DMA_Stream, ENABLE);
 }
 
 uint8_t UART::read_byte()
@@ -179,13 +210,13 @@ uint8_t UART::read_byte()
 
 void UART::put_byte(uint8_t ch)
 {
-  //  while (!USART_GetFlagStatus())
+  write(&ch, 1);
 }
 
 uint32_t UART::rx_bytes_waiting()
 {
   // Remember, the DMA CNDTR counts down
-  rx_buffer_head_ = DMA_GetCurrDataCounter(Rx_DMA_Stream_);
+  rx_buffer_head_ = DMA_GetCurrDataCounter(c_->Rx_DMA_Stream);
   if (rx_buffer_head_ < rx_buffer_tail_)
   {
     // Easy, becasue it's contiguous
@@ -205,7 +236,7 @@ uint32_t UART::rx_bytes_waiting()
 
 uint32_t UART::tx_bytes_free()
 {
-  tx_buffer_head_ = DMA_GetCurrDataCounter(Tx_DMA_Stream_);
+  tx_buffer_head_ = DMA_GetCurrDataCounter(c_->Tx_DMA_Stream);
   if (tx_buffer_head_ > tx_buffer_tail_)
   {
     return rx_buffer_head_ - rx_buffer_tail_;
@@ -232,8 +263,6 @@ bool UART::tx_buffer_empty()
   return tx_buffer_head_ == tx_buffer_tail_;
 }
 
-bool UART::set_mode(uint8_t mode){}
-
 bool UART::flush()
 {
   uint32_t timeout = 10000;
@@ -244,6 +273,37 @@ bool UART::flush()
     return false;
 }
 
+void UART::DMA_Rx_IRQ_callback()
+{
+  // DMA took care of putting the data on the buffer
+  // Just call the callback until we have not more data
+  // Update the head position from the DMA
+  rx_buffer_head_ =  DMA_GetCurrDataCounter(c_->Rx_DMA_Stream);
+  if(receive_CB_ != nullptr)
+  {
+    while(rx_buffer_head_ != rx_buffer_tail_)
+    {
+      // read a new byte and decrement the tail
+      uint8_t byte = rx_buffer_[RX_BUFFER_SIZE - rx_buffer_tail_];
+      receive_CB_(byte);
+      if(rx_buffer_tail_-- == 0)
+      {
+        // wrap to the top if at the bottom
+        rx_buffer_tail_ = RX_BUFFER_SIZE;
+      }
+    }
+  }
+}
+
+void UART::DMA_Tx_IRQ_callback()
+{
+  // If there is more data to be sent
+  if(tx_buffer_head_ != tx_buffer_tail_)
+  {
+    startDMA();
+  }
+}
+
 void UART::register_rx_callback(std::function<void(uint8_t)> cb)
 {
   receive_CB_ = cb;
@@ -252,4 +312,33 @@ void UART::register_rx_callback(std::function<void(uint8_t)> cb)
 void UART::unregister_rx_callback()
 {
   receive_CB_ = nullptr;
+}
+
+extern "C"
+{
+
+void USART1_IRQHandler (void)
+{
+  UART1Ptr->DMA_Rx_IRQ_callback();
+}
+
+void DMA2_Stream5_IRQHandler(void)
+{
+  if (DMA_GetITStatus(DMA2_Stream5, DMA_IT_TCIF5))
+  {
+    DMA_ClearITPendingBit(DMA2_Stream5, DMA_IT_TCIF5);
+    UART1Ptr->DMA_Rx_IRQ_callback();
+  }
+}
+
+void DMA2_Stream7_IRQHandler(void)
+{
+  if (DMA_GetITStatus(DMA2_Stream7, DMA_IT_TCIF7))
+  {
+    DMA_ClearITPendingBit(DMA2_Stream7, DMA_IT_TCIF7);
+    DMA_Cmd(DMA2_Stream7, DISABLE);
+    UART1Ptr->DMA_Tx_IRQ_callback();
+  }
+}
+
 }

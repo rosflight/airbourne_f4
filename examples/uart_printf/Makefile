@@ -123,11 +123,11 @@ CSOURCES =  $(CMSIS_SRC) \
             system.c \
             system_stm32f4xx.c
 
-
-CXXSOURCES = gpio.cpp \
-             led.cpp \
-             main.cpp \
-             uart.cpp
+CXXSOURCES = $(SRC_DIR)/gpio.cpp \
+             $(SRC_DIR)/led.cpp \
+             $(SRC_DIR)/uart.cpp \
+             $(PRINTF_DIR)/printf.cpp \
+             main.cpp
 
 INCLUDE_DIRS =  $(SRC_DIR) \
                 $(ROOT)/include \
@@ -163,7 +163,7 @@ TARGET_BIN=$(BIN_DIR)/$(TARGET).bin
 ifeq ($(DEBUG), GDB)
 $(info ************  BUILDING DEBUG SYMBOLS ************)
 DEBUG_FLAGS = -ggdb3
-OPTIMIZE = -Og
+OPTIMIZE = -O0
 else
 $(info ************  BUILDING RELEASE ************)
 DEBUG_FLAGS = -g0
@@ -183,7 +183,7 @@ FILE_SIZE_FLAGS += -ffunction-sections -fdata-sections -fno-exceptions
 CXX_FILE_SIZE_FLAGS = $(C_FILE_SIZE_FLAGS) -fno-rtti
 
 MCFLAGS=-mcpu=cortex-m4 -mthumb -march=armv7e-m -mfloat-abi=hard -mfpu=fpv4-sp-d16 -fsingle-precision-constant -Wdouble-promotion
-DEFS=-DSTM32F40_41xxx -D__CORTEX_M4 -D__FPU_PRESENT -DWORDS_STACK_SIZE=200 -DUSE_STDPERIPH_DRIVER -DTARGET_$(BOARD)
+DEFS=-DSTM32F40_41xxx -D__CORTEX_M4 -D__FPU_PRESENT -DWORDS_STACK_SIZE=200 -DUSE_STDPERIPH_DRIVER -DTARGET_$(BOARD) -DHSE_VALUE=8000000
 CFLAGS=-c $(MCFLAGS) $(DEFS) $(OPTIMIZE) $(DEBUG_FLAGS) $(FILE_SIZE_FLAGS) $(addprefix -I,$(INCLUDE_DIRS)) -std=c99
 CXXFLAGS=-c $(MCFLAGS) $(DEFS) $(OPTIMIZE) $(DEBUG_FLAGS) $(CXX_FILE_SIZE_FLAGS) $(CXX_STRICT_FLAGS) $(addprefix -I,$(INCLUDE_DIRS)) -std=c++11
 LDFLAGS =-T $(LDSCRIPT) $(MCFLAGS) -lm -lc --specs=nano.specs --specs=rdimon.specs $(ARCH_FLAGS)  $(LTO_FLAGS)  $(DEBUG_FLAGS) -static  -Wl,-gc-sections
