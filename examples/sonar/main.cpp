@@ -37,13 +37,6 @@
 #include "mpu6000.h"
 #include "mb1242.h"
 
-VCP* uartPtr = NULL;
-
-static void _putc(void *p, char c)
-{
-    (void)p; // avoid compiler warning about unused variable
-    uartPtr->put_byte(c);
-}
 
 int main() {
 

@@ -30,7 +30,6 @@
  */
 
 
-
 /*
  * Driver for the Maxbotix I2CXL-MaxSonar-EZ series sonar.
  * This has been made for and tested with the MB1242 sonar module,
