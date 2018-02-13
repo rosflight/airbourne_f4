@@ -45,14 +45,20 @@
 class UART : Serial
 {
 public:
+
+  typedef enum{
+    MODE_8N1,
+    MODE_8E2
+  } uart_mode_t;
+
   UART();
-  void init(const uart_hardware_struct_t *conf, uint32_t baudrate_);
+  void init(const uart_hardware_struct_t *conf, uint32_t baudrate_, uart_mode_t mode=MODE_8N1);
 
   void write(uint8_t*ch, uint8_t len);
   uint32_t rx_bytes_waiting();
   uint32_t tx_bytes_free();
   uint8_t read_byte();
-  bool set_baud_rate(uint32_t baud);
+  bool set_mode(uint32_t baud, uart_mode_t mode);
   bool tx_buffer_empty();
   void put_byte(uint8_t ch);
   bool flush();
@@ -64,7 +70,7 @@ public:
   void USART_IRQ_callback();
 
 private:
-  void init_UART(uint32_t baudrate_);
+  void init_UART(uint32_t baudrate_, uart_mode_t mode = MODE_8N1);
   void init_DMA();
   void init_NVIC();
   void startDMA();
@@ -80,7 +86,7 @@ private:
   uint16_t tx_buffer_tail_;
   GPIO rx_pin_;
   GPIO tx_pin_;
-  std::function<void(uint8_t)> receive_CB_;
+  std::function<void(uint8_t)> receive_CB_ = nullptr;
 };
 
 #endif // UART_H

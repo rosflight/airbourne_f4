@@ -53,7 +53,6 @@ public:
   virtual uint32_t rx_bytes_waiting() = 0;
   virtual uint32_t tx_bytes_free() = 0;
   virtual uint8_t read_byte() = 0;
-  virtual bool set_baud_rate(uint32_t baud) = 0;
   virtual bool tx_buffer_empty() = 0;
   virtual void put_byte(uint8_t ch) = 0;
   virtual bool flush() = 0;

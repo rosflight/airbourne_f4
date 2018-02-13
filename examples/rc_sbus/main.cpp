@@ -29,40 +29,34 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-
 #include "system.h"
 #include "uart.h"
+#include "rc_sbus.h"
+
 #include "revo_f4.h"
-
-UART* uartPtr = NULL;
-
-void rx_callback(uint8_t byte)
-{
-  uartPtr->put_byte(byte);
-}
 
 int main()
 {
+  static GPIO inv_pin;
+  static UART uart;
+  static RC_SBUS rc;
+
   systemInit();
 
-  UART uart;
-  uart.init(&uart_config[0], 57600);
-  uartPtr = &uart;
+  uart.init(&uart_config[0], 100000, UART::MODE_8E2);
 
-  uart.register_rx_callback(rx_callback);  // Uncomment to test callback version
+  inv_pin.init(SBUS_INV_GPIO, SBUS_INV_PIN, GPIO::OUTPUT);
+  inv_pin.write(GPIO::HIGH);
 
+  rc.init(&inv_pin, &uart);
+
+  uint16_t rc_raw[16];
   while(1)
   {
-    uint8_t hello_string[9] = "testing\n";
-//    uart.write(hello_string, 8); // Uncomment to test Tx
-    delay(200);
-
-    // Polling version (uncomment to test)
-//    while (uart.rx_bytes_waiting())
-//    {
-//      uint8_t byte = uart.read_byte();
-//      uartPtr->put_byte(byte);
-//    }
-
+    for(int i = 0; i < 16; i++)
+    {
+      rc_raw[i] = rc.read(i);
+    }
   }
+
 }

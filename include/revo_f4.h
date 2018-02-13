@@ -71,6 +71,10 @@ const uart_hardware_struct_t uart_config[NUM_UART] =
    DMA1_Stream3, DMA_Channel_5, DMA_IT_TCIF1, DMA_IT_TCIF3},
 };
 
+#define SBUS_UART 0
+#define SBUS_INV_GPIO GPIOC
+#define SBUS_INV_PIN GPIO_Pin_0
+
 
 /////////////////////// SPI CONFIG ///////////////////////
 #define NUM_SPI 3
@@ -228,5 +232,8 @@ const pwm_hardware_struct_t pwm_config[PWM_NUM_CHANNELS] =
 };
 #define RC_PPM_PIN 11
 #define PPM_RC_IQRHandler TIM8_BRK_TIM12_IRQHandler
+
+
+
 
 #endif // REVO_F4_H

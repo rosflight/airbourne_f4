@@ -32,25 +32,47 @@
 #ifndef RC_H
 #define RC_H
 
-#include "revo_f4.h"
+#include "system.h"
 
+#include "rc.h"
 #include "gpio.h"
+#include "uart.h"
 
-class RC
+class RC_SBUS
 {
-public:
-  typedef enum
-  {
-    PARALLEL_PWM,
-    PPM,
-  } RC_type_t;
 
 private:
-  uint32_t pulse_[8];
+
+  enum
+  {
+    START_BYTE = 0xF0,
+    END_BYTE = 0x00
+  };
+
+  typedef enum
+  {
+    SBUS_SIGNAL_OK,
+    SBUS_SIGNAL_LOST,
+    SBUS_SIGNAL_FAILSAFE
+  } failsafe_state_t;
+
+  failsafe_state_t failsafe_status_;
+
+  GPIO* inv_pin_;
+  UART* uart_;
+  uint32_t raw_[18];
+  uint32_t last_pulse_ms_ = 0;
+  uint8_t buffer_[25];
+  uint8_t buffer_pos_ = 0;
+
+  void decode_buffer();
 
 public:
-  virtual void init() = 0;
-  virtual float read(uint8_t channel) = 0;
+  void init(GPIO *inv_pin_, UART *uart_);
+  void read_cb(uint8_t byte);
+  uint32_t read(uint8_t channel);
+  bool lost();
+
 };
 
 #endif // RC_H
