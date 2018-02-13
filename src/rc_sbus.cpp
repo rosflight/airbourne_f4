@@ -33,9 +33,12 @@
 #include "rc_sbus.h"
 #include <functional>
 
-void RC_SBUS::init(GPIO* inv_pin_, UART *uart_)
+void RC_SBUS::init(GPIO* inv_pin, UART *uart)
 {
-//  uart_->set_mode(100000, UART::MODE_8E2);
+  uart_ = uart;
+  inv_pin_ = inv_pin;
+
+  uart_->set_mode(100000, UART::MODE_8E2);
   uart_->register_rx_callback(std::bind(&RC_SBUS::read_cb, this, std::placeholders::_1));
 
   // turn on the serial inverter
@@ -75,26 +78,24 @@ void RC_SBUS::decode_buffer()
   raw_[14] = ( (buffer_[20] & 0x3F) << 5 ) | (buffer_[21] >> 3);
   raw_[15] = ( (buffer_[21] & 0x07) << 8 | buffer_[22]);
 
-  // DigiChannel 1
-  if (buffer_[23] & (1<<0)) {
+  // Digitall Channel 1
+  if (buffer_[23] & (1<<0))
     raw_[16] = 1;
-  }else{
+  else
     raw_[16] = 0;
-  }
-  // DigiChannel 2
-  if (buffer_[23] & (1<<1)) {
+
+  // Digital Channel 2
+  if (buffer_[23] & (1<<1))
     raw_[17] = 1;
-  }else{
+  else
     raw_[17] = 0;
-  }
+
   // Failsafe
   failsafe_status_ = SBUS_SIGNAL_OK;
-  if (buffer_[23] & (1<<2)) {
+  if (buffer_[23] & (1<<2))
     failsafe_status_ = SBUS_SIGNAL_LOST;
-  }
-  if (buffer_[23] & (1<<3)) {
+  if (buffer_[23] & (1<<3))
     failsafe_status_ = SBUS_SIGNAL_FAILSAFE;
-  }
 }
 
 void RC_SBUS::read_cb(uint8_t byte)

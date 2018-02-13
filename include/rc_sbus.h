@@ -68,7 +68,7 @@ private:
   void decode_buffer();
 
 public:
-  void init(GPIO *inv_pin_, UART *uart_);
+  void init(GPIO *inv_pin, UART *uart);
   void read_cb(uint8_t byte);
   uint32_t read(uint8_t channel);
   bool lost();
