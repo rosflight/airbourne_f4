@@ -42,22 +42,22 @@
 #include "serial.h"
 #include "gpio.h"
 
-class UART : Serial
+class UART : public Serial
 {
 public:
   UART();
   void init(const uart_hardware_struct_t *conf, uint32_t baudrate_);
 
-  void write(uint8_t*ch, uint8_t len);
-  uint32_t rx_bytes_waiting();
-  uint32_t tx_bytes_free();
-  uint8_t read_byte();
-  bool set_baud_rate(uint32_t baud);
-  bool tx_buffer_empty();
-  void put_byte(uint8_t ch);
-  bool flush();
-  void register_rx_callback(std::function<void(uint8_t)> cb);
-  void unregister_rx_callback();
+  void write(uint8_t*ch, uint8_t len) override;
+  uint32_t rx_bytes_waiting() override;
+  uint32_t tx_bytes_free() override;
+  uint8_t read_byte() override;
+  bool set_baud_rate(uint32_t baud) override;
+  bool tx_buffer_empty() override;
+  void put_byte(uint8_t ch) override;
+  bool flush() override;
+  void register_rx_callback(std::function<void(uint8_t)> cb) override;
+  void unregister_rx_callback() override;
 
   void DMA_Tx_IRQ_callback();
   void DMA_Rx_IRQ_callback();
@@ -80,7 +80,7 @@ private:
   uint16_t tx_buffer_tail_;
   GPIO rx_pin_;
   GPIO tx_pin_;
-  std::function<void(uint8_t)> receive_CB_;
+  //std::function<void(uint8_t)> receive_CB_;
 };
 
 #endif // UART_H
