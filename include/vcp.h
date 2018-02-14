@@ -21,7 +21,7 @@ class VCP : public Serial
 {
 public:
   void init();
-  virtual void write( uint8_t *ch, uint8_t len) override;
+  virtual void write(const uint8_t *ch, uint8_t len) override;
   uint32_t rx_bytes_waiting() override;
   uint32_t tx_bytes_free() override;
   uint8_t read_byte() override;

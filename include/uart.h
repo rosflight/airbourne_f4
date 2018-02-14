@@ -48,7 +48,7 @@ public:
   UART();
   void init(const uart_hardware_struct_t *conf, uint32_t baudrate_);
 
-  void write(uint8_t*ch, uint8_t len) override;
+  void write(const uint8_t*ch, uint8_t len) override;
   uint32_t rx_bytes_waiting() override;
   uint32_t tx_bytes_free() override;
   uint8_t read_byte() override;

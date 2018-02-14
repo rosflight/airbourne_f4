@@ -57,7 +57,7 @@ public:
     VCP = 1
   };
   Serial(){}
-  virtual void write(uint8_t*ch, uint8_t len) = 0;
+  virtual void write(const uint8_t*ch, uint8_t len) = 0;
   virtual uint32_t rx_bytes_waiting() = 0;
   virtual uint32_t tx_bytes_free() = 0;
   virtual uint8_t read_byte() = 0;
