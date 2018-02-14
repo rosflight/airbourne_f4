@@ -152,7 +152,7 @@ void UART::init_NVIC()
 }
 
 
-void UART::write(uint8_t* ch, uint8_t len)
+void UART::write(const uint8_t* ch, uint8_t len)
 {
   // Put Data on the tx_buffer
   for (int i = 0; i < len ; i++)
