@@ -47,7 +47,7 @@ void RC_SBUS::init(GPIO* inv_pin, UART *uart)
 
 uint32_t RC_SBUS::read(uint8_t channel)
 {
-  return raw_[channel];
+    return raw_[channel];
 }
 
 bool RC_SBUS::lost()
@@ -78,7 +78,7 @@ void RC_SBUS::decode_buffer()
   raw_[14] = ( (buffer_[20] & 0x3F) << 5 ) | (buffer_[21] >> 3);
   raw_[15] = ( (buffer_[21] & 0x07) << 8 | buffer_[22]);
 
-  // Digitall Channel 1
+  // Digital Channel 1
   if (buffer_[23] & (1<<0))
     raw_[16] = 1;
   else
@@ -111,8 +111,11 @@ void RC_SBUS::read_cb(uint8_t byte)
     break;
 
   case 24:
-    decode_buffer();
-    buffer_pos_ = 0;
+    if (byte == END_BYTE)
+    {
+      decode_buffer();
+      buffer_pos_ = 0;
+    }
     break;
 
   default:

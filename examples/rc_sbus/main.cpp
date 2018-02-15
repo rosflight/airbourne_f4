@@ -44,11 +44,9 @@ int main()
   systemInit();
 
   uart.init(&uart_config[0], 100000, UART::MODE_8E2);
-
   inv_pin.init(SBUS_INV_GPIO, SBUS_INV_PIN, GPIO::OUTPUT);
-  inv_pin.write(GPIO::HIGH);
-
   rc.init(&inv_pin, &uart);
+
 
   uint16_t rc_raw[16];
   while(1)
@@ -57,6 +55,7 @@ int main()
     {
       rc_raw[i] = rc.read(i);
     }
+    delay(20);
   }
 
 }

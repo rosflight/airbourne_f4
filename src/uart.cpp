@@ -61,6 +61,9 @@ void UART::init(const uart_hardware_struct_t* conf, uint32_t baudrate, uart_mode
 void UART::init_UART(uint32_t baudrate, uart_mode_t mode)
 {
   // Configure the device
+  USART_ITConfig(c_->dev, USART_IT_RXNE, DISABLE);
+  USART_Cmd(c_->dev, DISABLE);
+
   USART_InitTypeDef USART_InitStruct;
   USART_InitStruct.USART_BaudRate = baudrate;
 
