@@ -76,13 +76,15 @@ void VCP::begin_write(){}
 void VCP::end_write(){}
 
 
-void VCP::register_rx_callback(std::function<void(uint8_t)> rx_callback_ptr)
+void VCP::register_rx_callback(void (*rx_callback_ptr)(uint8_t data) )
 {
   receive_CB_ = rx_callback_ptr;
-  Register_CDC_RxCallback(
-    [rx_callback_ptr](uint8_t arg){
-      rx_callback_ptr(arg);
-    });
+  Register_CDC_RxCallback(rx_callback_ptr);
+}
+void VCP::unregister_rx_callback()
+{
+    receive_CB_ = NULL;
+    Register_CDC_RxCallback(NULL);
 }
 
 

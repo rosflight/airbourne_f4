@@ -32,7 +32,7 @@ public:
   bool flush() override;
   void begin_write();
   void end_write();
-  void register_rx_callback(std::function<void(uint8_t)>) override;
+  void register_rx_callback(void (*rx_callback_ptr)(uint8_t data)) override;
   void unregister_rx_callback() override;
   bool in_bulk_mode();
 

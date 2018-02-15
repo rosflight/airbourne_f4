@@ -65,7 +65,7 @@ public:
   virtual bool tx_buffer_empty() = 0;
   virtual void put_byte(uint8_t ch) = 0;
   virtual bool flush() = 0;
-  virtual void register_rx_callback(std::function<void(uint8_t)> cb) = 0;
+  virtual void register_rx_callback(void (*cb)(uint8_t data) ) = 0;
   virtual void unregister_rx_callback();
 
 protected:
