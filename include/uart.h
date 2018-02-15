@@ -56,7 +56,7 @@ public:
   bool tx_buffer_empty() override;
   void put_byte(uint8_t ch) override;
   bool flush() override;
-  void register_rx_callback(std::function<void(uint8_t)> cb) override;
+  void register_rx_callback(void (*cb)(uint8_t data) ) override;
   void unregister_rx_callback() override;
 
   void DMA_Tx_IRQ_callback();

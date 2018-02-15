@@ -66,7 +66,7 @@ public:
   virtual void put_byte(uint8_t ch) = 0;
   virtual bool flush() = 0;
   virtual void register_rx_callback(void (*cb)(uint8_t data) ) = 0;
-  virtual void unregister_rx_callback();
+  virtual void unregister_rx_callback() = 0;
 
 protected:
   GPIO tx_pin_;
