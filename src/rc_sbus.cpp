@@ -80,22 +80,22 @@ void RC_SBUS::decode_buffer()
   raw_[15] = sbus_union_.frame.chan15;
 
   // Digital Channel 1
-  if (sbus_union_.frame.flags & (1<<0))
+  if (sbus_union_.frame.digichannels & (1<<0))
     raw_[16] = 2000;
   else
     raw_[16] = 1000;
 
   // Digital Channel 2
-  if (sbus_union_.frame.flags & (1<<1))
+  if (sbus_union_.frame.digichannels & (1<<1))
     raw_[17] = 2000;
   else
     raw_[17] = 1000;
 
   // Failsafe
   failsafe_status_ = SBUS_SIGNAL_OK;
-  if (sbus_union_.frame.flags & (1<<2))
+  if (sbus_union_.frame.digichannels & (1<<2))
     failsafe_status_ = SBUS_SIGNAL_LOST;
-  if (sbus_union_.frame.flags & (1<<3))
+  if (sbus_union_.frame.digichannels & (1<<3))
     failsafe_status_ = SBUS_SIGNAL_FAILSAFE;
 }
 

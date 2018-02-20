@@ -74,7 +74,7 @@ private:
       unsigned int chan13 : 11;
       unsigned int chan14 : 11;
       unsigned int chan15 : 11;
-      uint8_t flags;
+      uint8_t digichannels;
       uint8_t endByte;
   } __attribute__ ((__packed__));
 
