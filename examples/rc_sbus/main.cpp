@@ -63,13 +63,13 @@ int main()
   rc.init(&inv_pin, &uart);
 
 
-  uint16_t rc_raw[16];
+  float rc_raw[16];
   while(1)
   {
-    for(int i = 0; i < 16; i++)
+    for(int i = 0; i < 8; i++)
     {
       rc_raw[i] = rc.read(i);
-      printf("%d, ", rc_raw[i]);
+      printf("%d, ", (uint32_t)(rc_raw[i]*1000));
     }
     printf("\n");
     delay(20);

@@ -47,85 +47,81 @@ void RC_SBUS::init(GPIO* inv_pin, UART *uart)
   decode_buffer();
 }
 
-uint32_t RC_SBUS::read(uint8_t channel)
+float RC_SBUS::read(uint8_t channel)
 {
-    return raw_[channel];
-//  return buffer_[channel];
+  return (float)(raw_[channel] - 172)/(1639.0);
 }
 
 bool RC_SBUS::lost()
 {
-  return millis() < last_pulse_ms_ + 100 && failsafe_status_ == SBUS_SIGNAL_OK;
+  return millis() < frame_start_ms_ + 100 && failsafe_status_ == SBUS_SIGNAL_OK;
 }
 
 void RC_SBUS::decode_buffer()
 {
-  last_pulse_ms_ = millis();
+  frame_start_ms_ = millis();
 
-  // process actual sbus data
-  raw_[0]  = sbus_data_.data.chan0;
-  raw_[1]  = sbus_data_.data.chan1;
-  raw_[2]  = sbus_data_.data.chan2;
-  raw_[3]  = sbus_data_.data.chan3;
-  raw_[4]  = sbus_data_.data.chan4;
-  raw_[5]  = sbus_data_.data.chan5;
-  raw_[6]  = sbus_data_.data.chan6;
-  raw_[7]  = sbus_data_.data.chan7;
-  raw_[8]  = sbus_data_.data.chan8;
-  raw_[9]  = sbus_data_.data.chan9;
-  raw_[10] = sbus_data_.data.chan10;
-  raw_[11] = sbus_data_.data.chan11;
-  raw_[12] = sbus_data_.data.chan12;
-  raw_[13] = sbus_data_.data.chan13;
-  raw_[14] = sbus_data_.data.chan14;
-  raw_[15] = sbus_data_.data.chan15;
+  // process actual sbus data, use union to decode
+  raw_[0]  = sbus_union_.frame.chan0;
+  raw_[1]  = sbus_union_.frame.chan1;
+  raw_[2]  = sbus_union_.frame.chan2;
+  raw_[3]  = sbus_union_.frame.chan3;
+  raw_[4]  = sbus_union_.frame.chan4;
+  raw_[5]  = sbus_union_.frame.chan5;
+  raw_[6]  = sbus_union_.frame.chan6;
+  raw_[7]  = sbus_union_.frame.chan7;
+  raw_[8]  = sbus_union_.frame.chan8;
+  raw_[9]  = sbus_union_.frame.chan9;
+  raw_[10] = sbus_union_.frame.chan10;
+  raw_[11] = sbus_union_.frame.chan11;
+  raw_[12] = sbus_union_.frame.chan12;
+  raw_[13] = sbus_union_.frame.chan13;
+  raw_[14] = sbus_union_.frame.chan14;
+  raw_[15] = sbus_union_.frame.chan15;
 
   // Digital Channel 1
-  if (sbus_data_.array[23] & (1<<0))
+  if (sbus_union_.frame.flags & (1<<0))
     raw_[16] = 2000;
   else
     raw_[16] = 1000;
 
   // Digital Channel 2
-  if (sbus_data_.array[23] & (1<<1))
+  if (sbus_union_.frame.flags & (1<<1))
     raw_[17] = 2000;
   else
     raw_[17] = 1000;
 
   // Failsafe
   failsafe_status_ = SBUS_SIGNAL_OK;
-  if (sbus_data_.array[23] & (1<<2))
+  if (sbus_union_.frame.flags & (1<<2))
     failsafe_status_ = SBUS_SIGNAL_LOST;
-  if (sbus_data_.array[23] & (1<<3))
+  if (sbus_union_.frame.flags & (1<<3))
     failsafe_status_ = SBUS_SIGNAL_FAILSAFE;
 }
 
 void RC_SBUS::read_cb(uint8_t byte)
 {
-  // If there has been a 4ms gap in the stream, then assume we are at the start of the packet
-  uint32_t now = millis();
-  if (now >= last_pulse_ms_ + 5)
+  if (byte == START_BYTE && prev_byte_ == END_BYTE)
   {
     buffer_pos_ = 0;
-  }
-  last_pulse_ms_ = now;
-
-  if (buffer_pos_ == 0 && byte != START_BYTE)
-  {
-    // this is an error, wait for the right start byte
-  }
-  else
-  {
-    // Load the bytes into our buffer
-    sbus_data_.array[buffer_pos_] = byte;
-    buffer_pos_++;
+    frame_started_ = true;
+    frame_start_ms_ = millis();
   }
 
-  if (buffer_pos_ == 25)
+  if (frame_started_)
   {
-    // If we have a complete packet, decode
-    decode_buffer();
-    buffer_pos_ = 0;
+    sbus_union_.data[buffer_pos_++] = byte;
+
+    if (buffer_pos_ == 25)
+    {
+      // If we have a complete packet, decode
+      if (sbus_union_.frame.endByte == END_BYTE && sbus_union_.frame.startByte == START_BYTE)
+        decode_buffer();
+      else
+        errors_++;
+      frame_started_ = false;
+    }
   }
+  prev_byte_ = byte;
 }
 

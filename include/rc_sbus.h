@@ -57,8 +57,7 @@ private:
   } failsafe_state_t;
 
   struct dataFrame_s {
-      uint8_t syncByte;
-      // 176 bits of data (11 bits per channel * 16 channels) = 22 bytes.
+      uint8_t startByte;
       unsigned int chan0 : 11;
       unsigned int chan1 : 11;
       unsigned int chan2 : 11;
@@ -80,28 +79,33 @@ private:
   } __attribute__ ((__packed__));
 
   typedef union {
-      uint8_t array[25];
-      struct dataFrame_s data;
+      uint8_t data[25];
+      struct dataFrame_s frame;
   } SBUS_t;
 
-  SBUS_t sbus_data_;
+  SBUS_t sbus_union_;
 
   failsafe_state_t failsafe_status_;
 
   GPIO* inv_pin_;
   UART* uart_;
   uint32_t raw_[18];
-  uint32_t last_pulse_ms_ = 0;
+  uint32_t frame_start_ms_ = 0;
   uint8_t buffer_[25];
   uint8_t buffer_pos_ = 0;
+  uint32_t errors_ = 0;
+  uint8_t prev_byte_ = 0;
+  bool frame_started_ = false;
 
   void decode_buffer();
 
 public:
+
   void init(GPIO *inv_pin, UART *uart);
   void read_cb(uint8_t byte);
-  uint32_t read(uint8_t channel);
+  float read(uint8_t channel);
   bool lost();
+  inline uint32_t get_errors() { return errors_; }
 
 };
 

@@ -301,7 +301,7 @@ void UART::DMA_Rx_IRQ_callback()
       // read a new byte and decrement the tail
       uint8_t byte = rx_buffer_[RX_BUFFER_SIZE - rx_buffer_tail_];
       receive_CB_(byte);
-      if(rx_buffer_tail_-- == 0)
+      if(--rx_buffer_tail_ == 0)
       {
         // wrap to the top if at the bottom
         rx_buffer_tail_ = RX_BUFFER_SIZE;
