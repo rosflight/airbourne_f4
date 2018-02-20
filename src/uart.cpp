@@ -291,7 +291,7 @@ bool UART::flush()
 void UART::DMA_Rx_IRQ_callback()
 {
   // DMA took care of putting the data on the buffer
-  // Just call the callback until we have not more data
+  // Just call the callback until we have no more data
   // Update the head position from the DMA
   rx_buffer_head_ =  DMA_GetCurrDataCounter(c_->Rx_DMA_Stream);
   if(receive_CB_ != nullptr)

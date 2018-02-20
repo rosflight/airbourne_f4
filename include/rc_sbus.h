@@ -45,7 +45,7 @@ private:
 
   enum
   {
-    START_BYTE = 0xF0,
+    START_BYTE = 0x0F,
     END_BYTE = 0x00
   };
 

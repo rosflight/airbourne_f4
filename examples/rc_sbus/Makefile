@@ -127,6 +127,7 @@ CXXSOURCES = $(SRC_DIR)/gpio.cpp \
              $(SRC_DIR)/led.cpp \
              $(SRC_DIR)/uart.cpp \
              $(SRC_DIR)/rc_sbus.cpp \
+             $(SRC_DIR)/vcp.cpp \
              $(PRINTF_DIR)/printf.cpp \
              main.cpp
 
@@ -228,3 +229,4 @@ clean:
 
 flash: $(TARGET_BIN)
 	dfu-util -a 0 -s 0x08000000 -D $(TARGET_BIN)
+

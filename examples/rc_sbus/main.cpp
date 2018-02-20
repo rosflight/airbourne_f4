@@ -32,16 +32,31 @@
 #include "system.h"
 #include "uart.h"
 #include "rc_sbus.h"
+#include "vcp.h"
+#include "printf.h"
 
 #include "revo_f4.h"
+
+VCP* uartPtr = NULL;
+
+static void _putc(void *p, char c)
+{
+    (void)p; // avoid compiler warning about unused variable
+    uartPtr->put_byte(c);
+}
 
 int main()
 {
   static GPIO inv_pin;
   static UART uart;
   static RC_SBUS rc;
+  static VCP vcp;
 
   systemInit();
+  vcp.init();
+  uartPtr = &vcp;
+  init_printf(NULL, _putc);
+
 
   uart.init(&uart_config[0], 100000, UART::MODE_8E2);
   inv_pin.init(SBUS_INV_GPIO, SBUS_INV_PIN, GPIO::OUTPUT);
@@ -54,7 +69,9 @@ int main()
     for(int i = 0; i < 16; i++)
     {
       rc_raw[i] = rc.read(i);
+      printf("%d, ", rc_raw[i]);
     }
+    printf("\n");
     delay(20);
   }
 

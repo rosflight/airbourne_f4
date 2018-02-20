@@ -43,11 +43,14 @@ void RC_SBUS::init(GPIO* inv_pin, UART *uart)
 
   // turn on the serial inverter
   inv_pin_->write(GPIO::HIGH);
+
+  decode_buffer();
 }
 
 uint32_t RC_SBUS::read(uint8_t channel)
 {
     return raw_[channel];
+//  return buffer_[channel];
 }
 
 bool RC_SBUS::lost()
@@ -60,23 +63,23 @@ void RC_SBUS::decode_buffer()
   last_pulse_ms_ = millis();
 
   // process actual sbus data
-  raw_[0] = ( (buffer_[1] & 0xFF) << 3 ) | (buffer_[2] >> 5);
-  raw_[1] = ( (buffer_[2] & 0x1F) << 6 ) | (buffer_[3] >> 2);
-  raw_[2] = ( (buffer_[3] & 0x03) << 9 ) | (buffer_[4] << 1) | (buffer_[5] >> 7);
-  raw_[3] = ( (buffer_[5] & 0x7F) << 4 ) | (buffer_[6] >> 4);
-  raw_[4] = ( (buffer_[6] & 0x0F) << 7 ) | (buffer_[7] >> 1);
-  raw_[5] = ( (buffer_[7] & 0x01) << 10 ) | (buffer_[8] << 2) | (buffer_[9] >> 6);
-  raw_[6] = ( (buffer_[9] & 0x3F) << 5 ) | (buffer_[10] >> 3);
-  raw_[7] = ( (buffer_[10] & 0x07) << 8 | buffer_[11]);
-
-  raw_[8] = ( (buffer_[12] & 0xFF) << 3 ) | (buffer_[13] >> 5);
-  raw_[9] = ( (buffer_[13] & 0x1F) << 6 ) | (buffer_[14] >> 2);
-  raw_[10] = ( (buffer_[14] & 0x03) << 9 ) | (buffer_[15] << 1) | (buffer_[16] >> 7);
-  raw_[11] = ( (buffer_[16] & 0x7F) << 4 ) | (buffer_[17] >> 4);
-  raw_[12] = ( (buffer_[17] & 0x0F) << 7 ) | (buffer_[18] >> 1);
-  raw_[13] = ( (buffer_[18] & 0x01) << 10 ) | (buffer_[19] << 2) | (buffer_[20] >> 6);
-  raw_[14] = ( (buffer_[20] & 0x3F) << 5 ) | (buffer_[21] >> 3);
-  raw_[15] = ( (buffer_[21] & 0x07) << 8 | buffer_[22]);
+  raw_[0]  = ((buffer_[1]|buffer_[2]<<8) & 0x07FF); //The first Channel
+  raw_[1]  = ((buffer_[2]>>3|buffer_[3]<<5)  & 0x07FF);
+  raw_[2]  = ((buffer_[3]>>6 |buffer_[4]<<2 |buffer_[5]<<10)  & 0x07FF);
+  raw_[3]  = ((buffer_[5]>>1 |buffer_[6]<<7) & 0x07FF);
+  raw_[4]  = ((buffer_[6]>>4 |buffer_[7]<<4) & 0x07FF);
+  raw_[5]  = ((buffer_[7]>>7 |buffer_[8]<<1 |buffer_[9]<<9)   & 0x07FF);
+  raw_[6]  = ((buffer_[9]>>2 |buffer_[10]<<6) & 0x07FF);
+  raw_[7]  = ((buffer_[10]>>5|buffer_[11]<<3) & 0x07FF);
+  raw_[8]  = ((buffer_[12]   |buffer_[13]<<8) & 0x07FF);
+  raw_[9]  = ((buffer_[13]>>3|buffer_[14]<<5)  & 0x07FF);
+  raw_[10] = ((buffer_[14]>>6|buffer_[15]<<2|buffer_[16]<<10) & 0x07FF);
+  raw_[11] = ((buffer_[16]>>1|buffer_[17]<<7) & 0x07FF);
+  raw_[12] = ((buffer_[17]>>4|buffer_[18]<<4) & 0x07FF);
+  raw_[13] = ((buffer_[18]>>7|buffer_[19]<<1|buffer_[20]<<9)  & 0x07FF);
+  raw_[14] = ((buffer_[20]>>2|buffer_[21]<<6) & 0x07FF);
+  raw_[15] = ((buffer_[21]>>5|buffer_[22]<<3) & 0x07FF);
+  raw_[16] = ((buffer_[23]));
 
   // Digital Channel 1
   if (buffer_[23] & (1<<0))
@@ -100,6 +103,13 @@ void RC_SBUS::decode_buffer()
 
 void RC_SBUS::read_cb(uint8_t byte)
 {
+  uint32_t now = millis();
+  if (now > last_pulse_ms_ + 5)
+  {
+    buffer_pos_ = 0;
+  }
+  last_pulse_ms_ = now;
+
   switch (buffer_pos_)
   {
   case 0:
@@ -113,8 +123,9 @@ void RC_SBUS::read_cb(uint8_t byte)
   case 24:
     if (byte == END_BYTE)
     {
-      decode_buffer();
+      buffer_[buffer_pos_] = byte;
       buffer_pos_ = 0;
+      decode_buffer();
     }
     break;
 
