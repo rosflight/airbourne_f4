@@ -35,17 +35,8 @@
 #include "spi.h"
 #include "i2c.h"
 #include "mpu6000.h"
-#include "drv_mb1242.h"
-#include "vcp.h"
-#include "printf.h"
+#include "mb1242.h"
 
-VCP* uartPtr = NULL;
-
-static void _putc(void *p, char c)
-{
-    (void)p; // avoid compiler warning about unused variable
-    uartPtr->put_byte(c);
-}
 
 int main() {
 
@@ -57,21 +48,19 @@ int main() {
 
 //  init_printf(NULL, _putc);
 
-
-  I2C i2c;
-  i2c.init(&i2c_config[EXTERNAL_I2C]);
-  MB1242 sonar(i2c);
-
+  I2C i2c1;
+  i2c1.init(&i2c_config[EXTERNAL_I2C]);
+  I2CSonar sonar(&i2c1);
+  
 
   volatile float dist;
   while(true)
   {
     sonar.async_update();
     delay(100);
-
-    if (sonar.present())
-      dist = sonar.async_read();
-    delay(500);
+    dist=sonar.async_read();
+    //I usual put a breakpoint here when testing to read the dist value
+    delay(100);
   }
 
 }
