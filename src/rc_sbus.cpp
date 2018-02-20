@@ -63,76 +63,69 @@ void RC_SBUS::decode_buffer()
   last_pulse_ms_ = millis();
 
   // process actual sbus data
-  raw_[0]  = ((buffer_[1]|buffer_[2]<<8) & 0x07FF); //The first Channel
-  raw_[1]  = ((buffer_[2]>>3|buffer_[3]<<5)  & 0x07FF);
-  raw_[2]  = ((buffer_[3]>>6 |buffer_[4]<<2 |buffer_[5]<<10)  & 0x07FF);
-  raw_[3]  = ((buffer_[5]>>1 |buffer_[6]<<7) & 0x07FF);
-  raw_[4]  = ((buffer_[6]>>4 |buffer_[7]<<4) & 0x07FF);
-  raw_[5]  = ((buffer_[7]>>7 |buffer_[8]<<1 |buffer_[9]<<9)   & 0x07FF);
-  raw_[6]  = ((buffer_[9]>>2 |buffer_[10]<<6) & 0x07FF);
-  raw_[7]  = ((buffer_[10]>>5|buffer_[11]<<3) & 0x07FF);
-  raw_[8]  = ((buffer_[12]   |buffer_[13]<<8) & 0x07FF);
-  raw_[9]  = ((buffer_[13]>>3|buffer_[14]<<5)  & 0x07FF);
-  raw_[10] = ((buffer_[14]>>6|buffer_[15]<<2|buffer_[16]<<10) & 0x07FF);
-  raw_[11] = ((buffer_[16]>>1|buffer_[17]<<7) & 0x07FF);
-  raw_[12] = ((buffer_[17]>>4|buffer_[18]<<4) & 0x07FF);
-  raw_[13] = ((buffer_[18]>>7|buffer_[19]<<1|buffer_[20]<<9)  & 0x07FF);
-  raw_[14] = ((buffer_[20]>>2|buffer_[21]<<6) & 0x07FF);
-  raw_[15] = ((buffer_[21]>>5|buffer_[22]<<3) & 0x07FF);
-  raw_[16] = ((buffer_[23]));
+  raw_[0]  = sbus_data_.data.chan0;
+  raw_[1]  = sbus_data_.data.chan1;
+  raw_[2]  = sbus_data_.data.chan2;
+  raw_[3]  = sbus_data_.data.chan3;
+  raw_[4]  = sbus_data_.data.chan4;
+  raw_[5]  = sbus_data_.data.chan5;
+  raw_[6]  = sbus_data_.data.chan6;
+  raw_[7]  = sbus_data_.data.chan7;
+  raw_[8]  = sbus_data_.data.chan8;
+  raw_[9]  = sbus_data_.data.chan9;
+  raw_[10] = sbus_data_.data.chan10;
+  raw_[11] = sbus_data_.data.chan11;
+  raw_[12] = sbus_data_.data.chan12;
+  raw_[13] = sbus_data_.data.chan13;
+  raw_[14] = sbus_data_.data.chan14;
+  raw_[15] = sbus_data_.data.chan15;
 
   // Digital Channel 1
-  if (buffer_[23] & (1<<0))
-    raw_[16] = 1;
+  if (sbus_data_.array[23] & (1<<0))
+    raw_[16] = 2000;
   else
-    raw_[16] = 0;
+    raw_[16] = 1000;
 
   // Digital Channel 2
-  if (buffer_[23] & (1<<1))
-    raw_[17] = 1;
+  if (sbus_data_.array[23] & (1<<1))
+    raw_[17] = 2000;
   else
-    raw_[17] = 0;
+    raw_[17] = 1000;
 
   // Failsafe
   failsafe_status_ = SBUS_SIGNAL_OK;
-  if (buffer_[23] & (1<<2))
+  if (sbus_data_.array[23] & (1<<2))
     failsafe_status_ = SBUS_SIGNAL_LOST;
-  if (buffer_[23] & (1<<3))
+  if (sbus_data_.array[23] & (1<<3))
     failsafe_status_ = SBUS_SIGNAL_FAILSAFE;
 }
 
 void RC_SBUS::read_cb(uint8_t byte)
 {
+  // If there has been a 4ms gap in the stream, then assume we are at the start of the packet
   uint32_t now = millis();
-  if (now > last_pulse_ms_ + 5)
+  if (now >= last_pulse_ms_ + 5)
   {
     buffer_pos_ = 0;
   }
   last_pulse_ms_ = now;
 
-  switch (buffer_pos_)
+  if (buffer_pos_ == 0 && byte != START_BYTE)
   {
-  case 0:
-    if (byte == START_BYTE)
-    {
-      buffer_[buffer_pos_] = byte;
-      buffer_pos_++;
-    }
-    break;
-
-  case 24:
-    if (byte == END_BYTE)
-    {
-      buffer_[buffer_pos_] = byte;
-      buffer_pos_ = 0;
-      decode_buffer();
-    }
-    break;
-
-  default:
-    buffer_[buffer_pos_] = byte;
+    // this is an error, wait for the right start byte
+  }
+  else
+  {
+    // Load the bytes into our buffer
+    sbus_data_.array[buffer_pos_] = byte;
     buffer_pos_++;
-    break;
+  }
+
+  if (buffer_pos_ == 25)
+  {
+    // If we have a complete packet, decode
+    decode_buffer();
+    buffer_pos_ = 0;
   }
 }
 
