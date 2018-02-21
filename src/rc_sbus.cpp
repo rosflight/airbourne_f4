@@ -49,12 +49,12 @@ void RC_SBUS::init(GPIO* inv_pin, UART *uart)
 
 float RC_SBUS::read(uint8_t channel)
 {
-  return (float)(raw_[channel] - 172)/(1639.0);
+  return ((float)(raw_[channel]) - 172.0)/1639.0;
 }
 
 bool RC_SBUS::lost()
 {
-  return millis() < frame_start_ms_ + 100 && failsafe_status_ == SBUS_SIGNAL_OK;
+  return millis() > frame_start_ms_ + 100 || failsafe_status_ != SBUS_SIGNAL_OK;
 }
 
 void RC_SBUS::decode_buffer()
@@ -62,9 +62,10 @@ void RC_SBUS::decode_buffer()
   frame_start_ms_ = millis();
 
   // process actual sbus data, use union to decode
-  raw_[0]  = sbus_union_.frame.chan0;
-  raw_[1]  = sbus_union_.frame.chan1;
-  raw_[2]  = sbus_union_.frame.chan2;
+  // (Map to AETR to keep with ROSflight convention)
+  raw_[0]  = sbus_union_.frame.chan1;
+  raw_[1]  = sbus_union_.frame.chan2;
+  raw_[2]  = sbus_union_.frame.chan0;
   raw_[3]  = sbus_union_.frame.chan3;
   raw_[4]  = sbus_union_.frame.chan4;
   raw_[5]  = sbus_union_.frame.chan5;
@@ -81,20 +82,20 @@ void RC_SBUS::decode_buffer()
 
   // Digital Channel 1
   if (sbus_union_.frame.digichannels & (1<<0))
-    raw_[16] = 2000;
+    raw_[16] = 1811;
   else
-    raw_[16] = 1000;
+    raw_[16] = 172;
 
   // Digital Channel 2
   if (sbus_union_.frame.digichannels & (1<<1))
-    raw_[17] = 2000;
+    raw_[17] = 1811;
   else
-    raw_[17] = 1000;
+    raw_[17] = 172;
 
   // Failsafe
   failsafe_status_ = SBUS_SIGNAL_OK;
-  if (sbus_union_.frame.digichannels & (1<<2))
-    failsafe_status_ = SBUS_SIGNAL_LOST;
+//  if (sbus_union_.frame.digichannels & (1<<2))
+//    failsafe_status_ = SBUS_SIGNAL_LOST;
   if (sbus_union_.frame.digichannels & (1<<3))
     failsafe_status_ = SBUS_SIGNAL_FAILSAFE;
 }

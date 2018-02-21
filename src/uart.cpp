@@ -61,7 +61,6 @@ void UART::init(const uart_hardware_struct_t* conf, uint32_t baudrate, uart_mode
 void UART::init_UART(uint32_t baudrate, uart_mode_t mode)
 {
   // Configure the device
-  USART_ITConfig(c_->dev, USART_IT_RXNE, DISABLE);
   USART_Cmd(c_->dev, DISABLE);
 
   USART_InitTypeDef USART_InitStruct;
@@ -154,7 +153,7 @@ void UART::init_NVIC()
   // Configure the Interrupt
   NVIC_InitTypeDef NVIC_InitStruct;
   NVIC_InitStruct.NVIC_IRQChannel = c_->USART_IRQn;
-  NVIC_InitStruct.NVIC_IRQChannelPreemptionPriority = 2;
+  NVIC_InitStruct.NVIC_IRQChannelPreemptionPriority = 1;
   NVIC_InitStruct.NVIC_IRQChannelSubPriority = 1;
   NVIC_InitStruct.NVIC_IRQChannelCmd = ENABLE;
   NVIC_Init(&NVIC_InitStruct);
