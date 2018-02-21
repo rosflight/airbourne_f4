@@ -29,63 +29,19 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef UART_H
-#define UART_H
+#ifndef RC_H
+#define RC_H
 
-// from serial.h
-#define RX_BUFFER_SIZE 64
-#define TX_BUFFER_SIZE 64
-#include <functional>
+#include "revo_f4.h"
 
-#include "system.h"
-
-#include "serial.h"
 #include "gpio.h"
 
-class UART : public Serial
+class RC_BASE
 {
+
 public:
-
-  typedef enum{
-    MODE_8N1,
-    MODE_8E2
-  } uart_mode_t;
-
-  UART();
-  void init(const uart_hardware_struct_t *conf, uint32_t baudrate_, uart_mode_t mode=MODE_8N1);
-
-  void write(const uint8_t*ch, uint8_t len) override;
-  uint32_t rx_bytes_waiting() override;
-  uint32_t tx_bytes_free() override;
-  uint8_t read_byte() override;
-  bool set_mode(uint32_t baud, uart_mode_t mode);
-  bool tx_buffer_empty() override;
-  void put_byte(uint8_t ch) override;
-  bool flush() override;
-  void register_rx_callback(void (*cb)(uint8_t data) ) override;
-  void unregister_rx_callback() override;
-
-  void DMA_Tx_IRQ_callback();
-  void DMA_Rx_IRQ_callback();
-  void USART_IRQ_callback();
-
-private:
-  void init_UART(uint32_t baudrate_, uart_mode_t mode = MODE_8N1);
-  void init_DMA();
-  void init_NVIC();
-  void startDMA();
-
-  const uart_hardware_struct_t* c_;
-
-  uint32_t baudrate_;
-  uint8_t rx_buffer_[RX_BUFFER_SIZE];
-  uint8_t tx_buffer_[TX_BUFFER_SIZE];
-  uint16_t rx_buffer_head_;
-  uint16_t rx_buffer_tail_;
-  uint16_t tx_buffer_head_;
-  uint16_t tx_buffer_tail_;
-  GPIO rx_pin_;
-  GPIO tx_pin_;
+  virtual float read(uint8_t channel) = 0;
+  virtual bool lost() = 0;
 };
 
-#endif // UART_H
+#endif // RC_H

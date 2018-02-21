@@ -32,9 +32,9 @@
 #ifndef RC_PPM_H
 #define RC_PPM_H
 
-#include "rc.h"
+#include "rc_base.h"
 
-class RC_PPM
+class RC_PPM : public RC_BASE
 {
 private:
   GPIO pin_;
@@ -52,9 +52,11 @@ private:
 
 public:
   void init(const pwm_hardware_struct_t *conf);
+
   float read(uint8_t channel);
-  void pulse_callback();
   bool lost();
+
+  void pulse_callback();
 };
 
 #endif // RC_PPM_H

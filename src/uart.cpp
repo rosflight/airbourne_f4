@@ -37,8 +37,9 @@ UART::UART()
 {}
 
 
-void UART::init(const uart_hardware_struct_t* conf, uint32_t baudrate)
+void UART::init(const uart_hardware_struct_t* conf, uint32_t baudrate, uart_mode_t mode)
 {
+  receive_CB_ = nullptr;
   c_ = conf;
 
   rx_pin_.init(c_->GPIO, c_->Rx_Pin, GPIO::PERIPH_IN_OUT);
@@ -51,21 +52,34 @@ void UART::init(const uart_hardware_struct_t* conf, uint32_t baudrate)
     UART1Ptr = this;
   }
 
-  init_UART(baudrate);
+  init_UART(baudrate, mode);
   init_DMA();
   init_NVIC();
 
-  receive_CB_ = nullptr;
 }
 
-void UART::init_UART(uint32_t baudrate)
+void UART::init_UART(uint32_t baudrate, uart_mode_t mode)
 {
   // Configure the device
+  USART_Cmd(c_->dev, DISABLE);
+
   USART_InitTypeDef USART_InitStruct;
   USART_InitStruct.USART_BaudRate = baudrate;
-  USART_InitStruct.USART_WordLength = USART_WordLength_8b;
-  USART_InitStruct.USART_StopBits = USART_StopBits_1;
-  USART_InitStruct.USART_Parity = USART_Parity_No;
+
+  switch (mode)
+  {
+  case MODE_8N1:
+    USART_InitStruct.USART_WordLength = USART_WordLength_8b;
+    USART_InitStruct.USART_Parity = USART_Parity_No;
+    USART_InitStruct.USART_StopBits = USART_StopBits_1;
+    break;
+  case MODE_8E2:
+    USART_InitStruct.USART_WordLength = USART_WordLength_8b;
+    USART_InitStruct.USART_Parity = USART_Parity_Even;
+    USART_InitStruct.USART_StopBits = USART_StopBits_2;
+    break;
+  }
+
   USART_InitStruct.USART_HardwareFlowControl = USART_HardwareFlowControl_None;
   USART_InitStruct.USART_Mode = USART_Mode_Rx | USART_Mode_Tx;
   USART_Init(c_->dev, &USART_InitStruct);
@@ -139,7 +153,7 @@ void UART::init_NVIC()
   // Configure the Interrupt
   NVIC_InitTypeDef NVIC_InitStruct;
   NVIC_InitStruct.NVIC_IRQChannel = c_->USART_IRQn;
-  NVIC_InitStruct.NVIC_IRQChannelPreemptionPriority = 2;
+  NVIC_InitStruct.NVIC_IRQChannelPreemptionPriority = 1;
   NVIC_InitStruct.NVIC_IRQChannelSubPriority = 1;
   NVIC_InitStruct.NVIC_IRQChannelCmd = ENABLE;
   NVIC_Init(&NVIC_InitStruct);
@@ -152,7 +166,7 @@ void UART::init_NVIC()
 }
 
 
-void UART::write(const uint8_t* ch, uint8_t len)
+void UART::write(const uint8_t *ch, uint8_t len)
 {
   // Put Data on the tx_buffer
   for (int i = 0; i < len ; i++)
@@ -253,9 +267,9 @@ uint32_t UART::tx_bytes_free()
   }
 }
 
-bool UART::set_baud_rate(uint32_t baud)
+bool UART::set_mode(uint32_t baud, uart_mode_t mode)
 {
-  init_UART(baud);
+  init_UART(baud, mode);
 }
 
 bool UART::tx_buffer_empty()
@@ -276,7 +290,7 @@ bool UART::flush()
 void UART::DMA_Rx_IRQ_callback()
 {
   // DMA took care of putting the data on the buffer
-  // Just call the callback until we have not more data
+  // Just call the callback until we have no more data
   // Update the head position from the DMA
   rx_buffer_head_ =  DMA_GetCurrDataCounter(c_->Rx_DMA_Stream);
   if(receive_CB_ != nullptr)
@@ -286,7 +300,7 @@ void UART::DMA_Rx_IRQ_callback()
       // read a new byte and decrement the tail
       uint8_t byte = rx_buffer_[RX_BUFFER_SIZE - rx_buffer_tail_];
       receive_CB_(byte);
-      if(rx_buffer_tail_-- == 0)
+      if(--rx_buffer_tail_ == 0)
       {
         // wrap to the top if at the bottom
         rx_buffer_tail_ = RX_BUFFER_SIZE;

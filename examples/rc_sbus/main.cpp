@@ -29,63 +29,50 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef UART_H
-#define UART_H
-
-// from serial.h
-#define RX_BUFFER_SIZE 64
-#define TX_BUFFER_SIZE 64
-#include <functional>
-
 #include "system.h"
+#include "uart.h"
+#include "rc_sbus.h"
+#include "vcp.h"
+#include "printf.h"
 
-#include "serial.h"
-#include "gpio.h"
+#include "revo_f4.h"
 
-class UART : public Serial
+VCP* uartPtr = NULL;
+
+static void _putc(void *p, char c)
 {
-public:
+    (void)p; // avoid compiler warning about unused variable
+    uartPtr->put_byte(c);
+}
 
-  typedef enum{
-    MODE_8N1,
-    MODE_8E2
-  } uart_mode_t;
+int main()
+{
+  static GPIO inv_pin;
+  static UART uart;
+  static RC_SBUS rc;
+  static VCP vcp;
 
-  UART();
-  void init(const uart_hardware_struct_t *conf, uint32_t baudrate_, uart_mode_t mode=MODE_8N1);
+  systemInit();
+  vcp.init();
+  uartPtr = &vcp;
+  init_printf(NULL, _putc);
 
-  void write(const uint8_t*ch, uint8_t len) override;
-  uint32_t rx_bytes_waiting() override;
-  uint32_t tx_bytes_free() override;
-  uint8_t read_byte() override;
-  bool set_mode(uint32_t baud, uart_mode_t mode);
-  bool tx_buffer_empty() override;
-  void put_byte(uint8_t ch) override;
-  bool flush() override;
-  void register_rx_callback(void (*cb)(uint8_t data) ) override;
-  void unregister_rx_callback() override;
 
-  void DMA_Tx_IRQ_callback();
-  void DMA_Rx_IRQ_callback();
-  void USART_IRQ_callback();
+  uart.init(&uart_config[0], 100000, UART::MODE_8E2);
+  inv_pin.init(SBUS_INV_GPIO, SBUS_INV_PIN, GPIO::OUTPUT);
+  rc.init(&inv_pin, &uart);
 
-private:
-  void init_UART(uint32_t baudrate_, uart_mode_t mode = MODE_8N1);
-  void init_DMA();
-  void init_NVIC();
-  void startDMA();
 
-  const uart_hardware_struct_t* c_;
+  float rc_raw[16];
+  while(1)
+  {
+    for(int i = 0; i < 8; i++)
+    {
+      rc_raw[i] = rc.read(i);
+      printf("%d, ", (uint32_t)(rc_raw[i]*1000));
+    }
+    printf("\n");
+    delay(20);
+  }
 
-  uint32_t baudrate_;
-  uint8_t rx_buffer_[RX_BUFFER_SIZE];
-  uint8_t tx_buffer_[TX_BUFFER_SIZE];
-  uint16_t rx_buffer_head_;
-  uint16_t rx_buffer_tail_;
-  uint16_t tx_buffer_head_;
-  uint16_t tx_buffer_tail_;
-  GPIO rx_pin_;
-  GPIO tx_pin_;
-};
-
-#endif // UART_H
+}

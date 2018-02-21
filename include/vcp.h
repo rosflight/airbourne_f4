@@ -25,7 +25,7 @@ public:
   uint32_t rx_bytes_waiting() override;
   uint32_t tx_bytes_free() override;
   uint8_t read_byte() override;
-  bool set_baud_rate(uint32_t baud) override;
+  bool set_baud_rate(uint32_t baud);
   bool tx_buffer_empty() override;
   bool set_mode(uint8_t mode_);
   void put_byte(uint8_t ch) override;

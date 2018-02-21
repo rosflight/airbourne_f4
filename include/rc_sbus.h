@@ -29,28 +29,84 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef RC_H
-#define RC_H
+#ifndef RC_SBUS_H
+#define RC_SBUS_H
 
-#include "revo_f4.h"
+#include "system.h"
 
+#include "rc_base.h"
 #include "gpio.h"
+#include "uart.h"
 
-class RC
+class RC_SBUS : public RC_BASE
 {
-public:
-  typedef enum
-  {
-    PARALLEL_PWM,
-    PPM,
-  } RC_type_t;
 
 private:
-  uint32_t pulse_[8];
+
+  enum
+  {
+    START_BYTE = 0x0F,
+    END_BYTE = 0x00
+  };
+
+  typedef enum
+  {
+    SBUS_SIGNAL_OK,
+    SBUS_SIGNAL_LOST,
+    SBUS_SIGNAL_FAILSAFE
+  } failsafe_state_t;
+
+  struct dataFrame_s {
+      uint8_t startByte;
+      unsigned int chan0 : 11;
+      unsigned int chan1 : 11;
+      unsigned int chan2 : 11;
+      unsigned int chan3 : 11;
+      unsigned int chan4 : 11;
+      unsigned int chan5 : 11;
+      unsigned int chan6 : 11;
+      unsigned int chan7 : 11;
+      unsigned int chan8 : 11;
+      unsigned int chan9 : 11;
+      unsigned int chan10 : 11;
+      unsigned int chan11 : 11;
+      unsigned int chan12 : 11;
+      unsigned int chan13 : 11;
+      unsigned int chan14 : 11;
+      unsigned int chan15 : 11;
+      uint8_t digichannels;
+      uint8_t endByte;
+  } __attribute__ ((__packed__));
+
+  typedef union {
+      uint8_t data[25];
+      struct dataFrame_s frame;
+  } SBUS_t;
+
+  SBUS_t sbus_union_;
+
+  failsafe_state_t failsafe_status_;
+
+  GPIO* inv_pin_;
+  UART* uart_;
+  uint32_t raw_[18];
+  uint32_t frame_start_ms_ = 0;
+  uint8_t buffer_[25];
+  uint8_t buffer_pos_ = 0;
+  uint32_t errors_ = 0;
+  uint8_t prev_byte_ = 0;
+  bool frame_started_ = false;
+
+  void decode_buffer();
 
 public:
-  virtual void init() = 0;
-  virtual float read(uint8_t channel) = 0;
+
+  void init(GPIO *inv_pin, UART *uart);
+  void read_cb(uint8_t byte);
+  float read(uint8_t channel);
+  bool lost();
+  inline uint32_t get_errors() { return errors_; }
+
 };
 
-#endif // RC_H
+#endif // RC_SBUS_H
