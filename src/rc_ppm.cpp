@@ -92,7 +92,7 @@ void RC_PPM::init(const pwm_hardware_struct_t* conf)
 
 float RC_PPM::read(uint8_t channel)
 {
-  return rc_raw_[channel];
+  return (float)(rc_raw_[channel] - 1000)/1000.0;
 }
 
 bool RC_PPM::lost()

@@ -53,7 +53,7 @@ void VCP::init()
   vcpPtr = this;
 }
 
-void VCP::write(uint8_t*ch, uint8_t len)
+void VCP::write(const uint8_t*ch, uint8_t len)
 {
   uint32_t start = millis();
   while (len > 0)
