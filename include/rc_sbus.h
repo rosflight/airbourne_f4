@@ -29,16 +29,16 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef RC_H
-#define RC_H
+#ifndef RC_SBUS_H
+#define RC_SBUS_H
 
 #include "system.h"
 
-#include "rc.h"
+#include "rc_base.h"
 #include "gpio.h"
 #include "uart.h"
 
-class RC_SBUS
+class RC_SBUS : public RC_BASE
 {
 
 private:
@@ -109,4 +109,4 @@ public:
 
 };
 
-#endif // RC_H
+#endif // RC_SBUS_H
