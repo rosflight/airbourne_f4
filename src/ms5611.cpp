@@ -123,7 +123,7 @@ void MS5611::read_prom()
   for (int i = 0; i < 8; i++)
   {
     i2c_->read(ADDR, PROM_RD + i*2, 2, buf, nullptr, true);
-    prom[i] = (uint16_t)(buf[0] << 8 | buf[1]);
+    prom[i] = static_cast<uint16_t>(buf[0] << 8 | buf[1]);
   }
 }
 
@@ -166,10 +166,10 @@ void MS5611::convert()
   int64_t delta = 0;
   if(pres_raw_ > 9085466 * 2 / 3 && temp_raw_ > 0)
   {
-    int64_t dT = (int64_t)temp_raw_ - ((int64_t)prom[5] << 8);
-    int64_t off = ((int64_t)prom[2] << 16) + (((int64_t)prom[4] * dT) >> 7);
-    int64_t sens = ((int64_t)prom[1] << 15) + (((int64_t)prom[3] * dT) >> 8);
-    temp = 2000 + ((dT * (int64_t)prom[6]) >> 23);
+    int64_t dT = static_cast<int64_t>(temp_raw_) - (static_cast<int64_t>(prom[5]) << 8);
+    int64_t off = (static_cast<int64_t>(prom[2]) << 16) + ((static_cast<int64_t>(prom[4]) * dT) >> 7);
+    int64_t sens = (static_cast<int64_t>(prom[1]) << 15) + ((static_cast<int64_t>(prom[3]) * dT) >> 8);
+    temp = 2000 + ((dT * static_cast<int64_t>(prom[6])) >> 23);
 
     // temperature lower than 20degC
     if (temp < 2000)
@@ -190,10 +190,10 @@ void MS5611::convert()
 
       temp -= ((dT * dT) >> 31);
     }
-    press = ((((uint64_t)pres_raw_ * sens) >> 21) - off) >> 15;
+    press = (((static_cast<uint64_t>(pres_raw_) * sens) >> 21) - off) >> 15;
 
-    pressure_ = (float)press; // Pa
-    temperature_ = (float)temp/ 100.0 + 273.0; // K
+    pressure_ = static_cast<float>(press); // Pa
+    temperature_ = static_cast<float>(temp) / 100.0 + 273.0; // K
   }
   new_data_ = false;
 }

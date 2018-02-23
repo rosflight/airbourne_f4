@@ -92,7 +92,7 @@ void RC_PPM::init(const pwm_hardware_struct_t* conf)
 
 float RC_PPM::read(uint8_t channel)
 {
-  return (float)(rc_raw_[channel] - 1000)/1000.0;
+  return static_cast<float>(rc_raw_[channel] - 1000)/1000.0;
 }
 
 bool RC_PPM::lost()
@@ -110,6 +110,7 @@ void RC_PPM::pulse_callback()
     switch (TIM_Channel_)
     {
     case TIM_Channel_1:
+    default:
         current_capture_ = TIM_GetCapture1(TIM_);
         break;
     case TIM_Channel_2:

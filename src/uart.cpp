@@ -69,6 +69,7 @@ void UART::init_UART(uint32_t baudrate, uart_mode_t mode)
   switch (mode)
   {
   case MODE_8N1:
+  default:
     USART_InitStruct.USART_WordLength = USART_WordLength_8b;
     USART_InitStruct.USART_Parity = USART_Parity_No;
     USART_InitStruct.USART_StopBits = USART_StopBits_1;
@@ -106,7 +107,7 @@ void UART::init_DMA()
 
   DMA_InitStructure.DMA_Priority = DMA_Priority_High;
   DMA_InitStructure.DMA_PeripheralInc = DMA_PeripheralInc_Disable;
-  DMA_InitStructure.DMA_PeripheralBaseAddr = (uint32_t)(&(c_->dev->DR));
+  DMA_InitStructure.DMA_PeripheralBaseAddr = reinterpret_cast<uint32_t>(&(c_->dev->DR));
   DMA_InitStructure.DMA_Channel = c_->DMA_Channel;
 
   // Configure the Tx DMA
@@ -114,7 +115,7 @@ void UART::init_DMA()
   DMA_InitStructure.DMA_Mode = DMA_Mode_Normal;
   DMA_InitStructure.DMA_DIR = DMA_DIR_MemoryToPeripheral;
   DMA_InitStructure.DMA_BufferSize = TX_BUFFER_SIZE;
-  DMA_InitStructure.DMA_Memory0BaseAddr = (uint32_t) tx_buffer_;
+  DMA_InitStructure.DMA_Memory0BaseAddr = reinterpret_cast<uint32_t>(tx_buffer_);
   DMA_Init(c_->Tx_DMA_Stream, &DMA_InitStructure);
 
   // Configure the Rx DMA
@@ -122,7 +123,7 @@ void UART::init_DMA()
   DMA_InitStructure.DMA_Mode = DMA_Mode_Circular;
   DMA_InitStructure.DMA_DIR = DMA_DIR_PeripheralToMemory;
   DMA_InitStructure.DMA_BufferSize = RX_BUFFER_SIZE;
-  DMA_InitStructure.DMA_Memory0BaseAddr = (uint32_t) rx_buffer_;
+  DMA_InitStructure.DMA_Memory0BaseAddr = reinterpret_cast<uint32_t>(rx_buffer_);
   DMA_Init(c_->Rx_DMA_Stream, &DMA_InitStructure);
 
   // Turn on the Rx DMA Stream
@@ -184,7 +185,7 @@ void UART::write(const uint8_t *ch, uint8_t len)
 void UART::startDMA()
 {
   // Set the start of the transmission to the oldest data
-  c_->Tx_DMA_Stream->M0AR = (uint32_t)&tx_buffer_[tx_buffer_tail_];
+  c_->Tx_DMA_Stream->M0AR = reinterpret_cast<uint32_t>(&tx_buffer_[tx_buffer_tail_]);
   if(tx_buffer_head_ > tx_buffer_tail_)
   {
     // Set the length of the transmission to the data on the buffer
@@ -270,6 +271,7 @@ uint32_t UART::tx_bytes_free()
 bool UART::set_mode(uint32_t baud, uart_mode_t mode)
 {
   init_UART(baud, mode);
+  return true;
 }
 
 bool UART::tx_buffer_empty()

@@ -378,7 +378,7 @@ void         USB_OTG_StopHost        (USB_OTG_CORE_HANDLE *pdev);
 #ifdef USE_DEVICE_MODE
 USB_OTG_STS  USB_OTG_CoreInitDev         (USB_OTG_CORE_HANDLE *pdev);
 USB_OTG_STS  USB_OTG_EnableDevInt        (USB_OTG_CORE_HANDLE *pdev);
-uint32_t     USB_OTG_ReadDevAllInEPItr           (USB_OTG_CORE_HANDLE *pdev);
+uint32_t     USB_OTG_ReadDevAllInEPItr   (USB_OTG_CORE_HANDLE *pdev);
 enum USB_OTG_SPEED USB_OTG_GetDeviceSpeed (USB_OTG_CORE_HANDLE *pdev);
 USB_OTG_STS  USB_OTG_EP0Activate (USB_OTG_CORE_HANDLE *pdev);
 USB_OTG_STS  USB_OTG_EPActivate  (USB_OTG_CORE_HANDLE *pdev , USB_OTG_EP *ep);
@@ -389,7 +389,6 @@ USB_OTG_STS  USB_OTG_EPSetStall          (USB_OTG_CORE_HANDLE *pdev , USB_OTG_EP
 USB_OTG_STS  USB_OTG_EPClearStall        (USB_OTG_CORE_HANDLE *pdev , USB_OTG_EP *ep);
 uint32_t     USB_OTG_ReadDevAllOutEp_itr (USB_OTG_CORE_HANDLE *pdev);
 uint32_t     USB_OTG_ReadDevOutEP_itr    (USB_OTG_CORE_HANDLE *pdev , uint8_t epnum);
-uint32_t     USB_OTG_ReadDevAllInEPItr   (USB_OTG_CORE_HANDLE *pdev);
 void         USB_OTG_InitDevSpeed        (USB_OTG_CORE_HANDLE *pdev , uint8_t speed);
 uint8_t      USBH_IsEvenFrame (USB_OTG_CORE_HANDLE *pdev);
 void         USB_OTG_EP0_OutStart(USB_OTG_CORE_HANDLE *pdev);

@@ -76,7 +76,8 @@ void MPU6000::init(SPI* spi_drv)
   // Read the IMU
   raw[0] = MPU_RA_TEMP_OUT_H | 0x80;
   spi->transfer(raw, 3, raw, &cs_);
-  while (spi->is_busy()) {}
+  delay(20);
+//  while (spi->is_busy()) {}
 
   // Set up the EXTI pin
   exti_.init(GPIOC, GPIO_Pin_4, GPIO::INPUT);
@@ -99,22 +100,22 @@ void MPU6000::init(SPI* spi_drv)
 
 
   // set the accel and gyro scale parameters
-  accel_scale_ = (4.0 * 9.80665f) / ((float)0x7FFF);
-  gyro_scale_= (2000.0 * 3.14159f/180.0f) / ((float)0x7FFF);
+  accel_scale_ = (4.0 * 9.80665f) / (static_cast<float>(0x7FFF));
+  gyro_scale_= (2000.0 * 3.14159f/180.0f) / (static_cast<float>(0x7FFF));
 }
 
 void MPU6000::data_transfer_callback()
 {
   new_data_ = true;
-  acc_[0] = (float)((int16_t)((raw[1] << 8) | raw[2])) * accel_scale_;
-  acc_[1] = (float)((int16_t)((raw[3] << 8) | raw[4])) * accel_scale_;
-  acc_[2] = (float)((int16_t)((raw[5] << 8) | raw[6])) * accel_scale_;
+  acc_[0] = static_cast<float>(static_cast<int16_t>((raw[1] << 8) | raw[2])) * accel_scale_;
+  acc_[1] = static_cast<float>(static_cast<int16_t>((raw[3] << 8) | raw[4])) * accel_scale_;
+  acc_[2] = static_cast<float>(static_cast<int16_t>((raw[5] << 8) | raw[6])) * accel_scale_;
 
-  temp_  = (float)((int16_t)((raw[7] << 8) | raw[8])) / 340.0f + 36.53f;
+  temp_  = static_cast<float>(static_cast<int16_t>((raw[7] << 8) | raw[8])) / 340.0f + 36.53f;
 
-  gyro_[0]  = (float)((int16_t)((raw[9]  << 8) | raw[10])) * gyro_scale_;
-  gyro_[1]  = (float)((int16_t)((raw[11] << 8) | raw[12])) * gyro_scale_;
-  gyro_[2]  = (float)((int16_t)((raw[13] << 8) | raw[14])) * gyro_scale_;
+  gyro_[0]  = static_cast<float>(static_cast<int16_t>((raw[9]  << 8) | raw[10])) * gyro_scale_;
+  gyro_[1]  = static_cast<float>(static_cast<int16_t>((raw[11] << 8) | raw[12])) * gyro_scale_;
+  gyro_[2]  = static_cast<float>(static_cast<int16_t>((raw[13] << 8) | raw[14])) * gyro_scale_;
 }
 
 void MPU6000::read(float* accel_data, float* gyro_data, float* temp_data, uint64_t* time_us)

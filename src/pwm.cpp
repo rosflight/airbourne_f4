@@ -91,6 +91,7 @@ void PWM_OUT::init(const pwm_hardware_struct_t* pwm_init, uint16_t frequency, ui
   switch (pwm_init->TIM_Channel)
   {
   case TIM_Channel_1:
+  default:
     TIM_OC1Init(TIMPtr, &tim_oc_init_struct);
     TIM_OC1PreloadConfig(TIMPtr, TIM_OCPreload_Enable);
     CCR_ = &TIMPtr->CCR1;
@@ -135,7 +136,7 @@ void PWM_OUT::disable() {
 }
 
 void PWM_OUT::write(float value) {
-  *CCR_ = min_cyc_ + (uint16_t)((max_cyc_ - min_cyc_) * value);
+  *CCR_ = min_cyc_ + static_cast<uint16_t>((max_cyc_ - min_cyc_) * value);
 }
 
 void PWM_OUT::writeUs(uint16_t value) {
