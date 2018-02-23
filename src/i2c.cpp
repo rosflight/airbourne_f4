@@ -109,7 +109,7 @@ void I2C::init(const i2c_hardware_struct_t *c)
   DMA_InitStructure_.DMA_Mode = DMA_Mode_Normal;
   DMA_InitStructure_.DMA_Channel = c->DMA_Channel;
 
-  DMA_InitStructure_.DMA_PeripheralBaseAddr = (uint32_t)(&(c->dev->DR));
+  DMA_InitStructure_.DMA_PeripheralBaseAddr = reinterpret_cast<uint32_t>(&(c->dev->DR));
   DMA_InitStructure_.DMA_PeripheralBurst = DMA_PeripheralBurst_Single;
   DMA_InitStructure_.DMA_MemoryDataSize = DMA_MemoryDataSize_Byte;
   DMA_InitStructure_.DMA_Priority = DMA_Priority_High;
@@ -161,8 +161,8 @@ int8_t I2C::read(uint8_t addr, uint8_t reg, uint8_t num_bytes, uint8_t* data, st
   done_ = false;
 
   DMA_DeInit(c_->DMA_Stream);
-  DMA_InitStructure_.DMA_BufferSize = (uint16_t)(len_);
-  DMA_InitStructure_.DMA_Memory0BaseAddr = (uint32_t) data;
+  DMA_InitStructure_.DMA_BufferSize = static_cast<uint16_t>(len_);
+  DMA_InitStructure_.DMA_Memory0BaseAddr = reinterpret_cast<uint32_t>(data);
   DMA_Init(c_->DMA_Stream, &DMA_InitStructure_);
 
   I2C_Cmd(c_->dev, ENABLE);
@@ -329,10 +329,11 @@ bool I2C::handle_error()
   //reset errors
   I2C_ClearFlag(c_->dev, I2C_SR1_OVR | I2C_SR1_AF | I2C_SR1_ARLO | I2C_SR1_BERR);
   current_status_ = IDLE;
+  return true;
 }
 
 // This is the I2C_IT_EV handler
-bool I2C::handle_event()
+void I2C::handle_event()
 {
   uint32_t last_event = I2C_GetLastEvent(c_->dev);
 

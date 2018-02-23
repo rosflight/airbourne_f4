@@ -49,7 +49,7 @@ void RC_SBUS::init(GPIO* inv_pin, UART *uart)
 
 float RC_SBUS::read(uint8_t channel)
 {
-  return ((float)(raw_[channel]) - 172.0)/1639.0;
+  return (static_cast<float>(raw_[channel]) - 172.0)/1639.0;
 }
 
 bool RC_SBUS::lost()

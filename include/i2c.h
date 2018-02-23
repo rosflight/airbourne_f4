@@ -92,7 +92,7 @@ public:
 
   //interrupt handlers
   bool handle_error();
-  bool handle_event();
+  void handle_event();
   void transfer_complete_cb();
 };
 

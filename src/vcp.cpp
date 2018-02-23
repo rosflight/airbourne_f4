@@ -90,9 +90,6 @@ uint8_t VCP::read_byte()
     return 0;
 }
 
-
-bool VCP::set_baud_rate(uint32_t baud){}
-
 bool VCP::tx_buffer_empty()
 {
   return CDC_Send_FreeBytes() > 0;
@@ -106,6 +103,7 @@ void VCP::put_byte(uint8_t ch)
 bool VCP::flush()
 {
   CDC_flush();
+  return true;
 }
 
 

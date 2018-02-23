@@ -40,6 +40,8 @@
 #include <string.h>
 #include <stdarg.h>
 
+#pragma GCC system_header
+
 #include "stm32f4xx.h"
 #include "stm32f4xx_rcc.h"
 #include "stm32f4xx_exti.h"

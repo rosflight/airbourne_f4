@@ -58,21 +58,19 @@ uint8_t M25P16::get_status()
 
 bool M25P16::read_config(uint8_t *data, uint32_t len)
 {
-  uint8_t status = get_status();
-
   // Send the read data command, with address 0
   // Then clock out the right number of bytes
   spi_->enable(cs_);
   uint8_t addr[4] = {READ_DATA, 0, 0, 0};
-  spi_->transfer(addr, 4, NULL, NULL);
+  spi_->transfer(addr, 4, nullptr, NULL);
   while (spi_->is_busy()) {}
-  spi_->transfer(NULL, len, data, NULL);
+  spi_->transfer(nullptr, len, data, NULL);
   while (spi_->is_busy());
   spi_->disable(cs_);
   return true;
 }
 
-bool M25P16::write_config(uint8_t *data, uint32_t len)
+bool M25P16::write_config(uint8_t *data, const uint32_t len)
 {
   // Calculate the correct number of pages to store the config
   num_pages_for_config_ = len / 256;
@@ -117,12 +115,12 @@ bool M25P16::write_config(uint8_t *data, uint32_t len)
 
     // Send the PAGE_PROGRAM command with the right address
     spi_->enable(cs_);
-    uint8_t addr[4] = {PAGE_PROGRAM, (uint8_t)(i >> 8), (uint8_t)(i & 0xFF), 0};
+    uint8_t addr[4] = {PAGE_PROGRAM, static_cast<uint8_t>(i >> 8), static_cast<uint8_t>(i & 0xFF), 0};
     spi_->transfer(addr, 4, NULL, NULL);
     while (spi_->is_busy()) {} // Wait for the address to clear
 
     // Transfer the data
-    spi_->transfer(&data[256*i], page_len, NULL, NULL);
+    spi_->transfer(&data[256*i], page_len, nullptr, NULL);
     while (spi_->is_busy()) {} // Wait for the page to write
     spi_->disable(cs_);
 
