@@ -76,7 +76,8 @@ void MPU6000::init(SPI* spi_drv)
   // Read the IMU
   raw[0] = MPU_RA_TEMP_OUT_H | 0x80;
   spi->transfer(raw, 3, raw, &cs_);
-  while (spi->is_busy()) {}
+  delay(20);
+//  while (spi->is_busy()) {}
 
   // Set up the EXTI pin
   exti_.init(GPIOC, GPIO_Pin_4, GPIO::INPUT);

@@ -62,9 +62,9 @@ bool M25P16::read_config(uint8_t *data, uint32_t len)
   // Then clock out the right number of bytes
   spi_->enable(cs_);
   uint8_t addr[4] = {READ_DATA, 0, 0, 0};
-  spi_->transfer(addr, 4, nullptr, NULL);
+  spi_->transfer(addr, 4, nullptr);
   while (spi_->is_busy()) {}
-  spi_->transfer(nullptr, len, data, NULL);
+  spi_->transfer(nullptr, len, data);
   while (spi_->is_busy());
   spi_->disable(cs_);
   return true;
