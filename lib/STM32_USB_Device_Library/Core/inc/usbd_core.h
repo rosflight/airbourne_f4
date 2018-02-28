@@ -88,17 +88,17 @@ typedef enum {
 /** @defgroup USBD_CORE_Exported_FunctionsPrototype
   * @{
   */ 
-void USBD_Init(USB_OTG_CORE_HANDLE *pdev,
-               USB_OTG_CORE_ID_TypeDef coreID, 
-               USBD_DEVICE *pDevice,                  
-               USBD_Class_cb_TypeDef *class_cb, 
+void USBD_Init(volatile USB_OTG_CORE_HANDLE *pdev,
+               USB_OTG_CORE_ID_TypeDef coreID,
+               USBD_DEVICE *pDevice,
+               USBD_Class_cb_TypeDef *class_cb,
                USBD_Usr_cb_TypeDef *usr_cb);
 
-USBD_Status USBD_DeInit(USB_OTG_CORE_HANDLE *pdev);
+USBD_Status USBD_DeInit(volatile USB_OTG_CORE_HANDLE *pdev);
 
-USBD_Status USBD_ClrCfg(USB_OTG_CORE_HANDLE  *pdev, uint8_t cfgidx);
+USBD_Status USBD_ClrCfg(volatile USB_OTG_CORE_HANDLE  *pdev, uint8_t cfgidx);
 
-USBD_Status USBD_SetCfg(USB_OTG_CORE_HANDLE  *pdev, uint8_t cfgidx);
+USBD_Status USBD_SetCfg(volatile USB_OTG_CORE_HANDLE  *pdev, uint8_t cfgidx);
 
 /**
   * @}

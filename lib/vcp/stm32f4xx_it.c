@@ -6,7 +6,7 @@
 #include "usbd_core.h"
 #include "usbd_cdc_core.h"
 
-extern uint32_t USBD_OTG_ISR_Handler (USB_OTG_CORE_HANDLE *pdev);
+extern uint32_t USBD_OTG_ISR_Handler (volatile USB_OTG_CORE_HANDLE *pdev);
 
 #ifdef USB_OTG_HS_DEDICATED_EP1_ENABLED
 extern uint32_t USBD_OTG_EP1IN_ISR_Handler (USB_OTG_CORE_HANDLE *pdev);
@@ -100,7 +100,10 @@ void OTG_FS_IRQHandler(void)
 {
   USB_OTG_GINTSTS_TypeDef  gintr_status;
   gintr_status.d32 = USB_OTG_ReadCoreItr(&USB_OTG_dev);
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdiscarded-qualifiers"
   USBD_OTG_ISR_Handler (&USB_OTG_dev);
+#pragma GCC diagnostic pop
 
   if ((gintr_status.b.rxstsqlvl) || (gintr_status.b.outepintr))
   {

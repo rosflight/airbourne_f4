@@ -39,7 +39,7 @@ extern "C" {
 #include "usbd_usr.h"
 #include "usbd_desc.h"
 
-extern USB_OTG_CORE_HANDLE USB_OTG_dev;
+extern volatile USB_OTG_CORE_HANDLE USB_OTG_dev;
 
 uint32_t CDC_Send_DATA(const uint8_t *ptrBuffer, uint32_t sendLength);
 uint32_t CDC_Send_FreeBytes(void);

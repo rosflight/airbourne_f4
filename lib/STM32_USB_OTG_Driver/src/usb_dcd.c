@@ -29,6 +29,8 @@
 #include "usb_dcd.h"
 #include "usb_bsp.h"
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdiscarded-qualifiers"
 
 /** @addtogroup USB_OTG_DRIVER
 * @{
@@ -88,11 +90,11 @@
 
 
 
-void DCD_Init(USB_OTG_CORE_HANDLE *pdev , 
+void DCD_Init(volatile USB_OTG_CORE_HANDLE *pdev ,
               USB_OTG_CORE_ID_TypeDef coreID)
 {
   uint32_t i;
-  USB_OTG_EP *ep;
+  volatile USB_OTG_EP *ep;
   
   USB_OTG_SelectCore (pdev , coreID);
   
@@ -152,12 +154,12 @@ void DCD_Init(USB_OTG_CORE_HANDLE *pdev ,
 * @param epdesc : Endpoint Descriptor
 * @retval : status
 */
-uint32_t DCD_EP_Open(USB_OTG_CORE_HANDLE *pdev , 
+uint32_t DCD_EP_Open(volatile USB_OTG_CORE_HANDLE *pdev ,
                      uint8_t ep_addr,
                      uint16_t ep_mps,
                      uint8_t ep_type)
 {
-  USB_OTG_EP *ep;
+  volatile USB_OTG_EP *ep;
   
   if ((ep_addr & 0x80) == 0x80)
   {
@@ -191,9 +193,9 @@ uint32_t DCD_EP_Open(USB_OTG_CORE_HANDLE *pdev ,
 * @param ep_addr: endpoint address
 * @retval : status
 */
-uint32_t DCD_EP_Close(USB_OTG_CORE_HANDLE *pdev , uint8_t  ep_addr)
+uint32_t DCD_EP_Close(volatile USB_OTG_CORE_HANDLE *pdev , uint8_t  ep_addr)
 {
-  USB_OTG_EP *ep;
+  volatile USB_OTG_EP *ep;
   
   if ((ep_addr&0x80) == 0x80)
   {
@@ -218,7 +220,7 @@ uint32_t DCD_EP_Close(USB_OTG_CORE_HANDLE *pdev , uint8_t  ep_addr)
 * @param buf_len: data length
 * @retval : status
 */
-uint32_t   DCD_EP_PrepareRx( USB_OTG_CORE_HANDLE *pdev,
+uint32_t   DCD_EP_PrepareRx(volatile USB_OTG_CORE_HANDLE *pdev,
                             uint8_t   ep_addr,
                             uint8_t *pbuf,                        
                             uint16_t  buf_len)
@@ -258,12 +260,12 @@ uint32_t   DCD_EP_PrepareRx( USB_OTG_CORE_HANDLE *pdev,
 * @param buf_len: data length
 * @retval : status
 */
-uint32_t  DCD_EP_Tx ( USB_OTG_CORE_HANDLE *pdev,
+uint32_t  DCD_EP_Tx (volatile  USB_OTG_CORE_HANDLE *pdev,
                      uint8_t   ep_addr,
                      uint8_t   *pbuf,
                      uint32_t   buf_len)
 {
-  USB_OTG_EP *ep;
+  volatile USB_OTG_EP *ep;
   
   ep = &pdev->dev.in_ep[ep_addr & 0x7F];
   
@@ -293,7 +295,7 @@ uint32_t  DCD_EP_Tx ( USB_OTG_CORE_HANDLE *pdev,
 * @param epnum: endpoint address
 * @retval : status
 */
-uint32_t  DCD_EP_Stall (USB_OTG_CORE_HANDLE *pdev, uint8_t   epnum)
+uint32_t  DCD_EP_Stall (volatile USB_OTG_CORE_HANDLE *pdev, uint8_t   epnum)
 {
   USB_OTG_EP *ep;
   if ((0x80 & epnum) == 0x80)
@@ -320,7 +322,7 @@ uint32_t  DCD_EP_Stall (USB_OTG_CORE_HANDLE *pdev, uint8_t   epnum)
 * @param epnum: endpoint address
 * @retval : status
 */
-uint32_t  DCD_EP_ClrStall (USB_OTG_CORE_HANDLE *pdev, uint8_t epnum)
+uint32_t  DCD_EP_ClrStall (volatile USB_OTG_CORE_HANDLE *pdev, uint8_t epnum)
 {
   USB_OTG_EP *ep;
   if ((0x80 & epnum) == 0x80)
@@ -347,7 +349,7 @@ uint32_t  DCD_EP_ClrStall (USB_OTG_CORE_HANDLE *pdev, uint8_t epnum)
 * @param epnum: endpoint address
 * @retval : status
 */
-uint32_t  DCD_EP_Flush (USB_OTG_CORE_HANDLE *pdev , uint8_t epnum)
+uint32_t  DCD_EP_Flush (volatile USB_OTG_CORE_HANDLE *pdev , uint8_t epnum)
 {
 
   if ((epnum & 0x80) == 0x80)
@@ -369,7 +371,7 @@ uint32_t  DCD_EP_Flush (USB_OTG_CORE_HANDLE *pdev , uint8_t epnum)
 * @param address: new device address
 * @retval : status
 */
-void  DCD_EP_SetAddress (USB_OTG_CORE_HANDLE *pdev, uint8_t address)
+void  DCD_EP_SetAddress (volatile USB_OTG_CORE_HANDLE *pdev, uint8_t address)
 {
   USB_OTG_DCFG_TypeDef  dcfg;
   dcfg.d32 = 0;
@@ -382,7 +384,7 @@ void  DCD_EP_SetAddress (USB_OTG_CORE_HANDLE *pdev, uint8_t address)
 * @param pdev: device instance
 * @retval : None
 */
-void  DCD_DevConnect (USB_OTG_CORE_HANDLE *pdev)
+void  DCD_DevConnect (volatile USB_OTG_CORE_HANDLE *pdev)
 {
 #ifndef USE_OTG_MODE
   USB_OTG_DCTL_TypeDef  dctl;
@@ -400,7 +402,7 @@ void  DCD_DevConnect (USB_OTG_CORE_HANDLE *pdev)
 * @param pdev: device instance
 * @retval : None
 */
-void  DCD_DevDisconnect (USB_OTG_CORE_HANDLE *pdev)
+void  DCD_DevDisconnect (volatile USB_OTG_CORE_HANDLE *pdev)
 {
 #ifndef USE_OTG_MODE
   USB_OTG_DCTL_TypeDef  dctl;
@@ -420,7 +422,7 @@ void  DCD_DevDisconnect (USB_OTG_CORE_HANDLE *pdev)
 * @retval : EP status
 */
 
-uint32_t DCD_GetEPStatus(USB_OTG_CORE_HANDLE *pdev ,uint8_t epnum)
+uint32_t DCD_GetEPStatus(volatile USB_OTG_CORE_HANDLE *pdev ,uint8_t epnum)
 {
   USB_OTG_EP *ep;
   uint32_t Status = 0;  
@@ -447,7 +449,7 @@ uint32_t DCD_GetEPStatus(USB_OTG_CORE_HANDLE *pdev ,uint8_t epnum)
 *         epnum : EP address
 * @retval : None
 */
-void DCD_SetEPStatus (USB_OTG_CORE_HANDLE *pdev , uint8_t epnum , uint32_t Status)
+void DCD_SetEPStatus (volatile USB_OTG_CORE_HANDLE *pdev , uint8_t epnum , uint32_t Status)
 {
   USB_OTG_EP *ep;
   
@@ -475,4 +477,7 @@ void DCD_SetEPStatus (USB_OTG_CORE_HANDLE *pdev , uint8_t epnum , uint32_t Statu
 * @}
 */
 
+#pragma GCC diagnostic pop
+
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/
+

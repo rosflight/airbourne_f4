@@ -30,7 +30,7 @@
 #include "stdbool.h"
 #include "system.h"
 
-__ALIGN_BEGIN USB_OTG_CORE_HANDLE  USB_OTG_dev __ALIGN_END;
+__ALIGN_BEGIN volatile USB_OTG_CORE_HANDLE  USB_OTG_dev __ALIGN_END;
 static void (*rx_callback)(uint8_t data) = NULL;
 
 
@@ -80,8 +80,8 @@ extern uint32_t APP_Rx_ptr_in;
     to the USB device (flight controller).
 */
 static uint8_t APP_Tx_Buffer[APP_TX_DATA_SIZE];
-static uint32_t APP_Tx_ptr_out = 0;
-static uint32_t APP_Tx_ptr_in = 0;
+static volatile uint32_t APP_Tx_ptr_out = 0;
+static volatile uint32_t APP_Tx_ptr_in = 0;
 
 /* Private function prototypes -----------------------------------------------*/
 static uint16_t VCP_Init(void);

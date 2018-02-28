@@ -105,43 +105,43 @@ EP_DESCRIPTOR , *PEP_DESCRIPTOR;
 /********************************************************************************
 EXPORTED FUNCTION FROM THE USB-OTG LAYER
 ********************************************************************************/
-void       DCD_Init(USB_OTG_CORE_HANDLE *pdev ,
+void       DCD_Init(volatile USB_OTG_CORE_HANDLE *pdev ,
                     USB_OTG_CORE_ID_TypeDef coreID);
 
-void        DCD_DevConnect (USB_OTG_CORE_HANDLE *pdev);
-void        DCD_DevDisconnect (USB_OTG_CORE_HANDLE *pdev);
-void        DCD_EP_SetAddress (USB_OTG_CORE_HANDLE *pdev,
+void        DCD_DevConnect (volatile USB_OTG_CORE_HANDLE *pdev);
+void        DCD_DevDisconnect (volatile USB_OTG_CORE_HANDLE *pdev);
+void        DCD_EP_SetAddress (volatile USB_OTG_CORE_HANDLE *pdev,
                                uint8_t address);
-uint32_t    DCD_EP_Open(USB_OTG_CORE_HANDLE *pdev , 
+uint32_t    DCD_EP_Open(volatile USB_OTG_CORE_HANDLE *pdev ,
                      uint8_t ep_addr,
                      uint16_t ep_mps,
                      uint8_t ep_type);
 
-uint32_t    DCD_EP_Close  (USB_OTG_CORE_HANDLE *pdev,
+uint32_t    DCD_EP_Close  (volatile USB_OTG_CORE_HANDLE *pdev,
                                 uint8_t  ep_addr);
 
 
-uint32_t   DCD_EP_PrepareRx ( USB_OTG_CORE_HANDLE *pdev,
-                        uint8_t   ep_addr,                                  
-                        uint8_t *pbuf,                                  
+uint32_t   DCD_EP_PrepareRx (volatile USB_OTG_CORE_HANDLE *pdev,
+                        uint8_t   ep_addr,
+                        uint8_t *pbuf,
                         uint16_t  buf_len);
   
-uint32_t    DCD_EP_Tx (USB_OTG_CORE_HANDLE *pdev,
+uint32_t    DCD_EP_Tx (volatile USB_OTG_CORE_HANDLE *pdev,
                                uint8_t  ep_addr,
                                uint8_t  *pbuf,
                                uint32_t   buf_len);
-uint32_t    DCD_EP_Stall (USB_OTG_CORE_HANDLE *pdev,
+uint32_t    DCD_EP_Stall (volatile USB_OTG_CORE_HANDLE *pdev,
                               uint8_t   epnum);
-uint32_t    DCD_EP_ClrStall (USB_OTG_CORE_HANDLE *pdev,
+uint32_t    DCD_EP_ClrStall (volatile USB_OTG_CORE_HANDLE *pdev,
                                   uint8_t epnum);
-uint32_t    DCD_EP_Flush (USB_OTG_CORE_HANDLE *pdev,
+uint32_t    DCD_EP_Flush (volatile USB_OTG_CORE_HANDLE *pdev,
                                uint8_t epnum);
-uint32_t    DCD_Handle_ISR(USB_OTG_CORE_HANDLE *pdev);
+uint32_t    DCD_Handle_ISR(volatile USB_OTG_CORE_HANDLE *pdev);
 
-uint32_t DCD_GetEPStatus(USB_OTG_CORE_HANDLE *pdev ,
+uint32_t DCD_GetEPStatus(volatile USB_OTG_CORE_HANDLE *pdev ,
                          uint8_t epnum);
 
-void DCD_SetEPStatus (USB_OTG_CORE_HANDLE *pdev , 
+void DCD_SetEPStatus (volatile USB_OTG_CORE_HANDLE *pdev ,
                       uint8_t epnum , 
                       uint32_t Status);
 

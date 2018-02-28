@@ -50,18 +50,18 @@
 
 typedef struct _USBD_DCD_INT
 {
-  uint8_t (* DataOutStage) (USB_OTG_CORE_HANDLE *pdev , uint8_t epnum);
-  uint8_t (* DataInStage)  (USB_OTG_CORE_HANDLE *pdev , uint8_t epnum);
-  uint8_t (* SetupStage) (USB_OTG_CORE_HANDLE *pdev);
-  uint8_t (* SOF) (USB_OTG_CORE_HANDLE *pdev);
-  uint8_t (* Reset) (USB_OTG_CORE_HANDLE *pdev);
-  uint8_t (* Suspend) (USB_OTG_CORE_HANDLE *pdev);
-  uint8_t (* Resume) (USB_OTG_CORE_HANDLE *pdev);
-  uint8_t (* IsoINIncomplete) (USB_OTG_CORE_HANDLE *pdev);
-  uint8_t (* IsoOUTIncomplete) (USB_OTG_CORE_HANDLE *pdev);  
+  uint8_t (* DataOutStage) (volatile USB_OTG_CORE_HANDLE *pdev , uint8_t epnum);
+  uint8_t (* DataInStage)  (volatile USB_OTG_CORE_HANDLE *pdev , uint8_t epnum);
+  uint8_t (* SetupStage) (volatile USB_OTG_CORE_HANDLE *pdev);
+  uint8_t (* SOF) (volatile USB_OTG_CORE_HANDLE *pdev);
+  uint8_t (* Reset) (volatile USB_OTG_CORE_HANDLE *pdev);
+  uint8_t (* Suspend) (volatile USB_OTG_CORE_HANDLE *pdev);
+  uint8_t (* Resume) (volatile USB_OTG_CORE_HANDLE *pdev);
+  uint8_t (* IsoINIncomplete) (volatile USB_OTG_CORE_HANDLE *pdev);
+  uint8_t (* IsoOUTIncomplete) (volatile USB_OTG_CORE_HANDLE *pdev);
   
-  uint8_t (* DevConnected) (USB_OTG_CORE_HANDLE *pdev);
-  uint8_t (* DevDisconnected) (USB_OTG_CORE_HANDLE *pdev);   
+  uint8_t (* DevConnected) (volatile USB_OTG_CORE_HANDLE *pdev);
+  uint8_t (* DevDisconnected) (volatile USB_OTG_CORE_HANDLE *pdev);
   
 }USBD_DCD_INT_cb_TypeDef;
 
@@ -107,7 +107,7 @@ extern USBD_DCD_INT_cb_TypeDef *USBD_DCD_INT_fops;
   * @{
   */ 
 
-uint32_t USBD_OTG_ISR_Handler (USB_OTG_CORE_HANDLE *pdev);
+uint32_t USBD_OTG_ISR_Handler (volatile USB_OTG_CORE_HANDLE *pdev);
 
 /**
   * @}

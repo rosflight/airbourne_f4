@@ -42,7 +42,7 @@ void USB_OTG_BSP_DriveVBUS(USB_OTG_CORE_HANDLE *pdev,uint8_t state) {
 * @retval None
 */
 
-void USB_OTG_BSP_Init(USB_OTG_CORE_HANDLE *pdev)
+void USB_OTG_BSP_Init(volatile USB_OTG_CORE_HANDLE *pdev)
 {
     (void)pdev;
     GPIO_InitTypeDef GPIO_InitStructure;
@@ -96,7 +96,7 @@ void USB_OTG_BSP_Init(USB_OTG_CORE_HANDLE *pdev)
 * @param  None
 * @retval None
 */
-void USB_OTG_BSP_EnableInterrupt(USB_OTG_CORE_HANDLE *pdev)
+void USB_OTG_BSP_EnableInterrupt(volatile USB_OTG_CORE_HANDLE *pdev)
 {
     (void)pdev;
     NVIC_InitTypeDef NVIC_InitStructure;

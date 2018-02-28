@@ -27,6 +27,10 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "usb_dcd_int.h"
+
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdiscarded-qualifiers"
+
 /** @addtogroup USB_OTG_DRIVER
 * @{
 */
@@ -74,26 +78,26 @@
 * @{
 */
 /* static functions */
-static uint32_t DCD_ReadDevInEP (USB_OTG_CORE_HANDLE *pdev, uint8_t epnum);
+static uint32_t DCD_ReadDevInEP (volatile USB_OTG_CORE_HANDLE *pdev, uint8_t epnum);
 
 /* Interrupt Handlers */
-static uint32_t DCD_HandleInEP_ISR(USB_OTG_CORE_HANDLE *pdev);
-static uint32_t DCD_HandleOutEP_ISR(USB_OTG_CORE_HANDLE *pdev);
-static uint32_t DCD_HandleSof_ISR(USB_OTG_CORE_HANDLE *pdev);
+static uint32_t DCD_HandleInEP_ISR(volatile USB_OTG_CORE_HANDLE *pdev);
+static uint32_t DCD_HandleOutEP_ISR(volatile USB_OTG_CORE_HANDLE *pdev);
+static uint32_t DCD_HandleSof_ISR(volatile USB_OTG_CORE_HANDLE *pdev);
 
-static uint32_t DCD_HandleRxStatusQueueLevel_ISR(USB_OTG_CORE_HANDLE *pdev);
-static uint32_t DCD_WriteEmptyTxFifo(USB_OTG_CORE_HANDLE *pdev , uint32_t epnum);
+static uint32_t DCD_HandleRxStatusQueueLevel_ISR(volatile USB_OTG_CORE_HANDLE *pdev);
+static uint32_t DCD_WriteEmptyTxFifo(volatile USB_OTG_CORE_HANDLE *pdev , uint32_t epnum);
 
-static uint32_t DCD_HandleUsbReset_ISR(USB_OTG_CORE_HANDLE *pdev);
-static uint32_t DCD_HandleEnumDone_ISR(USB_OTG_CORE_HANDLE *pdev);
-static uint32_t DCD_HandleResume_ISR(USB_OTG_CORE_HANDLE *pdev);
-static uint32_t DCD_HandleUSBSuspend_ISR(USB_OTG_CORE_HANDLE *pdev);
+static uint32_t DCD_HandleUsbReset_ISR(volatile USB_OTG_CORE_HANDLE *pdev);
+static uint32_t DCD_HandleEnumDone_ISR(volatile USB_OTG_CORE_HANDLE *pdev);
+static uint32_t DCD_HandleResume_ISR(volatile USB_OTG_CORE_HANDLE *pdev);
+static uint32_t DCD_HandleUSBSuspend_ISR(volatile USB_OTG_CORE_HANDLE *pdev);
 
-static uint32_t DCD_IsoINIncomplete_ISR(USB_OTG_CORE_HANDLE *pdev);
-static uint32_t DCD_IsoOUTIncomplete_ISR(USB_OTG_CORE_HANDLE *pdev);
+static uint32_t DCD_IsoINIncomplete_ISR(volatile USB_OTG_CORE_HANDLE *pdev);
+static uint32_t DCD_IsoOUTIncomplete_ISR(volatile USB_OTG_CORE_HANDLE *pdev);
 #ifdef VBUS_SENSING_ENABLED
-static uint32_t DCD_SessionRequest_ISR(USB_OTG_CORE_HANDLE *pdev);
-static uint32_t DCD_OTG_ISR(USB_OTG_CORE_HANDLE *pdev);
+static uint32_t DCD_SessionRequest_ISR(volatile USB_OTG_CORE_HANDLE *pdev);
+static uint32_t DCD_OTG_ISR(volatile USB_OTG_CORE_HANDLE *pdev);
 #endif
 
 /**
@@ -113,7 +117,7 @@ static uint32_t DCD_OTG_ISR(USB_OTG_CORE_HANDLE *pdev);
 * @param  pdev: device instance
 * @retval status
 */
-uint32_t USBD_OTG_EP1OUT_ISR_Handler (USB_OTG_CORE_HANDLE *pdev)
+uint32_t USBD_OTG_EP1OUT_ISR_Handler (volatile USB_OTG_CORE_HANDLE *pdev)
 {
 
   USB_OTG_DOEPINTn_TypeDef  doepint;
@@ -156,7 +160,7 @@ uint32_t USBD_OTG_EP1OUT_ISR_Handler (USB_OTG_CORE_HANDLE *pdev)
 * @param  pdev: device instance
 * @retval status
 */
-uint32_t USBD_OTG_EP1IN_ISR_Handler (USB_OTG_CORE_HANDLE *pdev)
+uint32_t USBD_OTG_EP1IN_ISR_Handler (volatile USB_OTG_CORE_HANDLE *pdev)
 {
 
   USB_OTG_DIEPINTn_TypeDef  diepint;
@@ -206,9 +210,9 @@ uint32_t USBD_OTG_EP1IN_ISR_Handler (USB_OTG_CORE_HANDLE *pdev)
 * @param  pdev: device instance
 * @retval status
 */
-uint32_t USBD_OTG_ISR_Handler (USB_OTG_CORE_HANDLE *pdev)
+uint32_t USBD_OTG_ISR_Handler (volatile USB_OTG_CORE_HANDLE *pdev)
 {
-  USB_OTG_GINTSTS_TypeDef  gintr_status;
+  volatile USB_OTG_GINTSTS_TypeDef  gintr_status;
   uint32_t retval = 0;
 
   if (USB_OTG_IsDeviceMode(pdev)) /* ensure that we are in device mode */
@@ -301,7 +305,7 @@ uint32_t USBD_OTG_ISR_Handler (USB_OTG_CORE_HANDLE *pdev)
 * @param  pdev: device instance
 * @retval status
 */
-static uint32_t DCD_SessionRequest_ISR(USB_OTG_CORE_HANDLE *pdev)
+static uint32_t DCD_SessionRequest_ISR(volatile USB_OTG_CORE_HANDLE *pdev)
 {
   USB_OTG_GINTSTS_TypeDef  gintsts;
   USBD_DCD_INT_fops->DevConnected (pdev);
@@ -320,7 +324,7 @@ static uint32_t DCD_SessionRequest_ISR(USB_OTG_CORE_HANDLE *pdev)
 * @param  pdev: device instance
 * @retval status
 */
-static uint32_t DCD_OTG_ISR(USB_OTG_CORE_HANDLE *pdev)
+static uint32_t DCD_OTG_ISR(volatile USB_OTG_CORE_HANDLE *pdev)
 {
 
   USB_OTG_GOTGINT_TypeDef  gotgint;
@@ -343,7 +347,7 @@ static uint32_t DCD_OTG_ISR(USB_OTG_CORE_HANDLE *pdev)
 * @param  pdev: device instance
 * @retval status
 */
-static uint32_t DCD_HandleResume_ISR(USB_OTG_CORE_HANDLE *pdev)
+static uint32_t DCD_HandleResume_ISR(volatile USB_OTG_CORE_HANDLE *pdev)
 {
   USB_OTG_GINTSTS_TypeDef  gintsts;
   USB_OTG_DCTL_TypeDef     devctl;
@@ -379,7 +383,7 @@ static uint32_t DCD_HandleResume_ISR(USB_OTG_CORE_HANDLE *pdev)
 * @param  pdev: device instance
 * @retval status
 */
-static uint32_t DCD_HandleUSBSuspend_ISR(USB_OTG_CORE_HANDLE *pdev)
+static uint32_t DCD_HandleUSBSuspend_ISR(volatile USB_OTG_CORE_HANDLE *pdev)
 {
   USB_OTG_GINTSTS_TypeDef  gintsts;
   USB_OTG_PCGCCTL_TypeDef  power;
@@ -420,7 +424,7 @@ static uint32_t DCD_HandleUSBSuspend_ISR(USB_OTG_CORE_HANDLE *pdev)
 * @param  pdev: device instance
 * @retval status
 */
-static uint32_t DCD_HandleInEP_ISR(USB_OTG_CORE_HANDLE *pdev)
+static uint32_t DCD_HandleInEP_ISR(volatile USB_OTG_CORE_HANDLE *pdev)
 {
   USB_OTG_DIEPINTn_TypeDef  diepint;
 
@@ -489,7 +493,7 @@ static uint32_t DCD_HandleInEP_ISR(USB_OTG_CORE_HANDLE *pdev)
 * @param  pdev: device instance
 * @retval status
 */
-static uint32_t DCD_HandleOutEP_ISR(USB_OTG_CORE_HANDLE *pdev)
+static uint32_t DCD_HandleOutEP_ISR(volatile USB_OTG_CORE_HANDLE *pdev)
 {
   uint32_t ep_intr;
   USB_OTG_DOEPINTn_TypeDef  doepint;
@@ -561,7 +565,7 @@ static uint32_t DCD_HandleOutEP_ISR(USB_OTG_CORE_HANDLE *pdev)
 * @param  pdev: device instance
 * @retval status
 */
-static uint32_t DCD_HandleSof_ISR(USB_OTG_CORE_HANDLE *pdev)
+static uint32_t DCD_HandleSof_ISR(volatile USB_OTG_CORE_HANDLE *pdev)
 {
   USB_OTG_GINTSTS_TypeDef  GINTSTS;
 
@@ -582,11 +586,11 @@ static uint32_t DCD_HandleSof_ISR(USB_OTG_CORE_HANDLE *pdev)
 * @param  pdev: device instance
 * @retval status
 */
-static uint32_t DCD_HandleRxStatusQueueLevel_ISR(USB_OTG_CORE_HANDLE *pdev)
+static uint32_t DCD_HandleRxStatusQueueLevel_ISR(volatile USB_OTG_CORE_HANDLE *pdev)
 {
-  USB_OTG_GINTMSK_TypeDef  int_mask;
-  USB_OTG_DRXSTS_TypeDef   status;
-  USB_OTG_EP *ep;
+  volatile USB_OTG_GINTMSK_TypeDef  int_mask;
+  volatile USB_OTG_DRXSTS_TypeDef   status;
+  volatile USB_OTG_EP *ep;
 
   /* Disable the Rx Status Queue Level interrupt */
   int_mask.d32 = 0;
@@ -635,7 +639,7 @@ static uint32_t DCD_HandleRxStatusQueueLevel_ISR(USB_OTG_CORE_HANDLE *pdev)
 * @param  pdev: device instance
 * @retval status
 */
-static uint32_t DCD_WriteEmptyTxFifo(USB_OTG_CORE_HANDLE *pdev, uint32_t epnum)
+static uint32_t DCD_WriteEmptyTxFifo(volatile USB_OTG_CORE_HANDLE *pdev, uint32_t epnum)
 {
   USB_OTG_DTXFSTSn_TypeDef  txstatus;
   USB_OTG_EP *ep;
@@ -695,7 +699,7 @@ static uint32_t DCD_WriteEmptyTxFifo(USB_OTG_CORE_HANDLE *pdev, uint32_t epnum)
 * @param  pdev: device instance
 * @retval status
 */
-static uint32_t DCD_HandleUsbReset_ISR(USB_OTG_CORE_HANDLE *pdev)
+static uint32_t DCD_HandleUsbReset_ISR(volatile USB_OTG_CORE_HANDLE *pdev)
 {
   USB_OTG_DAINT_TypeDef    daintmsk;
   USB_OTG_DOEPMSK_TypeDef  doepmsk;
@@ -770,7 +774,7 @@ static uint32_t DCD_HandleUsbReset_ISR(USB_OTG_CORE_HANDLE *pdev)
 * @param  pdev: device instance
 * @retval status
 */
-static uint32_t DCD_HandleEnumDone_ISR(USB_OTG_CORE_HANDLE *pdev)
+static uint32_t DCD_HandleEnumDone_ISR(volatile USB_OTG_CORE_HANDLE *pdev)
 {
   USB_OTG_GINTSTS_TypeDef  gintsts;
   USB_OTG_GUSBCFG_TypeDef  gusbcfg;
@@ -810,7 +814,7 @@ static uint32_t DCD_HandleEnumDone_ISR(USB_OTG_CORE_HANDLE *pdev)
 * @param  pdev: device instance
 * @retval status
 */
-static uint32_t DCD_IsoINIncomplete_ISR(USB_OTG_CORE_HANDLE *pdev)
+static uint32_t DCD_IsoINIncomplete_ISR(volatile USB_OTG_CORE_HANDLE *pdev)
 {
   USB_OTG_GINTSTS_TypeDef gintsts;
 
@@ -831,7 +835,7 @@ static uint32_t DCD_IsoINIncomplete_ISR(USB_OTG_CORE_HANDLE *pdev)
 * @param  pdev: device instance
 * @retval status
 */
-static uint32_t DCD_IsoOUTIncomplete_ISR(USB_OTG_CORE_HANDLE *pdev)
+static uint32_t DCD_IsoOUTIncomplete_ISR(volatile USB_OTG_CORE_HANDLE *pdev)
 {
   USB_OTG_GINTSTS_TypeDef gintsts;
 
@@ -850,7 +854,7 @@ static uint32_t DCD_IsoOUTIncomplete_ISR(USB_OTG_CORE_HANDLE *pdev)
 * @param  pdev: device instance
 * @retval status
 */
-static uint32_t DCD_ReadDevInEP (USB_OTG_CORE_HANDLE *pdev, uint8_t epnum)
+static uint32_t DCD_ReadDevInEP (volatile USB_OTG_CORE_HANDLE *pdev, uint8_t epnum)
 {
   uint32_t v, msk, emp;
   msk = USB_OTG_READ_REG32(&pdev->regs.DREGS->DIEPMSK);
@@ -874,4 +878,5 @@ static uint32_t DCD_ReadDevInEP (USB_OTG_CORE_HANDLE *pdev, uint8_t epnum)
 * @}
 */
 
+#pragma GCC diagnostic pop
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

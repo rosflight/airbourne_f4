@@ -30,6 +30,8 @@
 #include "usbd_ioreq.h"
 #include "usbd_desc.h"
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdiscarded-qualifiers"
 
 /** @addtogroup STM32_USB_OTG_DEVICE_LIBRARY
   * @{
@@ -106,25 +108,25 @@ __ALIGN_BEGIN uint8_t USBD_StrDesc[USB_MAX_STR_DESC_SIZ] __ALIGN_END ;
 /** @defgroup USBD_REQ_Private_FunctionPrototypes
   * @{
   */ 
-static void USBD_GetDescriptor(USB_OTG_CORE_HANDLE  *pdev, 
+static void USBD_GetDescriptor(volatile USB_OTG_CORE_HANDLE  *pdev,
                                USB_SETUP_REQ *req);
 
-static void USBD_SetAddress(USB_OTG_CORE_HANDLE  *pdev, 
+static void USBD_SetAddress(volatile USB_OTG_CORE_HANDLE  *pdev,
                             USB_SETUP_REQ *req);
 
-static void USBD_SetConfig(USB_OTG_CORE_HANDLE  *pdev, 
+static void USBD_SetConfig(volatile USB_OTG_CORE_HANDLE  *pdev,
                            USB_SETUP_REQ *req);
 
-static void USBD_GetConfig(USB_OTG_CORE_HANDLE  *pdev, 
+static void USBD_GetConfig(volatile USB_OTG_CORE_HANDLE  *pdev,
                            USB_SETUP_REQ *req);
 
-static void USBD_GetStatus(USB_OTG_CORE_HANDLE  *pdev, 
+static void USBD_GetStatus(volatile USB_OTG_CORE_HANDLE  *pdev,
                            USB_SETUP_REQ *req);
 
-static void USBD_SetFeature(USB_OTG_CORE_HANDLE  *pdev, 
+static void USBD_SetFeature(volatile USB_OTG_CORE_HANDLE  *pdev,
                             USB_SETUP_REQ *req);
 
-static void USBD_ClrFeature(USB_OTG_CORE_HANDLE  *pdev, 
+static void USBD_ClrFeature(volatile USB_OTG_CORE_HANDLE  *pdev,
                             USB_SETUP_REQ *req);
 
 static uint8_t USBD_GetLen(uint8_t *buf);
@@ -145,7 +147,7 @@ static uint8_t USBD_GetLen(uint8_t *buf);
 * @param  req: usb request
 * @retval status
 */
-USBD_Status  USBD_StdDevReq (USB_OTG_CORE_HANDLE  *pdev, USB_SETUP_REQ  *req)
+USBD_Status  USBD_StdDevReq (volatile USB_OTG_CORE_HANDLE  *pdev, USB_SETUP_REQ  *req)
 {
   USBD_Status ret = USBD_OK;  
   
@@ -196,7 +198,7 @@ USBD_Status  USBD_StdDevReq (USB_OTG_CORE_HANDLE  *pdev, USB_SETUP_REQ  *req)
 * @param  req: usb request
 * @retval status
 */
-USBD_Status  USBD_StdItfReq (USB_OTG_CORE_HANDLE  *pdev, USB_SETUP_REQ  *req)
+USBD_Status  USBD_StdItfReq (volatile USB_OTG_CORE_HANDLE  *pdev, USB_SETUP_REQ  *req)
 {
   USBD_Status ret = USBD_OK; 
   
@@ -233,7 +235,7 @@ USBD_Status  USBD_StdItfReq (USB_OTG_CORE_HANDLE  *pdev, USB_SETUP_REQ  *req)
 * @param  req: usb request
 * @retval status
 */
-USBD_Status  USBD_StdEPReq (USB_OTG_CORE_HANDLE  *pdev, USB_SETUP_REQ  *req)
+USBD_Status  USBD_StdEPReq (volatile USB_OTG_CORE_HANDLE  *pdev, USB_SETUP_REQ  *req)
 {
   
   uint8_t   ep_addr;
@@ -363,7 +365,7 @@ USBD_Status  USBD_StdEPReq (USB_OTG_CORE_HANDLE  *pdev, USB_SETUP_REQ  *req)
 * @param  req: usb request
 * @retval status
 */
-static void USBD_GetDescriptor(USB_OTG_CORE_HANDLE  *pdev, 
+static void USBD_GetDescriptor(volatile USB_OTG_CORE_HANDLE  *pdev,
                                USB_SETUP_REQ *req)
 {
   uint16_t len;
@@ -499,7 +501,7 @@ static void USBD_GetDescriptor(USB_OTG_CORE_HANDLE  *pdev,
 * @param  req: usb request
 * @retval status
 */
-static void USBD_SetAddress(USB_OTG_CORE_HANDLE  *pdev, 
+static void USBD_SetAddress(volatile USB_OTG_CORE_HANDLE  *pdev,
                             USB_SETUP_REQ *req)
 {
   uint8_t  dev_addr; 
@@ -541,7 +543,7 @@ static void USBD_SetAddress(USB_OTG_CORE_HANDLE  *pdev,
 * @param  req: usb request
 * @retval status
 */
-static void USBD_SetConfig(USB_OTG_CORE_HANDLE  *pdev, 
+static void USBD_SetConfig(volatile USB_OTG_CORE_HANDLE  *pdev,
                            USB_SETUP_REQ *req)
 {
   
@@ -610,7 +612,7 @@ static void USBD_SetConfig(USB_OTG_CORE_HANDLE  *pdev,
 * @param  req: usb request
 * @retval status
 */
-static void USBD_GetConfig(USB_OTG_CORE_HANDLE  *pdev, 
+static void USBD_GetConfig(volatile USB_OTG_CORE_HANDLE  *pdev,
                            USB_SETUP_REQ *req)
 {
  
@@ -650,7 +652,7 @@ static void USBD_GetConfig(USB_OTG_CORE_HANDLE  *pdev,
 * @param  req: usb request
 * @retval status
 */
-static void USBD_GetStatus(USB_OTG_CORE_HANDLE  *pdev, 
+static void USBD_GetStatus(volatile USB_OTG_CORE_HANDLE  *pdev,
                            USB_SETUP_REQ *req)
 {
   
@@ -690,7 +692,7 @@ static void USBD_GetStatus(USB_OTG_CORE_HANDLE  *pdev,
 * @param  req: usb request
 * @retval status
 */
-static void USBD_SetFeature(USB_OTG_CORE_HANDLE  *pdev, 
+static void USBD_SetFeature(volatile USB_OTG_CORE_HANDLE  *pdev,
                             USB_SETUP_REQ *req)
 {
 
@@ -747,7 +749,7 @@ static void USBD_SetFeature(USB_OTG_CORE_HANDLE  *pdev,
 * @param  req: usb request
 * @retval status
 */
-static void USBD_ClrFeature(USB_OTG_CORE_HANDLE  *pdev, 
+static void USBD_ClrFeature(volatile USB_OTG_CORE_HANDLE  *pdev,
                             USB_SETUP_REQ *req)
 {
   switch (pdev->dev.device_status)
@@ -776,7 +778,7 @@ static void USBD_ClrFeature(USB_OTG_CORE_HANDLE  *pdev,
 * @retval None
 */
 
-void USBD_ParseSetupRequest( USB_OTG_CORE_HANDLE  *pdev,
+void USBD_ParseSetupRequest(volatile USB_OTG_CORE_HANDLE  *pdev,
                             USB_SETUP_REQ *req)
 {
   req->bmRequest     = *(uint8_t *)  (pdev->dev.setup_packet);
@@ -797,8 +799,7 @@ void USBD_ParseSetupRequest( USB_OTG_CORE_HANDLE  *pdev,
 * @retval None
 */
 
-void USBD_CtlError( USB_OTG_CORE_HANDLE  *pdev,
-                            USB_SETUP_REQ *req)
+void USBD_CtlError(volatile USB_OTG_CORE_HANDLE  *pdev, USB_SETUP_REQ *req)
 {
   
   DCD_EP_Stall(pdev , 0x80);
@@ -864,5 +865,7 @@ static uint8_t USBD_GetLen(uint8_t *buf)
 /**
   * @}
   */ 
+
+#pragma GCC diagnostic pop
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/
