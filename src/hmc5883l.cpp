@@ -80,9 +80,9 @@ void HMC5883L::update()
 
 void HMC5883L::convert(void)
 {
-  data_[0] = (float)((int16_t)((i2c_buf_[0] << 8) | i2c_buf_[1]));
-  data_[1] = (float)((int16_t)((i2c_buf_[2] << 8) | i2c_buf_[3]));
-  data_[2] = (float)((int16_t)((i2c_buf_[4] << 8) | i2c_buf_[5]));
+  data_[0] = static_cast<float>(static_cast<int16_t>((i2c_buf_[0] << 8) | i2c_buf_[1]));
+  data_[1] = static_cast<float>(static_cast<int16_t>((i2c_buf_[2] << 8) | i2c_buf_[3]));
+  data_[2] = static_cast<float>(static_cast<int16_t>((i2c_buf_[4] << 8) | i2c_buf_[5]));
 }
 
 bool HMC5883L::read(float mag_data[3])

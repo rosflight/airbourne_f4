@@ -35,7 +35,7 @@
 //The start of sector 11 in the flash memory
 //This is used as persistant memory
 
-#define FLASH_SECTOR11_START (void*)(0x080E0000)
+#define FLASH_SECTOR11_START reinterpret_cast<void*>(0x080E0000)
 
 
 #include <stdint.h>

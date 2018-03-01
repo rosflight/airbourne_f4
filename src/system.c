@@ -44,16 +44,16 @@ void SysTick_Handler(void)
 }
 
 // Return system uptime in microseconds (rollover in 1.5 days)
-uint64_t micros(void)
+volatile uint64_t micros(void)
 {
 
-  return ((uint64_t)sysTickUptime * 3125ul)/100ul;  // The convsersion is 31.25, so doing fixed-point math to be exact
+  return ((volatile uint64_t)sysTickUptime * 3125ul)/100ul;  // The convsersion is 31.25, so doing fixed-point math to be exact
 }
 
 // Return system uptime in milliseconds (rollover in 1.5 days)
-uint32_t millis(void)
+volatile uint32_t millis(void)
 {
-    return (uint32_t)(sysTickUptime >> 5);  // ( >> 5 is the same as divide by 32, but takes one operation)
+    return (volatile uint32_t)(sysTickUptime >> 5);  // ( >> 5 is the same as divide by 32, but takes one operation)
 }
 
 void systemInit(void)

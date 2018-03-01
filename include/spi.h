@@ -62,6 +62,6 @@ private:
 
   uint32_t errors_ = 0;
   GPIO* cs_;
-  bool busy_ = false;
+  volatile bool busy_ = false;
   void (*transfer_cb_)(void) = NULL;
 };

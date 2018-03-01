@@ -40,6 +40,8 @@
 #include <string.h>
 #include <stdarg.h>
 
+#pragma GCC system_header
+
 #include "stm32f4xx.h"
 #include "stm32f4xx_rcc.h"
 #include "stm32f4xx_exti.h"
@@ -123,8 +125,8 @@ void systemInit(void);
 void delayMicroseconds(uint32_t us);
 void delay(uint32_t ms);
 
-uint64_t micros(void);
-uint32_t millis(void);
+volatile uint64_t micros(void);
+volatile uint32_t millis(void);
 
 // bootloader/IAP
 void systemReset(void);
