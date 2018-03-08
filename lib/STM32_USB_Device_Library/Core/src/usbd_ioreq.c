@@ -28,6 +28,9 @@
 /* Includes ------------------------------------------------------------------*/
 #include "usbd_ioreq.h"
 
+#pragma GCC push_options
+#pragma GCC optimize ("O0")
+
 /** @addtogroup STM32_USB_OTG_DEVICE_LIBRARY
   * @{
   */
@@ -242,3 +245,4 @@ uint16_t  USBD_GetRxCount (USB_OTG_CORE_HANDLE  *pdev , uint8_t epnum)
   */ 
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/
+#pragma GCC pop_options

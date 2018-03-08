@@ -100,6 +100,10 @@ void OTG_FS_IRQHandler(void)
 {
   USB_OTG_GINTSTS_TypeDef  gintr_status;
   gintr_status.d32 = USB_OTG_ReadCoreItr(&USB_OTG_dev);
+  if (!USB_OTG_dev.regs.GREGS)
+    while(1);
+  else if (!USB_OTG_dev.regs.GREGS->GINTMSK)
+    while(1);
   USBD_OTG_ISR_Handler (&USB_OTG_dev);
 
   if ((gintr_status.b.rxstsqlvl) || (gintr_status.b.outepintr))

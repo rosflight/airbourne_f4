@@ -29,6 +29,8 @@
 #include "usb_dcd.h"
 #include "usb_bsp.h"
 
+#pragma GCC push_options
+#pragma GCC optimize ("O0")
 
 /** @addtogroup USB_OTG_DRIVER
 * @{
@@ -476,3 +478,5 @@ void DCD_SetEPStatus (USB_OTG_CORE_HANDLE *pdev , uint8_t epnum , uint32_t Statu
 */
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/
+
+#pragma GCC pop_options

@@ -63,7 +63,7 @@ private:
   uint16_t error_count_ = 0;
 
   //Variables for current job:
-  current_status_t current_status_;
+  volatile current_status_t current_status_;
   bool subaddress_sent_ = false;
   bool done_ = false;
 

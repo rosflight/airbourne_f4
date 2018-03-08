@@ -25,6 +25,9 @@
   ******************************************************************************
   */
 
+#pragma GCC push_options
+#pragma GCC optimize ("O0")
+
 /* Includes ------------------------------------------------------------------*/
 #include "usb_core.h"
 #include "usb_bsp.h"
@@ -92,7 +95,7 @@
 * @param  pdev : Selected device
 * @retval None
 */
-static void USB_OTG_EnableCommonInt(USB_OTG_CORE_HANDLE *pdev)
+static void USB_OTG_EnableCommonInt(USB_OTG_CORE_HANDLE * const pdev)
 {
   USB_OTG_GINTMSK_TypeDef  int_mask;
 
@@ -120,7 +123,7 @@ static void USB_OTG_EnableCommonInt(USB_OTG_CORE_HANDLE *pdev)
 * @param  pdev : Selected device
 * @retval USB_OTG_STS : status
 */
-static USB_OTG_STS USB_OTG_CoreReset(USB_OTG_CORE_HANDLE *pdev)
+static USB_OTG_STS USB_OTG_CoreReset(USB_OTG_CORE_HANDLE * const pdev)
 {
   USB_OTG_STS status = USB_OTG_OK;
   __IO USB_OTG_GRSTCTL_TypeDef  greset;
@@ -165,7 +168,7 @@ static USB_OTG_STS USB_OTG_CoreReset(USB_OTG_CORE_HANDLE *pdev)
 * @param  bytes : No. of bytes
 * @retval USB_OTG_STS : status
 */
-USB_OTG_STS USB_OTG_WritePacket(USB_OTG_CORE_HANDLE *pdev,
+USB_OTG_STS USB_OTG_WritePacket(USB_OTG_CORE_HANDLE * const pdev,
                                 uint8_t             *src,
                                 uint8_t             ch_ep_num,
                                 uint16_t            len)
@@ -194,7 +197,7 @@ USB_OTG_STS USB_OTG_WritePacket(USB_OTG_CORE_HANDLE *pdev,
 * @param  bytes : No. of bytes
 * @retval None
 */
-void *USB_OTG_ReadPacket(USB_OTG_CORE_HANDLE *pdev,
+void *USB_OTG_ReadPacket(USB_OTG_CORE_HANDLE * const pdev,
                          uint8_t *dest,
                          uint16_t len)
 {
@@ -218,7 +221,7 @@ void *USB_OTG_ReadPacket(USB_OTG_CORE_HANDLE *pdev,
 * @param  coreID : USB OTG Core ID
 * @retval USB_OTG_STS : status
 */
-USB_OTG_STS USB_OTG_SelectCore(USB_OTG_CORE_HANDLE *pdev,
+USB_OTG_STS USB_OTG_SelectCore(USB_OTG_CORE_HANDLE * const pdev,
                                USB_OTG_CORE_ID_TypeDef coreID)
 {
   uint32_t i , baseAddress = 0;
@@ -320,7 +323,7 @@ USB_OTG_STS USB_OTG_SelectCore(USB_OTG_CORE_HANDLE *pdev,
 * @param  pdev : Selected device
 * @retval USB_OTG_STS : status
 */
-USB_OTG_STS USB_OTG_CoreInit(USB_OTG_CORE_HANDLE *pdev)
+USB_OTG_STS USB_OTG_CoreInit(USB_OTG_CORE_HANDLE * const pdev)
 {
   USB_OTG_STS status = USB_OTG_OK;
   USB_OTG_GUSBCFG_TypeDef  usbcfg;
@@ -426,7 +429,7 @@ USB_OTG_STS USB_OTG_CoreInit(USB_OTG_CORE_HANDLE *pdev)
 * @param  pdev : Selected device
 * @retval USB_OTG_STS : status
 */
-USB_OTG_STS USB_OTG_EnableGlobalInt(USB_OTG_CORE_HANDLE *pdev)
+USB_OTG_STS USB_OTG_EnableGlobalInt(USB_OTG_CORE_HANDLE * const pdev)
 {
   USB_OTG_STS status = USB_OTG_OK;
   USB_OTG_GAHBCFG_TypeDef  ahbcfg;
@@ -444,7 +447,7 @@ USB_OTG_STS USB_OTG_EnableGlobalInt(USB_OTG_CORE_HANDLE *pdev)
 * @param  pdev : Selected device
 * @retval USB_OTG_STS : status
 */
-USB_OTG_STS USB_OTG_DisableGlobalInt(USB_OTG_CORE_HANDLE *pdev)
+USB_OTG_STS USB_OTG_DisableGlobalInt(USB_OTG_CORE_HANDLE * const pdev)
 {
   USB_OTG_STS status = USB_OTG_OK;
   USB_OTG_GAHBCFG_TypeDef  ahbcfg;
@@ -461,7 +464,7 @@ USB_OTG_STS USB_OTG_DisableGlobalInt(USB_OTG_CORE_HANDLE *pdev)
 * @param  num : FO num
 * @retval USB_OTG_STS : status
 */
-USB_OTG_STS USB_OTG_FlushTxFifo (USB_OTG_CORE_HANDLE *pdev , uint32_t num )
+USB_OTG_STS USB_OTG_FlushTxFifo (USB_OTG_CORE_HANDLE * const pdev , uint32_t num )
 {
   USB_OTG_STS status = USB_OTG_OK;
   __IO USB_OTG_GRSTCTL_TypeDef  greset;
@@ -491,7 +494,7 @@ USB_OTG_STS USB_OTG_FlushTxFifo (USB_OTG_CORE_HANDLE *pdev , uint32_t num )
 * @param  pdev : Selected device
 * @retval USB_OTG_STS : status
 */
-USB_OTG_STS USB_OTG_FlushRxFifo( USB_OTG_CORE_HANDLE *pdev )
+USB_OTG_STS USB_OTG_FlushRxFifo( USB_OTG_CORE_HANDLE * const pdev )
 {
   USB_OTG_STS status = USB_OTG_OK;
   __IO USB_OTG_GRSTCTL_TypeDef  greset;
@@ -521,7 +524,7 @@ USB_OTG_STS USB_OTG_FlushRxFifo( USB_OTG_CORE_HANDLE *pdev )
 * @param  mode :  (Host/device)
 * @retval USB_OTG_STS : status
 */
-USB_OTG_STS USB_OTG_SetCurrentMode(USB_OTG_CORE_HANDLE *pdev , uint8_t mode)
+USB_OTG_STS USB_OTG_SetCurrentMode(USB_OTG_CORE_HANDLE * const pdev , uint8_t mode)
 {
   USB_OTG_STS status = USB_OTG_OK;
   USB_OTG_GUSBCFG_TypeDef  usbcfg;
@@ -551,7 +554,7 @@ USB_OTG_STS USB_OTG_SetCurrentMode(USB_OTG_CORE_HANDLE *pdev , uint8_t mode)
 * @param  pdev : Selected device
 * @retval current mode
 */
-uint32_t USB_OTG_GetMode(USB_OTG_CORE_HANDLE *pdev)
+uint32_t USB_OTG_GetMode(USB_OTG_CORE_HANDLE * const pdev)
 {
   return (USB_OTG_READ_REG32(&pdev->regs.GREGS->GINTSTS ) & 0x1);
 }
@@ -562,7 +565,7 @@ uint32_t USB_OTG_GetMode(USB_OTG_CORE_HANDLE *pdev)
 * @param  pdev : Selected device
 * @retval num_in_ep
 */
-uint8_t USB_OTG_IsDeviceMode(USB_OTG_CORE_HANDLE *pdev)
+uint8_t USB_OTG_IsDeviceMode(USB_OTG_CORE_HANDLE * const pdev)
 {
   return (USB_OTG_GetMode(pdev) != HOST_MODE);
 }
@@ -573,7 +576,7 @@ uint8_t USB_OTG_IsDeviceMode(USB_OTG_CORE_HANDLE *pdev)
 * @param  pdev : Selected device
 * @retval num_in_ep
 */
-uint8_t USB_OTG_IsHostMode(USB_OTG_CORE_HANDLE *pdev)
+uint8_t USB_OTG_IsHostMode(USB_OTG_CORE_HANDLE * const pdev)
 {
   return (USB_OTG_GetMode(pdev) == HOST_MODE);
 }
@@ -584,7 +587,7 @@ uint8_t USB_OTG_IsHostMode(USB_OTG_CORE_HANDLE *pdev)
 * @param  pdev : Selected device
 * @retval Status
 */
-uint32_t USB_OTG_ReadCoreItr(USB_OTG_CORE_HANDLE *pdev)
+uint32_t USB_OTG_ReadCoreItr(USB_OTG_CORE_HANDLE * const pdev)
 {
   uint32_t v = 0;
   v = USB_OTG_READ_REG32(&pdev->regs.GREGS->GINTSTS);
@@ -598,7 +601,7 @@ uint32_t USB_OTG_ReadCoreItr(USB_OTG_CORE_HANDLE *pdev)
 * @param  pdev : Selected device
 * @retval Status
 */
-uint32_t USB_OTG_ReadOtgItr (USB_OTG_CORE_HANDLE *pdev)
+uint32_t USB_OTG_ReadOtgItr (USB_OTG_CORE_HANDLE * const pdev)
 {
   return (USB_OTG_READ_REG32 (&pdev->regs.GREGS->GOTGINT));
 }
@@ -609,7 +612,7 @@ uint32_t USB_OTG_ReadOtgItr (USB_OTG_CORE_HANDLE *pdev)
 * @param  pdev : Selected device
 * @retval status
 */
-USB_OTG_STS USB_OTG_CoreInitHost(USB_OTG_CORE_HANDLE *pdev)
+USB_OTG_STS USB_OTG_CoreInitHost(USB_OTG_CORE_HANDLE * const pdev)
 {
   USB_OTG_STS                     status = USB_OTG_OK;
   USB_OTG_FSIZ_TypeDef            nptxfifosize;
@@ -713,7 +716,7 @@ USB_OTG_STS USB_OTG_CoreInitHost(USB_OTG_CORE_HANDLE *pdev)
 * @param  pdev : Selected device
 * @retval Frame number
 */
-uint8_t USB_OTG_IsEvenFrame (USB_OTG_CORE_HANDLE *pdev)
+uint8_t USB_OTG_IsEvenFrame (USB_OTG_CORE_HANDLE * const pdev)
 {
   return !(USB_OTG_READ_REG32(&pdev->regs.HREGS->HFNUM) & 0x1);
 }
@@ -724,7 +727,7 @@ uint8_t USB_OTG_IsEvenFrame (USB_OTG_CORE_HANDLE *pdev)
 * @param  state : VBUS state
 * @retval None
 */
-void USB_OTG_DriveVbus (USB_OTG_CORE_HANDLE *pdev, uint8_t state)
+void USB_OTG_DriveVbus (USB_OTG_CORE_HANDLE * const pdev, uint8_t state)
 {
   USB_OTG_HPRT0_TypeDef     hprt0;
 
@@ -753,7 +756,7 @@ void USB_OTG_DriveVbus (USB_OTG_CORE_HANDLE *pdev, uint8_t state)
 * @param  pdev : Selected device
 * @retval USB_OTG_STS : status
 */
-USB_OTG_STS USB_OTG_EnableHostInt(USB_OTG_CORE_HANDLE *pdev)
+USB_OTG_STS USB_OTG_EnableHostInt(USB_OTG_CORE_HANDLE * const pdev)
 {
   USB_OTG_STS       status = USB_OTG_OK;
   USB_OTG_GINTMSK_TypeDef  intmsk;
@@ -787,7 +790,7 @@ USB_OTG_STS USB_OTG_EnableHostInt(USB_OTG_CORE_HANDLE *pdev)
 * @param  freq : clock frequency
 * @retval None
 */
-void USB_OTG_InitFSLSPClkSel(USB_OTG_CORE_HANDLE *pdev , uint8_t freq)
+void USB_OTG_InitFSLSPClkSel(USB_OTG_CORE_HANDLE * const pdev , uint8_t freq)
 {
   USB_OTG_HCFG_TypeDef   hcfg;
 
@@ -802,7 +805,7 @@ void USB_OTG_InitFSLSPClkSel(USB_OTG_CORE_HANDLE *pdev , uint8_t freq)
 * @param  pdev : Selected device
 * @retval HPRT0 value
 */
-uint32_t USB_OTG_ReadHPRT0(USB_OTG_CORE_HANDLE *pdev)
+uint32_t USB_OTG_ReadHPRT0(USB_OTG_CORE_HANDLE * const pdev)
 {
   USB_OTG_HPRT0_TypeDef  hprt0;
 
@@ -820,7 +823,7 @@ uint32_t USB_OTG_ReadHPRT0(USB_OTG_CORE_HANDLE *pdev)
 * @param  pdev : Selected device
 * @retval Status
 */
-uint32_t USB_OTG_ReadHostAllChannels_intr (USB_OTG_CORE_HANDLE *pdev)
+uint32_t USB_OTG_ReadHostAllChannels_intr (USB_OTG_CORE_HANDLE * const pdev)
 {
   return (USB_OTG_READ_REG32 (&pdev->regs.HREGS->HAINT));
 }
@@ -833,7 +836,7 @@ uint32_t USB_OTG_ReadHostAllChannels_intr (USB_OTG_CORE_HANDLE *pdev)
 * @note : (1)The application must wait at least 10 ms (+ 10 ms security)
 *   before clearing the reset bit.
 */
-uint32_t USB_OTG_ResetPort(USB_OTG_CORE_HANDLE *pdev)
+uint32_t USB_OTG_ResetPort(USB_OTG_CORE_HANDLE * const pdev)
 {
   USB_OTG_HPRT0_TypeDef  hprt0;
 
@@ -854,7 +857,7 @@ uint32_t USB_OTG_ResetPort(USB_OTG_CORE_HANDLE *pdev)
 * @param  hc_num : channel number
 * @retval USB_OTG_STS : status
 */
-USB_OTG_STS USB_OTG_HC_Init(USB_OTG_CORE_HANDLE *pdev , uint8_t hc_num)
+USB_OTG_STS USB_OTG_HC_Init(USB_OTG_CORE_HANDLE * const pdev , uint8_t hc_num)
 {
   USB_OTG_STS status = USB_OTG_OK;
   uint32_t intr_enable = 0;
@@ -964,7 +967,7 @@ USB_OTG_STS USB_OTG_HC_Init(USB_OTG_CORE_HANDLE *pdev , uint8_t hc_num)
 * @param  hc_num : channel number
 * @retval USB_OTG_STS : status
 */
-USB_OTG_STS USB_OTG_HC_StartXfer(USB_OTG_CORE_HANDLE *pdev , uint8_t hc_num)
+USB_OTG_STS USB_OTG_HC_StartXfer(USB_OTG_CORE_HANDLE * const pdev , uint8_t hc_num)
 {
   USB_OTG_STS status = USB_OTG_OK;
   USB_OTG_HCCHAR_TypeDef   hcchar;
@@ -1081,7 +1084,7 @@ USB_OTG_STS USB_OTG_HC_StartXfer(USB_OTG_CORE_HANDLE *pdev , uint8_t hc_num)
 * @param  hc_num : channel number
 * @retval USB_OTG_STS : status
 */
-USB_OTG_STS USB_OTG_HC_Halt(USB_OTG_CORE_HANDLE *pdev , uint8_t hc_num)
+USB_OTG_STS USB_OTG_HC_Halt(USB_OTG_CORE_HANDLE * const pdev , uint8_t hc_num)
 {
   USB_OTG_STS status = USB_OTG_OK;
   USB_OTG_HNPTXSTS_TypeDef            nptxsts;
@@ -1120,7 +1123,7 @@ USB_OTG_STS USB_OTG_HC_Halt(USB_OTG_CORE_HANDLE *pdev , uint8_t hc_num)
 * @param  None
 * @retval : None
 */
-USB_OTG_STS USB_OTG_HC_DoPing(USB_OTG_CORE_HANDLE *pdev , uint8_t hc_num)
+USB_OTG_STS USB_OTG_HC_DoPing(USB_OTG_CORE_HANDLE * const pdev , uint8_t hc_num)
 {
   USB_OTG_STS               status = USB_OTG_OK;
   USB_OTG_HCCHAR_TypeDef    hcchar;
@@ -1143,7 +1146,7 @@ USB_OTG_STS USB_OTG_HC_DoPing(USB_OTG_CORE_HANDLE *pdev , uint8_t hc_num)
 * @param  None
 * @retval : None
 */
-void USB_OTG_StopHost(USB_OTG_CORE_HANDLE *pdev)
+void USB_OTG_StopHost(USB_OTG_CORE_HANDLE * const pdev)
 {
   USB_OTG_HCCHAR_TypeDef  hcchar;
   uint32_t                i;
@@ -1175,7 +1178,7 @@ void USB_OTG_StopHost(USB_OTG_CORE_HANDLE *pdev)
 * @param  pdev : Selected device
 * @retval : None
 */
-void USB_OTG_InitDevSpeed(USB_OTG_CORE_HANDLE *pdev , uint8_t speed)
+void USB_OTG_InitDevSpeed(USB_OTG_CORE_HANDLE * const pdev , uint8_t speed)
 {
   USB_OTG_DCFG_TypeDef   dcfg;
 
@@ -1191,7 +1194,7 @@ void USB_OTG_InitDevSpeed(USB_OTG_CORE_HANDLE *pdev , uint8_t speed)
 * @param  pdev : Selected device
 * @retval USB_OTG_STS : status
 */
-USB_OTG_STS USB_OTG_CoreInitDev (USB_OTG_CORE_HANDLE *pdev)
+USB_OTG_STS USB_OTG_CoreInitDev (USB_OTG_CORE_HANDLE * const pdev)
 {
   USB_OTG_STS             status       = USB_OTG_OK;
   USB_OTG_DEPCTL_TypeDef  depctl;
@@ -1370,7 +1373,7 @@ USB_OTG_STS USB_OTG_CoreInitDev (USB_OTG_CORE_HANDLE *pdev)
 * @param  pdev : Selected device
 * @retval USB_OTG_STS : status
 */
-USB_OTG_STS USB_OTG_EnableDevInt(USB_OTG_CORE_HANDLE *pdev)
+USB_OTG_STS USB_OTG_EnableDevInt(USB_OTG_CORE_HANDLE * const pdev)
 {
   USB_OTG_STS status = USB_OTG_OK;
   USB_OTG_GINTMSK_TypeDef  intmsk;
@@ -1414,7 +1417,7 @@ USB_OTG_STS USB_OTG_EnableDevInt(USB_OTG_CORE_HANDLE *pdev)
 * @param  None
 * @retval status
 */
-enum USB_OTG_SPEED USB_OTG_GetDeviceSpeed (USB_OTG_CORE_HANDLE *pdev)
+enum USB_OTG_SPEED USB_OTG_GetDeviceSpeed (USB_OTG_CORE_HANDLE * const pdev)
 {
   USB_OTG_DSTS_TypeDef  dsts;
   enum USB_OTG_SPEED speed = USB_SPEED_UNKNOWN;
@@ -1445,7 +1448,7 @@ enum USB_OTG_SPEED USB_OTG_GetDeviceSpeed (USB_OTG_CORE_HANDLE *pdev)
 * @param  None
 * @retval USB_OTG_STS : status
 */
-USB_OTG_STS  USB_OTG_EP0Activate(USB_OTG_CORE_HANDLE *pdev)
+USB_OTG_STS  USB_OTG_EP0Activate(USB_OTG_CORE_HANDLE * const pdev)
 {
   USB_OTG_STS             status = USB_OTG_OK;
   USB_OTG_DSTS_TypeDef    dsts;
@@ -1480,7 +1483,7 @@ USB_OTG_STS  USB_OTG_EP0Activate(USB_OTG_CORE_HANDLE *pdev)
 * @param  pdev : Selected device
 * @retval USB_OTG_STS : status
 */
-USB_OTG_STS USB_OTG_EPActivate(USB_OTG_CORE_HANDLE *pdev , USB_OTG_EP *ep)
+USB_OTG_STS USB_OTG_EPActivate(USB_OTG_CORE_HANDLE * const pdev , USB_OTG_EP *ep)
 {
   USB_OTG_STS status = USB_OTG_OK;
   USB_OTG_DEPCTL_TypeDef  depctl;
@@ -1531,7 +1534,7 @@ USB_OTG_STS USB_OTG_EPActivate(USB_OTG_CORE_HANDLE *pdev , USB_OTG_EP *ep)
 * @param  pdev : Selected device
 * @retval USB_OTG_STS : status
 */
-USB_OTG_STS USB_OTG_EPDeactivate(USB_OTG_CORE_HANDLE *pdev , USB_OTG_EP *ep)
+USB_OTG_STS USB_OTG_EPDeactivate(USB_OTG_CORE_HANDLE * const pdev , USB_OTG_EP *ep)
 {
   USB_OTG_STS status = USB_OTG_OK;
   USB_OTG_DEPCTL_TypeDef  depctl;
@@ -1573,7 +1576,7 @@ USB_OTG_STS USB_OTG_EPDeactivate(USB_OTG_CORE_HANDLE *pdev , USB_OTG_EP *ep)
 * @param  pdev : Selected device
 * @retval USB_OTG_STS : status
 */
-USB_OTG_STS USB_OTG_EPStartXfer(USB_OTG_CORE_HANDLE *pdev , USB_OTG_EP *ep)
+USB_OTG_STS USB_OTG_EPStartXfer(USB_OTG_CORE_HANDLE * const pdev , USB_OTG_EP *ep)
 {
   USB_OTG_STS status = USB_OTG_OK;
   USB_OTG_DEPCTL_TypeDef     depctl;
@@ -1705,7 +1708,7 @@ USB_OTG_STS USB_OTG_EPStartXfer(USB_OTG_CORE_HANDLE *pdev , USB_OTG_EP *ep)
 * @param  pdev : Selected device
 * @retval USB_OTG_STS : status
 */
-USB_OTG_STS USB_OTG_EP0StartXfer(USB_OTG_CORE_HANDLE *pdev , USB_OTG_EP *ep)
+USB_OTG_STS USB_OTG_EP0StartXfer(USB_OTG_CORE_HANDLE * const pdev , USB_OTG_EP *ep)
 {
   USB_OTG_STS                 status = USB_OTG_OK;
   USB_OTG_DEPCTL_TypeDef      depctl;
@@ -1806,7 +1809,7 @@ USB_OTG_STS USB_OTG_EP0StartXfer(USB_OTG_CORE_HANDLE *pdev , USB_OTG_EP *ep)
 * @param  pdev : Selected device
 * @retval USB_OTG_STS : status
 */
-USB_OTG_STS USB_OTG_EPSetStall(USB_OTG_CORE_HANDLE *pdev , USB_OTG_EP *ep)
+USB_OTG_STS USB_OTG_EPSetStall(USB_OTG_CORE_HANDLE * const pdev , USB_OTG_EP *ep)
 {
   USB_OTG_STS status = USB_OTG_OK;
   USB_OTG_DEPCTL_TypeDef  depctl;
@@ -1842,7 +1845,7 @@ USB_OTG_STS USB_OTG_EPSetStall(USB_OTG_CORE_HANDLE *pdev , USB_OTG_EP *ep)
 * @param  pdev : Selected device
 * @retval USB_OTG_STS : status
 */
-USB_OTG_STS USB_OTG_EPClearStall(USB_OTG_CORE_HANDLE *pdev , USB_OTG_EP *ep)
+USB_OTG_STS USB_OTG_EPClearStall(USB_OTG_CORE_HANDLE * const pdev , USB_OTG_EP *ep)
 {
   USB_OTG_STS status = USB_OTG_OK;
   USB_OTG_DEPCTL_TypeDef  depctl;
@@ -1875,7 +1878,7 @@ USB_OTG_STS USB_OTG_EPClearStall(USB_OTG_CORE_HANDLE *pdev , USB_OTG_EP *ep)
 * @param  pdev : Selected device
 * @retval OUT endpoint interrupt bits
 */
-uint32_t USB_OTG_ReadDevAllOutEp_itr(USB_OTG_CORE_HANDLE *pdev)
+uint32_t USB_OTG_ReadDevAllOutEp_itr(USB_OTG_CORE_HANDLE * const pdev)
 {
   uint32_t v;
   v  = USB_OTG_READ_REG32(&pdev->regs.DREGS->DAINT);
@@ -1890,7 +1893,7 @@ uint32_t USB_OTG_ReadDevAllOutEp_itr(USB_OTG_CORE_HANDLE *pdev)
 * @param  ep : end point number
 * @retval Device OUT EP Interrupt register
 */
-uint32_t USB_OTG_ReadDevOutEP_itr(USB_OTG_CORE_HANDLE *pdev , uint8_t epnum)
+uint32_t USB_OTG_ReadDevOutEP_itr(USB_OTG_CORE_HANDLE * const pdev , uint8_t epnum)
 {
   uint32_t v;
   v  = USB_OTG_READ_REG32(&pdev->regs.OUTEP_REGS[epnum]->DOEPINT);
@@ -1904,7 +1907,7 @@ uint32_t USB_OTG_ReadDevOutEP_itr(USB_OTG_CORE_HANDLE *pdev , uint8_t epnum)
 * @param  pdev : Selected device
 * @retval int status register
 */
-uint32_t USB_OTG_ReadDevAllInEPItr(USB_OTG_CORE_HANDLE *pdev)
+uint32_t USB_OTG_ReadDevAllInEPItr(USB_OTG_CORE_HANDLE * const pdev)
 {
   uint32_t v;
   v = USB_OTG_READ_REG32(&pdev->regs.DREGS->DAINT);
@@ -1917,7 +1920,7 @@ uint32_t USB_OTG_ReadDevAllInEPItr(USB_OTG_CORE_HANDLE *pdev)
 * @param  None
 * @retval : None
 */
-void USB_OTG_EP0_OutStart(USB_OTG_CORE_HANDLE *pdev)
+void USB_OTG_EP0_OutStart(USB_OTG_CORE_HANDLE * const pdev)
 {
   USB_OTG_DEP0XFRSIZ_TypeDef  doeptsize0;
   doeptsize0.d32 = 0;
@@ -1946,7 +1949,7 @@ void USB_OTG_EP0_OutStart(USB_OTG_CORE_HANDLE *pdev)
 * @param  None
 * @retval : None
 */
-void USB_OTG_ActiveRemoteWakeup(USB_OTG_CORE_HANDLE *pdev)
+void USB_OTG_ActiveRemoteWakeup(USB_OTG_CORE_HANDLE * const pdev)
 {
 
   USB_OTG_DCTL_TypeDef     dctl;
@@ -1982,7 +1985,7 @@ void USB_OTG_ActiveRemoteWakeup(USB_OTG_CORE_HANDLE *pdev)
 * @param  None
 * @retval : None
 */
-void USB_OTG_UngateClock(USB_OTG_CORE_HANDLE *pdev)
+void USB_OTG_UngateClock(USB_OTG_CORE_HANDLE * const pdev)
 {
   if(pdev->cfg.low_power)
   {
@@ -2009,7 +2012,7 @@ void USB_OTG_UngateClock(USB_OTG_CORE_HANDLE *pdev)
 * @param  None
 * @retval : None
 */
-void USB_OTG_StopDevice(USB_OTG_CORE_HANDLE *pdev)
+void USB_OTG_StopDevice(USB_OTG_CORE_HANDLE * const pdev)
 {
   uint32_t i;
 
@@ -2038,7 +2041,7 @@ void USB_OTG_StopDevice(USB_OTG_CORE_HANDLE *pdev)
 * @retval : EP status
 */
 
-uint32_t USB_OTG_GetEPStatus(USB_OTG_CORE_HANDLE *pdev ,USB_OTG_EP *ep)
+uint32_t USB_OTG_GetEPStatus(USB_OTG_CORE_HANDLE * const pdev ,USB_OTG_EP *ep)
 {
   USB_OTG_DEPCTL_TypeDef  depctl;
   __IO uint32_t *depctl_addr;
@@ -2081,7 +2084,7 @@ uint32_t USB_OTG_GetEPStatus(USB_OTG_CORE_HANDLE *pdev ,USB_OTG_EP *ep)
 *         ep : EP structure
 * @retval : None
 */
-void USB_OTG_SetEPStatus (USB_OTG_CORE_HANDLE *pdev , USB_OTG_EP *ep , uint32_t Status)
+void USB_OTG_SetEPStatus (USB_OTG_CORE_HANDLE * const pdev , USB_OTG_EP *ep , uint32_t Status)
 {
   USB_OTG_DEPCTL_TypeDef  depctl;
   __IO uint32_t *depctl_addr;
@@ -2160,3 +2163,5 @@ void USB_OTG_SetEPStatus (USB_OTG_CORE_HANDLE *pdev , USB_OTG_EP *ep , uint32_t 
 */
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/
+
+#pragma GCC pop_options

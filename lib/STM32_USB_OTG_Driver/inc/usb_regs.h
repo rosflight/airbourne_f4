@@ -226,7 +226,7 @@ typedef struct USB_OTG_core_regs //000h
   USB_OTG_HREGS         *HREGS;
   USB_OTG_INEPREGS      *INEP_REGS[USB_OTG_MAX_TX_FIFOS];
   USB_OTG_OUTEPREGS     *OUTEP_REGS[USB_OTG_MAX_TX_FIFOS];
-  USB_OTG_HC_REGS       *HC_REGS[USB_OTG_MAX_TX_FIFOS];
+   USB_OTG_HC_REGS       *HC_REGS[USB_OTG_MAX_TX_FIFOS];
   __IO uint32_t         *HPRT0;
   __IO uint32_t         *DFIFO[USB_OTG_MAX_TX_FIFOS];
   __IO uint32_t         *PCGCCTL;

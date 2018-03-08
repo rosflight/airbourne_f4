@@ -63,6 +63,9 @@
   ******************************************************************************
   */ 
 
+#pragma GCC push_options
+#pragma GCC optimize ("O0")
+
 /* Includes ------------------------------------------------------------------*/
 #include "usbd_cdc_core.h"
 #include "usbd_desc.h"
@@ -821,3 +824,5 @@ static uint8_t  *USBD_cdc_GetOtherCfgDesc (uint8_t speed, uint16_t *length)
   */ 
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/
+
+#pragma GCC pop_options
