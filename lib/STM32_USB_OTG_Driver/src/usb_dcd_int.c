@@ -259,6 +259,12 @@ uint32_t USBD_OTG_ISR_Handler (USB_OTG_CORE_HANDLE * const pdev)
 
     if (gintr_status.b.rxstsqlvl)
     {
+      if(!pdev)
+        while(1);
+      else if (!pdev->regs.GREGS)
+        while(1);
+      else if (!pdev->regs.GREGS->GINTMSK)
+        while(1);
       retval |= DCD_HandleRxStatusQueueLevel_ISR(pdev);
 
     }

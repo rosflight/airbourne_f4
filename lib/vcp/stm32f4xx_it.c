@@ -6,7 +6,7 @@
 #include "usbd_core.h"
 #include "usbd_cdc_core.h"
 
-extern uint32_t USBD_OTG_ISR_Handler (USB_OTG_CORE_HANDLE *pdev);
+extern uint32_t USBD_OTG_ISR_Handler (USB_OTG_CORE_HANDLE * const pdev);
 
 #ifdef USB_OTG_HS_DEDICATED_EP1_ENABLED
 extern uint32_t USBD_OTG_EP1IN_ISR_Handler (USB_OTG_CORE_HANDLE *pdev);

@@ -403,7 +403,7 @@ static uint8_t USBD_Suspend(USB_OTG_CORE_HANDLE * const pdev)
 
 static uint8_t USBD_SOF(USB_OTG_CORE_HANDLE * const pdev)
 {
-  if(pdev->dev.class_cb->SOF)
+  if(pdev->dev.class_cb && pdev->dev.class_cb->SOF)
   {
     pdev->dev.class_cb->SOF(pdev); 
   }
