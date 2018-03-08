@@ -94,7 +94,8 @@ void systemInit(void)
 void delayMicroseconds(uint32_t us)
 {
     uint32_t now = micros();
-    while (micros() - now < us);
+    volatile uint64_t m;
+    while ((m=micros()) - now < us);
 }
 
 void delay(uint32_t ms)
