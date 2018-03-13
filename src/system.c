@@ -89,6 +89,7 @@ void systemInit(void)
     RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM12, ENABLE);
 
     RCC_APB2PeriphClockCmd(RCC_APB2Periph_USART1, ENABLE);
+    RCC_APB1PeriphClockCmd(RCC_APB1Periph_USART3, ENABLE);
 }
 
 void delayMicroseconds(uint32_t us)
