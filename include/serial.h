@@ -73,7 +73,7 @@ protected:
 
   uint8_t mode_;
 
-  std::function<void(uint8_t)> receive_CB_;
+  std::function<void(uint8_t)> receive_CB_ = nullptr;
 
 };
 

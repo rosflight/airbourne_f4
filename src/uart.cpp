@@ -54,7 +54,7 @@ void UART::init(const uart_hardware_struct_t* conf, uint32_t baudrate, uart_mode
   }
   if(c_->dev == USART3)
   {
-    UART1Ptr = this;
+    UART3Ptr = this;
   }
 
   init_UART(baudrate, mode);
@@ -371,8 +371,7 @@ void DMA1_Stream1_IRQHandler(void)
   if (DMA_GetITStatus(DMA1_Stream1, DMA_IT_TCIF1))
   {
     DMA_ClearITPendingBit(DMA1_Stream1, DMA_IT_TCIF1);
-    DMA_Cmd(DMA2_Stream1, DISABLE);
-    UART3Ptr->DMA_Tx_IRQ_callback();
+    UART3Ptr->DMA_Rx_IRQ_callback();
   }
 }
 
@@ -382,7 +381,7 @@ void DMA1_Stream3_IRQHandler(void)
   {
     DMA_ClearITPendingBit(DMA1_Stream3, DMA_IT_TCIF3);
     DMA_Cmd(DMA1_Stream3, DISABLE);
-    UART1Ptr->DMA_Tx_IRQ_callback();
+    UART3Ptr->DMA_Tx_IRQ_callback();
   }
 }
 
