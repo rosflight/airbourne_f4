@@ -180,12 +180,30 @@ void UART::write(const uint8_t *ch, uint8_t len)
     tx_buffer_[tx_buffer_head_] = ch[i];
     tx_buffer_head_ = (tx_buffer_head_ + 1) % TX_BUFFER_SIZE;
   }
-
+  if (DMA_GetCmdStatus(c_->Tx_DMA_Stream) == DISABLE)
+  {
+    startDMA();
+  }/*
+    for(uint8_t i=0;i<len;i++)
+    {
+        this->put_byte(ch[i]);
+        delay(1);
+    }*/
+}
+void UART::write_helper(const uint8_t *ch, uint8_t len)
+{
+  // Put Data on the tx_buffer
+  for (int i = 0; i < len ; i++)
+  {
+    tx_buffer_[tx_buffer_head_] = ch[i];
+    tx_buffer_head_ = (tx_buffer_head_ + 1) % TX_BUFFER_SIZE;
+  }
   if (DMA_GetCmdStatus(c_->Tx_DMA_Stream) == DISABLE)
   {
     startDMA();
   }
 }
+
 
 void UART::startDMA()
 {
@@ -230,7 +248,7 @@ uint8_t UART::read_byte()
 
 void UART::put_byte(uint8_t ch)
 {
-  write(&ch, 1);
+  write_helper(&ch, 1);
 }
 
 uint32_t UART::rx_bytes_waiting()
@@ -286,7 +304,7 @@ bool UART::tx_buffer_empty()
 
 bool UART::flush()
 {
-  uint32_t timeout = 10000;
+  uint32_t timeout = 100000;
   while (!tx_buffer_empty() && --timeout);
   if (timeout)
     return true;

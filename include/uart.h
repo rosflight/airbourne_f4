@@ -33,8 +33,6 @@
 #define UART_H
 
 // from serial.h
-#define RX_BUFFER_SIZE 64
-#define TX_BUFFER_SIZE 64
 #include <functional>
 
 #include "system.h"
@@ -55,6 +53,7 @@ public:
   void init(const uart_hardware_struct_t *conf, uint32_t baudrate_, uart_mode_t mode=MODE_8N1);
 
   void write(const uint8_t*ch, uint8_t len) override;
+  void write_helper(const uint8_t*ch, uint8_t len);
   uint32_t rx_bytes_waiting() override;
   uint32_t tx_bytes_free() override;
   uint8_t read_byte() override;

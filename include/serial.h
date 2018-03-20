@@ -36,8 +36,8 @@
 #include <functional>
 #include "gpio.h"
 
-#define RX_BUFFER_SIZE 64
-#define TX_BUFFER_SIZE 64
+#define RX_BUFFER_SIZE 256
+#define TX_BUFFER_SIZE 256
 
 
 class Serial
