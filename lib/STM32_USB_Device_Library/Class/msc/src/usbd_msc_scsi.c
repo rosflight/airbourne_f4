@@ -2,13 +2,13 @@
   ******************************************************************************
   * @file    usbd_msc_scsi.c
   * @author  MCD Application Team
-  * @version V1.1.0
-  * @date    19-March-2012
+  * @version V1.2.0
+  * @date    09-November-2015
   * @brief   This file provides all the USBD SCSI layer functions.
   ******************************************************************************
   * @attention
   *
-  * <h2><center>&copy; COPYRIGHT 2012 STMicroelectronics</center></h2>
+  * <h2><center>&copy; COPYRIGHT 2015 STMicroelectronics</center></h2>
   *
   * Licensed under MCD-ST Liberty SW License Agreement V2, (the "License");
   * You may not use this file except in compliance with the License.
@@ -266,9 +266,9 @@ static int8_t SCSI_ReadCapacity10(uint8_t lun, uint8_t *params)
   else
   {
     
-    MSC_BOT_Data[0] = (uint8_t)(SCSI_blk_nbr - 1 >> 24);
-    MSC_BOT_Data[1] = (uint8_t)(SCSI_blk_nbr - 1 >> 16);
-    MSC_BOT_Data[2] = (uint8_t)(SCSI_blk_nbr - 1 >>  8);
+    MSC_BOT_Data[0] = (uint8_t)((SCSI_blk_nbr - 1) >> 24);
+    MSC_BOT_Data[1] = (uint8_t)((SCSI_blk_nbr - 1) >> 16);
+    MSC_BOT_Data[2] = (uint8_t)((SCSI_blk_nbr - 1) >>  8);
     MSC_BOT_Data[3] = (uint8_t)(SCSI_blk_nbr - 1);
     
     MSC_BOT_Data[4] = (uint8_t)(SCSI_blk_size >>  24);
@@ -309,9 +309,9 @@ static int8_t SCSI_ReadFormatCapacity(uint8_t lun, uint8_t *params)
   else
   {
     MSC_BOT_Data[3] = 0x08;
-    MSC_BOT_Data[4] = (uint8_t)(blk_nbr - 1 >> 24);
-    MSC_BOT_Data[5] = (uint8_t)(blk_nbr - 1 >> 16);
-    MSC_BOT_Data[6] = (uint8_t)(blk_nbr - 1 >>  8);
+    MSC_BOT_Data[4] = (uint8_t)((blk_nbr - 1) >> 24);
+    MSC_BOT_Data[5] = (uint8_t)((blk_nbr - 1) >> 16);
+    MSC_BOT_Data[6] = (uint8_t)((blk_nbr - 1) >>  8);
     MSC_BOT_Data[7] = (uint8_t)(blk_nbr - 1);
     
     MSC_BOT_Data[8] = 0x02;
@@ -598,6 +598,13 @@ static int8_t SCSI_Verify10(uint8_t lun , uint8_t *params){
     return -1; /* Error, Verify Mode Not supported*/
   }
   
+  SCSI_blk_addr = (params[2] << 24) | \
+    (params[3] << 16) | \
+      (params[4] <<  8) | \
+        params[5];
+  SCSI_blk_len = (params[7] <<  8) | \
+    params[8];  
+    
   if(SCSI_CheckAddressRange(lun, SCSI_blk_addr, SCSI_blk_len) < 0)
   {
     return -1; /* error */      

@@ -2,14 +2,14 @@
   ******************************************************************************
   * @file    stm32f4xx_syscfg.h
   * @author  MCD Application Team
-  * @version V1.1.0
-  * @date    11-January-2013
+  * @version V1.6.0
+  * @date    10-July-2015
   * @brief   This file contains all the functions prototypes for the SYSCFG firmware
   *          library. 
   ******************************************************************************
   * @attention
   *
-  * <h2><center>&copy; COPYRIGHT 2013 STMicroelectronics</center></h2>
+  * <h2><center>&copy; COPYRIGHT 2015 STMicroelectronics</center></h2>
   *
   * Licensed under MCD-ST Liberty SW License Agreement V2, (the "License");
   * You may not use this file except in compliance with the License.
@@ -64,7 +64,9 @@
 #define EXTI_PortSourceGPIOG       ((uint8_t)0x06)
 #define EXTI_PortSourceGPIOH       ((uint8_t)0x07)
 #define EXTI_PortSourceGPIOI       ((uint8_t)0x08)
-  
+#define EXTI_PortSourceGPIOJ       ((uint8_t)0x09)
+#define EXTI_PortSourceGPIOK       ((uint8_t)0x0A)
+
 #define IS_EXTI_PORT_SOURCE(PORTSOURCE) (((PORTSOURCE) == EXTI_PortSourceGPIOA) || \
                                          ((PORTSOURCE) == EXTI_PortSourceGPIOB) || \
                                          ((PORTSOURCE) == EXTI_PortSourceGPIOC) || \
@@ -73,7 +75,9 @@
                                          ((PORTSOURCE) == EXTI_PortSourceGPIOF) || \
                                          ((PORTSOURCE) == EXTI_PortSourceGPIOG) || \
                                          ((PORTSOURCE) == EXTI_PortSourceGPIOH) || \
-                                         ((PORTSOURCE) == EXTI_PortSourceGPIOI))
+                                         ((PORTSOURCE) == EXTI_PortSourceGPIOI) || \
+                                         ((PORTSOURCE) == EXTI_PortSourceGPIOJ) || \
+                                         ((PORTSOURCE) == EXTI_PortSourceGPIOK))
                                          
 /**
   * @}
@@ -126,13 +130,56 @@
 #define SYSCFG_MemoryRemap_Flash       ((uint8_t)0x00)
 #define SYSCFG_MemoryRemap_SystemFlash ((uint8_t)0x01)
 #define SYSCFG_MemoryRemap_SRAM        ((uint8_t)0x03)
-#define SYSCFG_MemoryRemap_FSMC        ((uint8_t)0x02) 
+#define SYSCFG_MemoryRemap_SDRAM       ((uint8_t)0x04)
 
+#if defined (STM32F40_41xxx)
+#define SYSCFG_MemoryRemap_FSMC        ((uint8_t)0x02) 
+#endif /* STM32F40_41xxx */
+
+#if defined (STM32F427_437xx) || defined (STM32F429_439xx)
+#define SYSCFG_MemoryRemap_FMC         ((uint8_t)0x02) 
+#endif /* STM32F427_437xx ||  STM32F429_439xx */  
+
+#if defined (STM32F446xx) || defined (STM32F469_479xx)
+#define SYSCFG_MemoryRemap_ExtMEM      ((uint8_t)0x02) 
+#endif /*  STM32F446xx || STM32F469_479xx */ 
+
+#if defined (STM32F40_41xxx) 
 #define IS_SYSCFG_MEMORY_REMAP_CONFING(REMAP) (((REMAP) == SYSCFG_MemoryRemap_Flash)       || \
                                                ((REMAP) == SYSCFG_MemoryRemap_SystemFlash) || \
                                                ((REMAP) == SYSCFG_MemoryRemap_SRAM)        || \
                                                ((REMAP) == SYSCFG_MemoryRemap_FSMC))
-                                                                                              
+#endif /* STM32F40_41xxx */
+
+#if defined (STM32F401xx) || defined (STM32F410xx) || defined (STM32F411xE)
+#define IS_SYSCFG_MEMORY_REMAP_CONFING(REMAP) (((REMAP) == SYSCFG_MemoryRemap_Flash)       || \
+                                               ((REMAP) == SYSCFG_MemoryRemap_SystemFlash) || \
+                                               ((REMAP) == SYSCFG_MemoryRemap_SRAM))
+#endif /* STM32F401xx || STM32F410xx || STM32F411xE */
+
+#if defined (STM32F427_437xx) || defined (STM32F429_439xx)
+#define IS_SYSCFG_MEMORY_REMAP_CONFING(REMAP) (((REMAP) == SYSCFG_MemoryRemap_Flash)       || \
+                                               ((REMAP) == SYSCFG_MemoryRemap_SystemFlash) || \
+                                               ((REMAP) == SYSCFG_MemoryRemap_SRAM)        || \
+                                               ((REMAP) == SYSCFG_MemoryRemap_SDRAM)       || \
+                                               ((REMAP) == SYSCFG_MemoryRemap_FMC))
+#endif /* STM32F427_437xx ||  STM32F429_439xx */
+
+#if defined (STM32F446xx) || defined (STM32F469_479xx)
+#define IS_SYSCFG_MEMORY_REMAP_CONFING(REMAP) (((REMAP) == SYSCFG_MemoryRemap_Flash)       || \
+                                               ((REMAP) == SYSCFG_MemoryRemap_ExtMEM)      || \
+                                               ((REMAP) == SYSCFG_MemoryRemap_SystemFlash) || \
+                                               ((REMAP) == SYSCFG_MemoryRemap_SRAM)        || \
+                                               ((REMAP) == SYSCFG_MemoryRemap_SDRAM))
+#endif /* STM32F446xx || STM32F469_479xx */
+
+#if defined(STM32F410xx)
+#define SYSCFG_Break_PVD             SYSCFG_CFGR2_PVDL
+#define SYSCFG_Break_HardFault       SYSCFG_CFGR2_CLL
+
+#define IS_SYSCFG_LOCK_CONFIG(BREAK) (((BREAK) == SYSCFG_Break_PVD)       || \
+                                      ((BREAK) == SYSCFG_Break_PVD))
+#endif /* STM32F410xx */
 /**
   * @}
   */ 
@@ -159,11 +206,14 @@
  
 void       SYSCFG_DeInit(void);
 void       SYSCFG_MemoryRemapConfig(uint8_t SYSCFG_MemoryRemap);
+void       SYSCFG_MemorySwappingBank(FunctionalState NewState);
 void       SYSCFG_EXTILineConfig(uint8_t EXTI_PortSourceGPIOx, uint8_t EXTI_PinSourcex);
 void       SYSCFG_ETH_MediaInterfaceConfig(uint32_t SYSCFG_ETH_MediaInterface); 
 void       SYSCFG_CompensationCellCmd(FunctionalState NewState); 
 FlagStatus SYSCFG_GetCompensationCellStatus(void);
-
+#if defined(STM32F410xx)
+void       SYSCFG_BreakConfig(uint32_t SYSCFG_Break);
+#endif /* STM32F410xx */
 #ifdef __cplusplus
 }
 #endif

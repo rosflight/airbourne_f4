@@ -2,13 +2,13 @@
   ******************************************************************************
   * @file    usbd_ioreq.c
   * @author  MCD Application Team
-  * @version V1.1.0
-  * @date    19-March-2012
+  * @version V1.2.0
+  * @date    09-November-2015
   * @brief   This file provides the IO requests APIs for control endpoints.
   ******************************************************************************
   * @attention
   *
-  * <h2><center>&copy; COPYRIGHT 2012 STMicroelectronics</center></h2>
+  * <h2><center>&copy; COPYRIGHT 2015 STMicroelectronics</center></h2>
   *
   * Licensed under MCD-ST Liberty SW License Agreement V2, (the "License");
   * You may not use this file except in compliance with the License.
@@ -27,9 +27,6 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "usbd_ioreq.h"
-
-#pragma GCC push_options
-#pragma GCC optimize ("O0")
 
 /** @addtogroup STM32_USB_OTG_DEVICE_LIBRARY
   * @{
@@ -179,7 +176,7 @@ USBD_Status  USBD_CtlContinueRx (USB_OTG_CORE_HANDLE  *pdev,
 }
 /**
 * @brief  USBD_CtlSendStatus
-*         send zero lzngth packet on the ctl pipe
+*         send zero length packet on the ctl pipe
 * @param  pdev: USB OTG device instance
 * @retval status
 */
@@ -199,7 +196,7 @@ USBD_Status  USBD_CtlSendStatus (USB_OTG_CORE_HANDLE  *pdev)
 
 /**
 * @brief  USBD_CtlReceiveStatus
-*         receive zero lzngth packet on the ctl pipe
+*         receive zero length packet on the ctl pipe
 * @param  pdev: USB OTG device instance
 * @retval status
 */
@@ -245,4 +242,3 @@ uint16_t  USBD_GetRxCount (USB_OTG_CORE_HANDLE  *pdev , uint8_t epnum)
   */ 
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/
-#pragma GCC pop_options

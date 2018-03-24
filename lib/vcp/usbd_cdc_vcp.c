@@ -30,7 +30,8 @@
 #include "stdbool.h"
 #include "system.h"
 
-__ALIGN_BEGIN USB_OTG_CORE_HANDLE  USB_OTG_dev __ALIGN_END;
+//__ALIGN_BEGIN USB_OTG_CORE_HANDLE  USB_OTG_dev __ALIGN_END;
+//USB_OTG_CORE_HANDLE*  USB_OTG_dev;
 static void (*rx_callback)(uint8_t data) = NULL;
 
 
@@ -326,3 +327,4 @@ uint32_t CDC_BaudRate(void)
 }
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/
+

@@ -49,8 +49,8 @@ void VCP::init()
 
   send_disconnect_signal();
 
-  USBD_Init(&USB_OTG_dev, USB_OTG_FS_CORE_ID, &USR_desc, &USBD_CDC_cb, &USR_cb);
   vcpPtr = this;
+  USBD_Init(&USB_OTG_dev_, USB_OTG_FS_CORE_ID, &USR_desc, &USBD_CDC_cb, &USR_cb);
 }
 
 void VCP::write(const uint8_t*ch, uint8_t len)
@@ -126,4 +126,32 @@ void VCP::send_disconnect_signal()
   delay(200);
   tx_pin_.write(GPIO::HIGH);
   tx_pin_.set_mode(GPIO::PERIPH_IN_OUT);
+}
+
+extern "C" 
+{
+void OTG_FS_IRQHandler(void)
+{
+  USB_OTG_GINTSTS_TypeDef  gintr_status;
+//  gintr_status.d32 = USB_OTG_ReadCoreItr(&USB_OTG_dev);
+  gintr_status.d32 = vcpPtr->USB_OTG_dev_.regs.GREGS->GINTMSK & vcpPtr->USB_OTG_dev_.regs.GREGS->GINTSTS;
+  USBD_OTG_ISR_Handler (&vcpPtr->USB_OTG_dev_);
+
+  if ((gintr_status.b.rxstsqlvl) || (gintr_status.b.outepintr))
+  {
+    CDC_RxCallback();
+  }
+}
+
+void OTG_FS_WKUP_IRQHandler(void)
+{
+  if(vcpPtr->USB_OTG_dev_.cfg.low_power)
+  {
+    *(uint32_t *)(0xE000ED10) &= 0xFFFFFFF9 ;
+    SystemInit();
+    USB_OTG_UngateClock(&vcpPtr->USB_OTG_dev_);
+  }
+  EXTI_ClearITPendingBit(EXTI_Line18);
+}
+
 }

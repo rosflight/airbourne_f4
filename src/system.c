@@ -31,6 +31,78 @@
 
 #include "system.h"
 
+void debug_error()
+{
+  //#ifdef DEBUG
+  while(1) {volatile int debug = 1;}
+  //#else
+  //  ResetHandler();
+  //#endif
+}
+
+void UsageFault_Handler()
+{
+  debug_error();
+}
+
+void WWDG_IRQHandler()
+{
+  debug_error();
+}
+
+static void HardFault_Handler(void)
+{
+  __asm volatile
+      (
+        " tst lr, #4                                                \n"
+        " ite eq                                                    \n"
+        " mrseq r0, msp                                             \n"
+        " mrsne r0, psp                                             \n"
+        " ldr r1, [r0, #24]                                         \n"
+        " ldr r2, handler2_address_const                            \n"
+        " bx r2                                                     \n"
+        " handler2_address_const: .word prvGetRegistersFromStack    \n"
+        );
+}
+void prvGetRegistersFromStack( uint32_t *pulFaultStackAddress )
+{
+  /* These are volatile to try and prevent the compiler/linker optimising them
+away as the variables never actually get used.  If the debugger won't show the
+values of the variables, make them global by moving their declaration outside
+of this function. */
+  volatile uint32_t r0;
+  volatile uint32_t r1;
+  volatile uint32_t r2;
+  volatile uint32_t r3;
+  volatile uint32_t r12;
+  volatile uint32_t lr; /* Link register. */
+  volatile uint32_t pc; /* Program counter. */
+  volatile uint32_t psr;/* Program status register. */
+  
+  r0 = pulFaultStackAddress[ 0 ];
+  r1 = pulFaultStackAddress[ 1 ];
+  r2 = pulFaultStackAddress[ 2 ];
+  r3 = pulFaultStackAddress[ 3 ];
+  
+  r12 = pulFaultStackAddress[ 4 ];
+  lr = pulFaultStackAddress[ 5 ];
+  pc = pulFaultStackAddress[ 6 ];
+  psr = pulFaultStackAddress[ 7 ];
+  
+  /* When the following line is hit, the variables contain the register values. */
+  debug_error();
+}
+
+void MemManage_Handler()
+{
+  debug_error();
+}
+
+void BusFault_Handler()
+{
+  debug_error();
+}
+
 
 // cycles per microsecond
 static uint32_t usTicks = 0;
@@ -40,66 +112,66 @@ static volatile uint32_t sysTickUptime = 0;
 // SysTick
 void SysTick_Handler(void)
 {
-    sysTickUptime++;
+  sysTickUptime++;
 }
 
 // Return system uptime in microseconds (rollover in 1.5 days)
 uint64_t micros(void)
 {
-
+  
   return ((uint64_t)sysTickUptime * 3125ul)/100ul;  // The convsersion is 31.25, so doing fixed-point math to be exact
 }
 
 // Return system uptime in milliseconds (rollover in 1.5 days)
 uint32_t millis(void)
 {
-    return (uint32_t)(sysTickUptime >> 5);  // ( >> 5 is the same as divide by 32, but takes one operation)
+  return (uint32_t)(sysTickUptime >> 5);  // ( >> 5 is the same as divide by 32, but takes one operation)
 }
 
 void systemInit(void)
 {
-    NVIC_PriorityGroupConfig(NVIC_PriorityGroup_2); //2 bit preemption, 2 bit sub priority
-
-    // Configure Systick
-    SysTick_Config(SystemCoreClock / 32000 + 27);
-    NVIC_SetPriority(SysTick_IRQn, 0);
-
-    //TODO: Should these be abstracted with the board-specific (ie revo_f4.h) file?
-    RCC_AHB2PeriphClockCmd(RCC_AHB2Periph_OTG_FS, DISABLE);
-    RCC_APB2PeriphClockCmd(RCC_APB2Periph_SPI1, ENABLE);
-    RCC_APB1PeriphClockCmd(RCC_APB1Periph_SPI2, ENABLE);
-    RCC_APB1PeriphClockCmd(RCC_APB1Periph_SPI3, ENABLE);
-    RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_DMA2, ENABLE);
-    RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_DMA1, ENABLE);
-    RCC_APB1PeriphClockCmd(RCC_APB1Periph_I2C1, ENABLE);
-    RCC_APB1PeriphClockCmd(RCC_APB1Periph_I2C2, ENABLE);
-
-    RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOA, ENABLE);
-    RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOB, ENABLE);
-    RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOC, ENABLE);
-    RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOD, ENABLE);
-    RCC_APB2PeriphClockCmd(RCC_APB2Periph_SYSCFG, ENABLE);
-
-    RCC_APB2PeriphClockCmd(RCC_APB2Periph_TIM1, ENABLE);
-    RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM2, ENABLE);
-    RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM3, ENABLE);
-    RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM5, ENABLE);
-    RCC_APB2PeriphClockCmd(RCC_APB2Periph_TIM9, ENABLE);
-    RCC_APB2PeriphClockCmd(RCC_APB2Periph_TIM8, ENABLE);
-    RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM12, ENABLE);
-
-    RCC_APB2PeriphClockCmd(RCC_APB2Periph_USART1, ENABLE);
+  NVIC_PriorityGroupConfig(NVIC_PriorityGroup_2); //2 bit preemption, 2 bit sub priority
+  
+  // Configure Systick
+  SysTick_Config(SystemCoreClock / 32000 + 27);
+  NVIC_SetPriority(SysTick_IRQn, 0);
+  
+  //TODO: Should these be abstracted with the board-specific (ie revo_f4.h) file?
+  RCC_AHB2PeriphClockCmd(RCC_AHB2Periph_OTG_FS, DISABLE);
+  RCC_APB2PeriphClockCmd(RCC_APB2Periph_SPI1, ENABLE);
+  RCC_APB1PeriphClockCmd(RCC_APB1Periph_SPI2, ENABLE);
+  RCC_APB1PeriphClockCmd(RCC_APB1Periph_SPI3, ENABLE);
+  RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_DMA2, ENABLE);
+  RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_DMA1, ENABLE);
+  RCC_APB1PeriphClockCmd(RCC_APB1Periph_I2C1, ENABLE);
+  RCC_APB1PeriphClockCmd(RCC_APB1Periph_I2C2, ENABLE);
+  
+  RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOA, ENABLE);
+  RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOB, ENABLE);
+  RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOC, ENABLE);
+  RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOD, ENABLE);
+  RCC_APB2PeriphClockCmd(RCC_APB2Periph_SYSCFG, ENABLE);
+  
+  RCC_APB2PeriphClockCmd(RCC_APB2Periph_TIM1, ENABLE);
+  RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM2, ENABLE);
+  RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM3, ENABLE);
+  RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM5, ENABLE);
+  RCC_APB2PeriphClockCmd(RCC_APB2Periph_TIM9, ENABLE);
+  RCC_APB2PeriphClockCmd(RCC_APB2Periph_TIM8, ENABLE);
+  RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM12, ENABLE);
+  
+  RCC_APB2PeriphClockCmd(RCC_APB2Periph_USART1, ENABLE);
 }
 
 void delayMicroseconds(uint32_t us)
 {
-    uint32_t now = micros();
-    while (micros() - now < us);
+  uint32_t now = micros();
+  while (micros() - now < us);
 }
 
 void delay(uint32_t ms)
 {
-    while (ms--)
-        delayMicroseconds(1000);
+  while (ms--)
+    delayMicroseconds(1000);
 }
 

@@ -38,19 +38,18 @@
 #include "gpio.h"
 
 extern "C" {
-#include "stm32f4xx_conf.h"
 #include "usbd_cdc_core.h"
-#include "usb_conf.h"
-#include "usbd_desc.h"
+#include "usbd_core.h"
 #include "usbd_cdc_vcp.h"
-#include "usbd_usr.h"
-#include "usbd_ioreq.h"
+#include "usb_dcd_int.h"
 }
 
 
 class VCP : Serial
 {
 public:
+  USB_OTG_CORE_HANDLE USB_OTG_dev_;
+  
   void init();
   void write(const uint8_t *ch, uint8_t len);
   uint32_t rx_bytes_waiting();

@@ -2,14 +2,14 @@
   ******************************************************************************
   * @file    stm32f4xx_tim.h
   * @author  MCD Application Team
-  * @version V1.1.0
-  * @date    11-January-2013
+  * @version V1.6.0
+  * @date    10-July-2015
   * @brief   This file contains all the functions prototypes for the TIM firmware 
   *          library.
   ******************************************************************************
   * @attention
   *
-  * <h2><center>&copy; COPYRIGHT 2013 STMicroelectronics</center></h2>
+  * <h2><center>&copy; COPYRIGHT 2015 STMicroelectronics</center></h2>
   *
   * Licensed under MCD-ST Liberty SW License Agreement V2, (the "License");
   * You may not use this file except in compliance with the License.
@@ -126,7 +126,7 @@ typedef struct
                                   This parameter can be a value of @ref TIM_Input_Capture_Polarity */
 
   uint16_t TIM_ICSelection;  /*!< Specifies the input.
-                                  This parameter can be a value of @ref RC */
+                                  This parameter can be a value of @ref TIM_Input_Capture_Selection */
 
   uint16_t TIM_ICPrescaler;  /*!< Specifies the Input Capture Prescaler.
                                   This parameter can be a value of @ref TIM_Input_Capture_Prescaler */
