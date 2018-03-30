@@ -41,13 +41,15 @@ UART::UART()
 void UART::init(const uart_hardware_struct_t* conf, uint32_t baudrate, uart_mode_t mode)
 {
   receive_CB_ = nullptr;
-  c_ = conf;
+  c_ = conf;//Save the configuration
 
+  //initialize pins
   rx_pin_.init(c_->GPIO, c_->Rx_Pin, GPIO::PERIPH_IN_OUT);
   tx_pin_.init(c_->GPIO, c_->Tx_Pin, GPIO::PERIPH_IN_OUT);
   GPIO_PinAFConfig(c_->GPIO, c_->Rx_PinSource, c_->GPIO_AF);
   GPIO_PinAFConfig(c_->GPIO, c_->Tx_PinSource, c_->GPIO_AF);
 
+  //Save the pointer, for callbacks
   if (c_->dev == USART1)
   {
     UART1Ptr = this;
@@ -66,7 +68,7 @@ void UART::init(const uart_hardware_struct_t* conf, uint32_t baudrate, uart_mode
 void UART::init_UART(uint32_t baudrate, uart_mode_t mode)
 {
   // Configure the device
-  USART_Cmd(c_->dev, DISABLE);
+  USART_Cmd(c_->dev, DISABLE);//Disable the usart device for configuration
 
   USART_InitTypeDef USART_InitStruct;
   USART_InitStruct.USART_BaudRate = baudrate;
@@ -87,12 +89,13 @@ void UART::init_UART(uint32_t baudrate, uart_mode_t mode)
   }
 
   USART_InitStruct.USART_HardwareFlowControl = USART_HardwareFlowControl_None;
-  USART_InitStruct.USART_Mode = USART_Mode_Rx | USART_Mode_Tx;
+  USART_InitStruct.USART_Mode = USART_Mode_Rx | USART_Mode_Tx;//Set to both recieve and send
   USART_Init(c_->dev, &USART_InitStruct);
+  //USART_OverSampling8Cmd(c_->dev, ENABLE);//Please don't break anything
 
   // Throw interrupts on byte receive
-  USART_ITConfig(c_->dev, USART_IT_RXNE, ENABLE);
-  USART_Cmd(c_->dev, ENABLE);
+  USART_ITConfig(c_->dev, USART_IT_RXNE, ENABLE);//enable interupts on recieve
+  USART_Cmd(c_->dev, ENABLE);//reenable the usart
 }
 
 void UART::init_DMA()
@@ -183,25 +186,8 @@ void UART::write(const uint8_t *ch, uint8_t len)
   if (DMA_GetCmdStatus(c_->Tx_DMA_Stream) == DISABLE)
   {
     startDMA();
-  }/*
-    for(uint8_t i=0;i<len;i++)
-    {
-        this->put_byte(ch[i]);
-        delay(1);
-    }*/
-}
-void UART::write_helper(const uint8_t *ch, uint8_t len)
-{
-  // Put Data on the tx_buffer
-  for (int i = 0; i < len ; i++)
-  {
-    tx_buffer_[tx_buffer_head_] = ch[i];
-    tx_buffer_head_ = (tx_buffer_head_ + 1) % TX_BUFFER_SIZE;
   }
-  if (DMA_GetCmdStatus(c_->Tx_DMA_Stream) == DISABLE)
-  {
-    startDMA();
-  }
+  this->flush();//testing
 }
 
 
@@ -248,7 +234,7 @@ uint8_t UART::read_byte()
 
 void UART::put_byte(uint8_t ch)
 {
-  write_helper(&ch, 1);
+  write(&ch, 1);
 }
 
 uint32_t UART::rx_bytes_waiting()

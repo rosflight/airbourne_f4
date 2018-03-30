@@ -53,7 +53,6 @@ public:
   void init(const uart_hardware_struct_t *conf, uint32_t baudrate_, uart_mode_t mode=MODE_8N1);
 
   void write(const uint8_t*ch, uint8_t len) override;
-  void write_helper(const uint8_t*ch, uint8_t len);
   uint32_t rx_bytes_waiting() override;
   uint32_t tx_bytes_free() override;
   uint8_t read_byte() override;
@@ -74,17 +73,17 @@ private:
   void init_NVIC();
   void startDMA();
 
-  const uart_hardware_struct_t* c_;
+  const uart_hardware_struct_t* c_; //contains config information
 
-  uint32_t baudrate_;
-  uint8_t rx_buffer_[RX_BUFFER_SIZE];
-  uint8_t tx_buffer_[TX_BUFFER_SIZE];
+  uint32_t baudrate_; //the baudrate for the connection
+  uint8_t rx_buffer_[RX_BUFFER_SIZE]; //the buffer for incoming data
+  uint8_t tx_buffer_[TX_BUFFER_SIZE]; //the buffer for outgoing data
   uint16_t rx_buffer_head_;
   uint16_t rx_buffer_tail_;
   uint16_t tx_buffer_head_;
   uint16_t tx_buffer_tail_;
-  GPIO rx_pin_;
-  GPIO tx_pin_;
+  GPIO rx_pin_; //The pin used for incoming data
+  GPIO tx_pin_; //The pin used for outgoing data
 };
 
 #endif // UART_H
