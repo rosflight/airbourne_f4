@@ -1,102 +1,175 @@
-/* BSD 3-Clause License                                                       
-*                                                                            
-* Copyright (c) 2018, James Jackson                                          
-* All rights reserved.                                                       
-*                                                                            
-* Redistribution and use in source and binary forms, with or without         
-* modification, are permitted provided that the following conditions are met:
-*                                                                               
-* * Redistributions of source code must retain the above copyright notice, this 
-*   list of conditions and the following disclaimer. 
-*  
-* * Redistributions in binary form must reproduce the above copyright notice, 
-*   this list of conditions and the following disclaimer in the documentation 
-*   and/or other materials provided with the distribution. 
-*  
-* * Neither the name of the copyright holder nor the names of its 
-*   contributors may be used to endorse or promote products derived from 
-*   this software without specific prior written permission. 
-*  
-* THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
-* AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE 
-* IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE 
-* DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE 
-* FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL 
-* DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR 
-* SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER 
-* CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, 
-* OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE 
-* OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. 
+/*
+*****************************************************************************
+**
+**  File        : stm32_flash.ld
+**
+**  Abstract    : Linker script for STM32F407VG Device with
+**                1024KByte FLASH, 128KByte RAM
+**
+**                Set heap size, stack size and stack location according
+**                to application requirements.
+**
+**                Set memory bank area and size if external memory is used.
+**
+**  Target      : STMicroelectronics STM32
+**
+**  Environment : Atollic TrueSTUDIO(R)
+**
+**  Distribution: The file is distributed �as is,� without any warranty
+**                of any kind.
+**
+**  (c)Copyright Atollic AB.
+**  You may use this file as-is or modify it according to the needs of your
+**  project. Distribution of this file (unmodified or modified) is not
+**  permitted. Atollic AB permit registered Atollic TrueSTUDIO(R) users the
+**  rights to distribute the assembled, compiled & linked contents of this
+**  file as part of an application binary file, provided that it is built
+**  using the Atollic TrueSTUDIO(R) toolchain.
+**
+*****************************************************************************
 */
 
+/* Entry Point */
+ENTRY(Reset_Handler)
+
+/* Generate a link error if heap and stack don't fit into RAM */
+_Min_Heap_Size = 0;      /* required amount of heap  */
+_Min_Stack_Size = 0x400; /* required amount of stack */
 
 /* Specify the memory areas */
 MEMORY
 {
-  flash (rx): ORIGIN = 0x08000000, LENGTH = 1024K
-  ram (rwx) : ORIGIN = 0x20000000, LENGTH = 128K
-  ccm (rwx) : ORIGIN = 0x10000000, LENGTH = 64K
+	FLASH (rx)      : ORIGIN = 0x08000000, LENGTH = 0x0e0000 - 0x64
+	INFOX (rx)      : ORIGIN = 0x08000000 + 0x0e0000 - 0x64, LENGTH = 0x64
+	RAM (xrw)       : ORIGIN = 0x20000000, LENGTH = 128K
+	MEMORY_B1 (rx)  : ORIGIN = 0x60000000, LENGTH = 0K
 }
 
-/* Size of Memory Areas */
-__rom_start__   = ORIGIN(flash);
-__rom_size__    = LENGTH(flash);
-__ram_start__   = ORIGIN(ram);
-__ram_size__    = LENGTH(ram);
-__ram_end__     = __ram_start__ + __ram_size__;
-__stack_end__   = __ram_end__;      /* Top of RAM */
-__stack_size__  = 16K;
-__stack_start__ = __stack_end__ - __stack_size__;
-__heap_start__  = __bss_end__;      /* Between bss and stack */
-__heap_end__    = __stack_start__;
-__ccm_start__   = ORIGIN(ccm);
-__ccm_size__    = LENGTH(ccm);
-end = __heap_start__;
-__end__ = end;
-_end = end;
-__bss_start__ = __bss_beg__;
-
+/* Section Definitions */
 SECTIONS
 {
-  . = 0;
-
-  .text : {
-    KEEP(*(.startup))         /* Startup code */
-    *(.text*)                 /* Program code */
-    KEEP(*(.rodata*))         /* Read only data */
-    *(.glue_7)
-    *(.glue_7t)
-    *(.eh_frame)
+  /* The program code and other data goes into FLASH */
+  .text :
+  {
+    PROVIDE (isr_vector_table_base = .);
+    KEEP(*(.isr_vector)) /* Startup code */
     . = ALIGN(4);
-    __ctors_start__ = .;
-    KEEP(*(.init_array))      /* C++ constructors */
-    KEEP(*(.ctors))           /* C++ constructors */
-    __ctors_end__ = .;
-    . = ALIGN(16);
-    __text_end__ = .;
-  } >flash
+    *(.text)           /* .text sections (code) */
+    *(.text*)          /* .text* sections (code) */
+    *(.rodata)         /* .rodata sections (constants, strings, etc.) */
+    *(.rodata*)        /* .rodata* sections (constants, strings, etc.) */
+    *(.glue_7)         /* glue arm to thumb code */
+    *(.glue_7t)        /* glue thumb to arm code */
+    *(.eh_frame)
 
-  .data : ALIGN(16) {
-    __data_beg__ = .;         /* Used in crt0.S */
-    *(.data*)                 /* Initialized data */
-    __data_end__ = .;         /* Used in crt0.S */
-  } >ram AT > flash
+    KEEP (*(.init))
+    KEEP (*(.fini))
 
-  .bss (NOLOAD) : ALIGN(16) {
-    __bss_beg__ = .;          /* Used in crt0.S */
-    *(.bss*)                  /* Uninitialized data */
-    *(COMMON)                 /* Common data */
-    __bss_end__ = .;          /* Used in crt0.S */
-  } >ram
+    . = ALIGN(4);
+    _etext = .;        /* define a global symbols at end of code */
+  } >FLASH
 
-  /* C++ exception unwinding stuff--needed by some toolchains */
-  .ARM.extab : { *(.ARM.extab* .gnu.linkonce.armextab.*) } >flash
 
-  __exidx_start = .;
-  .ARM.exidx : { *(.ARM.exidx* .gnu.linkonce.armexidx.*) } >flash
-  __exidx_end = .;
+   .ARM.extab   : { *(.ARM.extab* .gnu.linkonce.armextab.*) } >FLASH
+    .ARM : {
+    __exidx_start = .;
+      *(.ARM.exidx*)
+      __exidx_end = .;
+    } >FLASH
+
+  .preinit_array     :
+  {
+    PROVIDE_HIDDEN (__preinit_array_start = .);
+    KEEP (*(.preinit_array*))
+    PROVIDE_HIDDEN (__preinit_array_end = .);
+  } >FLASH
+  .init_array :
+  {
+    PROVIDE_HIDDEN (__init_array_start = .);
+    KEEP (*(SORT(.init_array.*)))
+    KEEP (*(.init_array*))
+    PROVIDE_HIDDEN (__init_array_end = .);
+  } >FLASH
+  .fini_array :
+  {
+    PROVIDE_HIDDEN (__fini_array_start = .);
+    KEEP (*(.fini_array*))
+    KEEP (*(SORT(.fini_array.*)))
+    PROVIDE_HIDDEN (__fini_array_end = .);
+  } >FLASH
+
+
+  /* used by the startup to initialize data */
+  _sidata = .;
+
+  /*
+   * Place the IRQ/bootstrap stack at the bottom of SRAM so that an overflow
+   * results in a hard fault.
+   */
+  .istack (NOLOAD) :
+  {
+    . = ALIGN(4);
+    _irq_stack_end = . ;
+    *(.irqstack)
+    _irq_stack_top = . ;
+  } > RAM
+
+  /* Initialized data sections goes into RAM, load LMA copy after code */
+  .data : 
+  {
+    . = ALIGN(4);
+    _sdata = .;        /* create a global symbol at data start */
+    *(.data)           /* .data sections */
+    *(.data*)          /* .data* sections */
+
+    . = ALIGN(4);
+    _edata = .;        /* define a global symbol at data end */
+  } >RAM AT> FLASH
+
+  /* Uninitialized data section */
+  . = ALIGN(4);
+  .bss :
+  {
+    /* This is used by the startup in order to initialize the .bss secion */
+    _sbss = .;         /* define a global symbol at bss start */
+    __bss_start__ = _sbss;
+    *(.bss)
+    *(.bss*)
+    *(COMMON)
+
+    . = ALIGN(4);
+    _ebss = .;         /* define a global symbol at bss end */
+    __bss_end__ = _ebss;
+  } >RAM
+
+  /* User_heap_stack section, used to check that there is enough RAM left */
+  ._user_heap_stack :
+  {
+    . = ALIGN(4);
+    PROVIDE ( end = . );
+    PROVIDE ( _end = . );
+    . = . + _Min_Heap_Size;
+    . = . + _Min_Stack_Size;
+    . = ALIGN(4);
+  } >RAM
+
+  /* MEMORY_bank1 section, code must be located here explicitly            */
+  /* Example: extern int foo(void) __attribute__ ((section (".mb1text"))); */
+  .memory_b1_text :
+  {
+    *(.mb1text)        /* .mb1text sections (code) */
+    *(.mb1text*)       /* .mb1text* sections (code)  */
+    *(.mb1rodata)      /* read-only data (constants) */
+    *(.mb1rodata*)
+  } >MEMORY_B1
+
+  /* Remove information from the standard libraries */
+  /DISCARD/ :
+  {
+    libc.a ( * )
+    libm.a ( * )
+    libgcc.a ( * )
+  }
+
+  .ARM.attributes 0 : { *(.ARM.attributes) }
 }
-
-/* Firmware entry point */
-
-ENTRY(_vectors)
