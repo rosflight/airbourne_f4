@@ -58,6 +58,9 @@
 //	uint32_t DMA_Rx_IT_Bit;
 //	uint32_t DMA_Tx_IT_Bit;
 //} uart_hardware_struct_t;
+#define UART1 0
+#define UART2 1
+#define UART3 0
 const uart_hardware_struct_t uart_config[NUM_UART] =
 {
   {USART1, GPIOA, GPIO_Pin_10, GPIO_Pin_9, GPIO_PinSource10, GPIO_PinSource9,

@@ -33,7 +33,7 @@
 
 #define USB_TIMEOUT  50
 
-VCP* vcpPtr = nullptr;
+static VCP* vcpPtr = nullptr;
 
 void vcp_rx_callback(uint8_t byte)
 {

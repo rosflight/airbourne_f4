@@ -55,7 +55,6 @@ void UART::init(const uart_hardware_struct_t* conf, uint32_t baudrate, uart_mode
   init_UART(baudrate, mode);
   init_DMA();
   init_NVIC();
-
 }
 
 void UART::init_UART(uint32_t baudrate, uart_mode_t mode)
