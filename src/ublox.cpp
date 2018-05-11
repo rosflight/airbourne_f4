@@ -171,11 +171,12 @@ void UBLOX::read_cb(uint8_t byte)
     if (buffer_head_ <= length_)
     {
       // push the byte onto the data buffer
-      in_message_.buffer[buffer_head_++] = byte;
+      in_message_.buffer[buffer_head_] = byte;
       if (buffer_head_ == length_)
       {
         parse_state_ = GOT_PAYLOAD;
       }
+      buffer_head_++;
     }
     break;
   case GOT_PAYLOAD:
