@@ -70,7 +70,7 @@ bool M25P16::read_config(uint8_t *data, uint32_t len)
   return true;
 }
 
-bool M25P16::write_config(uint8_t *data, const uint32_t len)
+bool M25P16::write_config(const uint8_t *data, const uint32_t len)
 {
   // Calculate the correct number of pages to store the config
   num_pages_for_config_ = len / 256;
@@ -120,7 +120,7 @@ bool M25P16::write_config(uint8_t *data, const uint32_t len)
     while (spi_->is_busy()) {} // Wait for the address to clear
 
     // Transfer the data
-    spi_->transfer(&data[256*i], page_len, nullptr, NULL);
+    spi_->write(&data[256*i], page_len);
     while (spi_->is_busy()) {} // Wait for the page to write
     spi_->disable(cs_);
 
