@@ -70,6 +70,7 @@ int main() {
     info.toggle();
     for (int i = 0; i < NUM_I2C; i++)
     {
+      warn.toggle();
       for (int j = 0; j < 128; j++)
       {
         uint8_t data = 0;
