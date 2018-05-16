@@ -77,7 +77,7 @@ int main() {
   
   
   // Initialize the barometer
-  float pressure, temperature;
+  float pressure(0.0), baro_temp(0.0);
   if (!baro.init(&i2c1))
   {
     while(1)
@@ -99,7 +99,7 @@ int main() {
   }
   
   // Initialize the airspeed Sensor
-  float diff_press, temp;
+  float diff_press(0.0), as_temp(0.0);
   if (!airspeed.init(&i2c2))
   {
     while (1)
@@ -113,16 +113,48 @@ int main() {
   while(1)
   {
     info.toggle();
-    mag.update();
     baro.update();
+    mag.update();
     airspeed.update();
-    baro.read(&pressure, &temperature);
-    mag.read(mag_data);
-    airspeed.read(&diff_press, &temp);
-    printf("%d Pa, %d.%d K\n",
-           (int32_t)(pressure),
-           (int32_t)(temperature),
-           (int32_t)(temperature*100)%100);
+    if (baro.present())
+    {
+      baro.read(&pressure, &baro_temp);
+    }
+    else
+    {
+      pressure = 0.0;
+      baro_temp = 0.0;
+    }
+    printf("baro: %d.%d Pa, %d.%d K\t",
+           (int32_t)(pressure), (int32_t)(pressure*1000)%1000,
+           (int32_t)(baro_temp), (int32_t)(baro_temp*1000)%1000);
+    if (mag.present())
+    {
+      mag.read(mag_data);
+    }
+    else
+    {
+      for (int i =0; i < 3; i++) mag_data[i] = 0.0;
+    }
+    printf("mag: %d.%d, %d.%d, %d.%d\t",
+           (int32_t)(mag_data[0]), (int32_t)(mag_data[0] * 1000)%1000,
+           (int32_t)(mag_data[1]), (int32_t)(mag_data[1] * 1000)%1000,
+           (int32_t)(mag_data[2]), (int32_t)(mag_data[2] * 1000)%1000);
+    if (airspeed.present())
+    {
+      airspeed.read(&diff_press, &as_temp);
+    }
+    else
+    {
+      diff_press = 0.0;
+      as_temp = 0.0;
+    }
+    printf("as: %d.%d Pa, %d.%dK \n",
+           (int32_t)(diff_press), (int32_t)(diff_press*1000)%1000,
+           (int32_t)(as_temp), (int32_t)(as_temp*1000)%1000);
+           
+    
+
     
     delay(10);
   }
