@@ -38,8 +38,8 @@ bool MS5611::init(I2C* _i2c)
   baro_present_ = false;
   while (millis() < 10);  // wait for chip to power on
   
-  next_update_ms_ = 0;
-  last_update_ms_ = 0;
+  next_update_ms_ = millis();
+  last_update_ms_ = millis();
 
   uint8_t byte;
   i2c_->write(0, 0, 0);

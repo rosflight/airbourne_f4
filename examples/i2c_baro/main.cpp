@@ -70,11 +70,11 @@ int main() {
   float pressure, temperature;
   while(1)
   {
+    baro.update();
     if (baro.present())
     {
       warn.off();
       info.toggle();
-      baro.update();
       baro.read(&pressure, &temperature);
       printf("%d Pa, %d.%d K\n",
              (int32_t)(pressure),
