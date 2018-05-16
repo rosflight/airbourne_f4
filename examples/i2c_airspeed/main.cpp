@@ -76,7 +76,7 @@ int main() {
 
   float diff_press, temp;
   while(1) {
-    info.toggle();
+    info.on();
     airspeed.update();
     if (airspeed.present())
     {
