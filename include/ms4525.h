@@ -52,6 +52,7 @@ private:
   float diff_press_;
   float temp_;
   uint32_t next_update_ms_;
+  uint32_t last_update_ms_;
   bool new_data_;
   bool sensor_present_;
 };

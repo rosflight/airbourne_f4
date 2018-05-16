@@ -69,10 +69,10 @@ private:
   void reset();
   void read_prom();
   int8_t calc_crc();
-  void read_pres_mess();
-  void read_temp_mess();
-  void start_temp_meas();
-  void start_pres_meas();
+  bool read_pres_mess();
+  bool read_temp_mess();
+  bool start_temp_meas();
+  bool start_pres_meas();
   void convert();
 
   I2C* i2c_;

@@ -67,8 +67,8 @@ BIN_DIR       = obj
 # Source Files
 #################################
 VPATH := $(VPATH):$(STARTUP_DIR)
-LDSCRIPT = $(STARTUP_DIR)/stm32_flash_f405_1024k.ld
-ASOURCES = startup_stm32f40_41xxx.s
+LDSCRIPT = $(STARTUP_DIR)/stm32f405.ld
+ASOURCES = stm32f405.s
 
 # Search path and source files for the CMSIS sources
 VPATH	 := $(VPATH):$(CMSIS_DIR)/CM4/CoreSupport
@@ -169,11 +169,11 @@ TARGET_BIN=$(BIN_DIR)/$(TARGET).bin
 ifeq ($(DEBUG), GDB)
 $(info ************  BUILDING DEBUG SYMBOLS ************)
 DEBUG_FLAGS = -ggdb3
-OPTIMIZE = -Og
+OPTIMIZE = -O0
 else
 $(info ************  BUILDING RELEASE ************)
 DEBUG_FLAGS = -g0
-OPTIMIZE = -O3
+OPTIMIZE = -O2
 LTO_FLAGS = -flto -fuse-linker-plugin $(OPTIMIZE)
 endif
 

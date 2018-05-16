@@ -73,11 +73,16 @@ int main() {
       for (int j = 0; j < 128; j++)
       {
         uint8_t data = 0;
-        if (i2c[i].write(j, 0xFF, data) > 0)
+        int8_t result  = i2c[i].write(j, 0xFF, data);
+        while(result < 0)
+        {
+          result  = i2c[i].write(j, 0xFF, data);
+        }
+        if (result > 0)
         {
           printf("I2C%d: found device at 0x%X\n", i+1, j);
         }
-        delay(1);
+        delay(5);
       }
     }
     printf("--------------------------\n");

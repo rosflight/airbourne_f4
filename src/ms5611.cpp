@@ -61,8 +61,6 @@ bool MS5611::init(I2C* _i2c)
   state_ = START_TEMP;
   new_data_ = false;
 
-  update();
-
   baro_present_ = true;
 
   return true;
@@ -84,20 +82,20 @@ void MS5611::update()
     switch (state_)
     {
     case START_TEMP:
-      start_temp_meas();
-      state_ = READ_TEMP;
+      if (start_temp_meas())
+        state_ = READ_TEMP;
       break;
     case READ_TEMP:
-      read_temp_mess();
-      state_ = START_PRESS;
+      if (read_temp_mess())
+        state_ = START_PRESS;
       break;
     case START_PRESS:
-      start_pres_meas();
-      state_ = READ_PRESS;
+      if (start_pres_meas())
+        state_ = READ_PRESS;
       break;
     case READ_PRESS:
-      read_pres_mess();
-      state_ = START_TEMP;
+      if (read_pres_mess())
+        state_ = START_TEMP;
       break;
     default:
       state_ = START_TEMP;
@@ -198,24 +196,24 @@ void MS5611::convert()
   new_data_ = false;
 }
 
-void MS5611::start_temp_meas()
+bool MS5611::start_temp_meas()
 {
-  i2c_->write(ADDR, ADC_CONV + ADC_D2 + ADC_4096, 1, std::bind(&MS5611::temp_start_cb, this));
+  return i2c_->write(ADDR, ADC_CONV + ADC_D2 + ADC_4096, 1, std::bind(&MS5611::temp_start_cb, this)) > 0;
 }
 
-void MS5611::start_pres_meas()
+bool MS5611::start_pres_meas()
 {
-  i2c_->write(ADDR, ADC_CONV + ADC_D1 + ADC_4096, 1, std::bind(&MS5611::pres_start_cb, this));
+  return i2c_->write(ADDR, ADC_CONV + ADC_D1 + ADC_4096, 1, std::bind(&MS5611::pres_start_cb, this)) > 0;
 }
 
-void MS5611::read_pres_mess()
+bool MS5611::read_pres_mess()
 {
-  i2c_->read(ADDR, ADC_READ, 3, pres_buf_, std::bind(&MS5611::pres_read_cb, this));
+  return i2c_->read(ADDR, ADC_READ, 3, pres_buf_, std::bind(&MS5611::pres_read_cb, this)) > 0;
 }
 
-void MS5611::read_temp_mess()
+bool MS5611::read_temp_mess()
 {
-  i2c_->read(ADDR, ADC_READ, 3, temp_buf_, std::bind(&MS5611::temp_read_cb, this));
+  return (i2c_->read(ADDR, ADC_READ, 3, temp_buf_, std::bind(&MS5611::temp_read_cb, this)) > 0);
 }
 
 void MS5611::temp_read_cb()

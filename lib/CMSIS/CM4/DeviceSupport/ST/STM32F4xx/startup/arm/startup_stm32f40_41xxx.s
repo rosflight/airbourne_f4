@@ -1,5 +1,5 @@
 ;******************** (C) COPYRIGHT 2015 STMicroelectronics ********************
-;* File Name          : startup_stm32f40_41xxx.s
+;* File Name          : stm32f405.s
 ;* Author             : MCD Application Team
 ;* @version           : V1.6.1
 ;* @date              : 21-October-2015

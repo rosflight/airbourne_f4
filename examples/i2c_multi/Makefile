@@ -26,7 +26,7 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-TARGET = spi
+TARGET = i2c_multi
 
 BOARD ?= REVO
 
@@ -133,8 +133,10 @@ CXXSOURCES = $(PRINTF_SRC) \
              led.cpp \
              main.cpp \
              vcp.cpp \
-             spi.cpp \
-             M25P16.cpp
+             i2c.cpp \
+             ms5611.cpp \
+             ms4525.cpp \
+             hmc5883l.cpp
 
 INCLUDE_DIRS =  $(SRC_DIR) \
                 $(ROOT)/include \
@@ -170,7 +172,7 @@ TARGET_BIN=$(BIN_DIR)/$(TARGET).bin
 ifeq ($(DEBUG), GDB)
 $(info ************  BUILDING DEBUG SYMBOLS ************)
 DEBUG_FLAGS = -ggdb3
-OPTIMIZE = -O0
+OPTIMIZE = -Og
 else
 $(info ************  BUILDING RELEASE ************)
 DEBUG_FLAGS = -g0

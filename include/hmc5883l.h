@@ -92,7 +92,7 @@ public:
 private:
   I2C* i2c_;
   uint8_t i2c_buf_[6];
-  float data_[3];
+  volatile float data_[3];
   uint32_t last_update_ms_;
   bool mag_present_;
 };

@@ -35,6 +35,7 @@
 #include "led.h"
 #include "vcp.h"
 #include "printf.h"
+#include "revo_f4.h"
 
 VCP* uartPtr = NULL;
 

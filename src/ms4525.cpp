@@ -38,24 +38,27 @@ bool MS4525::init(I2C *_i2c)
   i2c_ = _i2c;
   sensor_present_ = false;
   uint8_t buf[1];
-  sensor_present_ |= i2c_->read(ADDR, 0xFF, buf);
-  next_update_ms_ = 0;
+  if (i2c_->read(ADDR, 0xFF, buf) == SUCCESS)
+    sensor_present_ = true;
+  else
+    sensor_present_ = false;
+  next_update_ms_ = 0;    
   return sensor_present_;
 }
 
 bool MS4525::present()
 {
+  if (sensor_present_ && millis() > last_update_ms_ + 200)
+    sensor_present_ = false;
   return sensor_present_;
 }
 
 void MS4525::update()
 {
-  uint32_t now_ms = millis();
-
-  if (now_ms > next_update_ms_)
+  if (millis() > next_update_ms_)
   {
-    i2c_->read(ADDR, 0xFF, 4, buf_, std::bind(&MS4525::read_cb, this));
-    next_update_ms_ += 100;
+    if (i2c_->read(ADDR, 0xFF, 4, buf_, std::bind(&MS4525::read_cb, this)))
+      next_update_ms_ += 100;
   }
 }
 
@@ -64,6 +67,7 @@ void MS4525::read_cb()
   new_data_ = true;
   sensor_present_ = true;
   next_update_ms_ += 20;
+  last_update_ms_ = millis();
 }
 
 void MS4525::read(float* differential_pressure, float* temp)

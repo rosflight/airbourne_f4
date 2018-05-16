@@ -1,11 +1,11 @@
 /**
   ******************************************************************************
-  * @file      startup_stm32f40_41xxx.s
+  * @file      stm32f405.s
   * @author    MCD Application Team
   * @version   V1.6.1
   * @date      21-October-2015
   * @brief     STM32F40xxx/41xxx Devices vector table for GCC based toolchain.  
-  *            Same as startup_stm32f40_41xxx.s and maintained for legacy purpose   
+  *            Same as stm32f405.s and maintained for legacy purpose   
   *            This module performs:
   *                - Set the initial SP
   *                - Set the initial PC == Reset_Handler,
