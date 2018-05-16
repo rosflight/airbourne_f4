@@ -139,21 +139,21 @@ void I2C::unstick()
   // clock out some bits
   for (int i = 0; i < 8; ++i)
   {
-    delayMicroseconds(1);
+    delayMicroseconds(10);
     scl_.toggle();
   }
 
   // send a start condition
   sda_.write(GPIO::LOW);
-  delayMicroseconds(1);
+  delayMicroseconds(10);
   scl_.write(GPIO::LOW);
-  delayMicroseconds(1);
+  delayMicroseconds(10);
 
   // then a stop
   scl_.write(GPIO::HIGH);
-  delayMicroseconds(1);
+  delayMicroseconds(10);
   sda_.write(GPIO::HIGH);
-  delayMicroseconds(1);
+  delayMicroseconds(10);
 
   // turn things back on
   scl_.set_mode(GPIO::PERIPH_IN_OUT);

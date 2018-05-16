@@ -78,36 +78,15 @@ int main() {
   
   // Initialize the barometer
   float pressure(0.0), baro_temp(0.0);
-  if (!baro.init(&i2c1))
-  {
-    while(1)
-    {
-      warn.toggle();
-      delay(100);
-    }
-  }
+  baro.init(&i2c1);
   
   // Initialize the Magnetometer
   float mag_data[3] = {0., 0., 0.};
-  if (!mag.init(&i2c1))
-  {
-    while(1)
-    {
-      warn.toggle();
-      delay(100);
-    }
-  }
+  mag.init(&i2c1);
   
   // Initialize the airspeed Sensor
   float diff_press(0.0), as_temp(0.0);
-  if (!airspeed.init(&i2c2))
-  {
-    while (1)
-    {
-      warn.toggle();
-      delay(100);
-    }
-  }
+  airspeed.init(&i2c2);
   
 
   while(1)

@@ -81,25 +81,35 @@ void MS5611::update()
 
   if (now_ms > next_update_ms_)
   {
-    next_update_ms_ += 100;
-
     switch (state_)
     {
     case START_TEMP:
       if (start_temp_meas())
+      {
+        next_update_ms_ += 100;
         state_ = READ_TEMP;
+      }
       break;
     case READ_TEMP:
       if (read_temp_mess())
+      {
+        next_update_ms_ += 100;
         state_ = START_PRESS;
+      }
       break;
     case START_PRESS:
       if (start_pres_meas())
+      {
+        next_update_ms_ += 100;
         state_ = READ_PRESS;
+      }
       break;
     case READ_PRESS:
       if (read_pres_mess())
+      {
+        next_update_ms_ += 100;
         state_ = START_TEMP;
+      }
       break;
     default:
       state_ = START_TEMP;
