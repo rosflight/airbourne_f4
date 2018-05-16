@@ -84,6 +84,7 @@ private:
   float temperature_;
   uint16_t prom[8];
   uint32_t next_update_ms_;
+  uint32_t last_update_ms_;
   bool new_data_;
   bool baro_present_;
 

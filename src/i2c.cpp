@@ -229,11 +229,14 @@ int8_t I2C::read(uint8_t addr, uint8_t reg, uint8_t *data)
     I2C_Send7bitAddress(c_->dev, addr << 1, I2C_Direction_Transmitter);
     uint32_t timeout = 500;
     while (!I2C_CheckEvent(c_->dev, I2C_EVENT_MASTER_TRANSMITTER_MODE_SELECTED) && --timeout != 0);
-    if (timeout != 0 || return_code != ERROR)
+    if (timeout != 0 && return_code != ERROR)
     {
       I2C_GenerateSTOP(c_->dev, ENABLE);
       I2C_Cmd(c_->dev, DISABLE);
-      return ERROR;
+    }
+    else
+    {
+        return return_code;
     }
     I2C_Cmd(c_->dev, ENABLE);
     I2C_SendData(c_->dev, reg);
@@ -357,7 +360,7 @@ void I2C::handle_event()
   uint32_t last_event = I2C_GetLastEvent(c_->dev);
 
   // We just sent a byte
-  if (last_event == I2C_EVENT_MASTER_BYTE_TRANSMITTED)
+  if ((last_event & I2C_EVENT_MASTER_BYTE_TRANSMITTED) == I2C_EVENT_MASTER_BYTE_TRANSMITTED)
   {
     // If we are reading, then we just sent a subaddress and need to send
     // a repeated start, and enable the DMA NACK
@@ -377,7 +380,7 @@ void I2C::handle_event()
   }
 
   // We just sent the address in write mode
-  if (last_event == I2C_EVENT_MASTER_TRANSMITTER_MODE_SELECTED)
+  if ((last_event & I2C_EVENT_MASTER_TRANSMITTER_MODE_SELECTED) == I2C_EVENT_MASTER_TRANSMITTER_MODE_SELECTED)
   {
     // We need to send the subaddress
     if (!subaddress_sent_)
@@ -399,9 +402,9 @@ void I2C::handle_event()
   }
 
   // We are in receiving mode, preparing to receive the big DMA dump
-  if (last_event == I2C_EVENT_MASTER_RECEIVER_MODE_SELECTED)
+  if ((last_event & I2C_EVENT_MASTER_RECEIVER_MODE_SELECTED) == I2C_EVENT_MASTER_RECEIVER_MODE_SELECTED)
   {
-    I2C_ITConfig(c_->dev, I2C_IT_EVT, DISABLE);
+//    I2C_ITConfig(c_->dev, I2C_IT_EVT, DISABLE);
     DMA_SetCurrDataCounter(c_->DMA_Stream, len_);
     I2C_DMACmd(c_->dev, ENABLE);
     DMA_ITConfig(c_->DMA_Stream, DMA_IT_TC, ENABLE);
@@ -409,7 +412,7 @@ void I2C::handle_event()
   }
 
   // Start just sent
-  if (last_event == I2C_EVENT_MASTER_MODE_SELECT)
+  if ((last_event & I2C_EVENT_MASTER_MODE_SELECT)  == I2C_EVENT_MASTER_MODE_SELECT)
   {
     // we either don't need to send, or already sent the subaddress
     if (subaddress_sent_ && current_status_ == READING)
@@ -429,7 +432,7 @@ void I2C::handle_event()
 extern "C"
 {
 
-// C-based IRQ functions (defined in the STD lib somewhere)
+// C-based IRQ functions (defined in the startup script)
 void DMA1_Stream2_IRQHandler(void)
 {
 

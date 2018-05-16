@@ -37,12 +37,14 @@ bool MS5611::init(I2C* _i2c)
   i2c_ = _i2c;
   baro_present_ = false;
   while (millis() < 10);  // wait for chip to power on
+  
+  next_update_ms_ = 0;
+  last_update_ms_ = 0;
 
   uint8_t byte;
   i2c_->write(0, 0, 0);
   delay(1);
-  uint8_t ack = i2c_->read(ADDR, PROM_RD, &byte);
-  if (!ack)
+  if (i2c_->read(ADDR, 0xFF, &byte) != SUCCESS)
   {
     baro_present_ = false;
     return false;
@@ -57,7 +59,7 @@ bool MS5611::init(I2C* _i2c)
   if (calc_crc() != 0)
     return false;
 
-  next_update_ms_ = 0;
+  
   state_ = START_TEMP;
   new_data_ = false;
 
@@ -68,6 +70,8 @@ bool MS5611::init(I2C* _i2c)
 
 bool MS5611::present()
 {
+  if (baro_present_ && millis() > last_update_ms_ + 200)
+      baro_present_ = false;
   return baro_present_;
 }
 
@@ -218,15 +222,17 @@ bool MS5611::read_temp_mess()
 
 void MS5611::temp_read_cb()
 {
+  last_update_ms_ = millis();
   temp_raw_ = (temp_buf_[0] << 16) | (temp_buf_[1] << 8) | temp_buf_[2];
-  next_update_ms_ = millis() + 15;
+  next_update_ms_ = last_update_ms_ + 15;
   new_data_ = true;
 }
 
 void MS5611::pres_read_cb()
 {
+  last_update_ms_ = millis();
   pres_raw_ = (pres_buf_[0] << 16) | (pres_buf_[1] << 8) | pres_buf_[2];
-  next_update_ms_ = millis() + 15;
+  next_update_ms_ = last_update_ms_ + 15;
   new_data_ = true;
 }
 

@@ -32,6 +32,8 @@
 #include "system.h"
 #include "i2c.h"
 #include "ms5611.h"
+#include "hmc5883l.h"
+#include "ms4525.h"
 #include "led.h"
 #include "vcp.h"
 #include "printf.h"
@@ -45,48 +47,83 @@ static void _putc(void *p, char c)
 }
 
 int main() {
-
+  
   systemInit();
-
+  
   VCP vcp;
   vcp.init();
   uartPtr = &vcp;
   init_printf(NULL, _putc);
-
+  
   LED warn;
   warn.init(LED1_GPIO, LED1_PIN);
   LED info;
   info.init(LED2_GPIO, LED2_PIN);
-
+  
   delay(500);
-
+  
   info.on();
+  
+  // Initialize the I2C peripherals1
   I2C i2c1;
+  I2C i2c2;
   i2c1.init(&i2c_config[BARO_I2C]);
+  i2c2.init(&i2c_config[EXTERNAL_I2C]);
+  
+  // Initialize the sensors
   MS5611 baro;
-
-  baro.init(&i2c1);
-
+  HMC5883L mag;
+  MS4525 airspeed;
+  
+  
+  // Initialize the barometer
   float pressure, temperature;
+  if (!baro.init(&i2c1))
+  {
+    while(1)
+    {
+      warn.toggle();
+      delay(100);
+    }
+  }
+  
+  // Initialize the Magnetometer
+  float mag_data[3] = {0., 0., 0.};
+  if (!mag.init(&i2c1))
+  {
+    while(1)
+    {
+      warn.toggle();
+      delay(100);
+    }
+  }
+  
+  // Initialize the airspeed Sensor
+  float diff_press, temp;
+  if (!airspeed.init(&i2c2))
+  {
+    while (1)
+    {
+      warn.toggle();
+      delay(100);
+    }
+  }
+  
+
   while(1)
   {
-    if (baro.present())
-    {
-      warn.off();
-      info.toggle();
-      baro.update();
-      baro.read(&pressure, &temperature);
-      printf("%d Pa, %d.%d K\n",
-             (int32_t)(pressure),
-             (int32_t)(temperature),
-             (int32_t)(temperature*100)%100);
-      
-      delay(10);
-    }
-    else
-    {
-      warn.on();
-      printf("error\n");
-    }
+    info.toggle();
+    mag.update();
+    baro.update();
+    airspeed.update();
+    baro.read(&pressure, &temperature);
+    mag.read(mag_data);
+    airspeed.read(&diff_press, &temp);
+    printf("%d Pa, %d.%d K\n",
+           (int32_t)(pressure),
+           (int32_t)(temperature),
+           (int32_t)(temperature*100)%100);
+    
+    delay(10);
   }
 }
