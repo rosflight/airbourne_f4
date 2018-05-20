@@ -400,7 +400,6 @@ void I2C::handle_event()
 {
   uint32_t last_event = I2C_GetLastEvent(c_->dev);
   interrupt_history_.add_event(c_->dev->SR2 << 16 | c_->dev->SR1);
-  log_line;
   // We just sent a byte
   if ((last_event & I2C_EVENT_MASTER_BYTE_TRANSMITTED) == I2C_EVENT_MASTER_BYTE_TRANSMITTED)
   {
@@ -463,7 +462,7 @@ void I2C::handle_event()
   }
   
   // Start just sent
-  else if ((last_event & I2C_EVENT_MASTER_MODE_SELECT)  == I2C_EVENT_MASTER_MODE_SELECT)
+  else if ((last_event & I2C_EVENT_MASTER_MODE_SELECT) == I2C_EVENT_MASTER_MODE_SELECT)
   {
     last_event_us_ = micros();
     // we either don't need to send, or already sent the subaddress
@@ -481,9 +480,14 @@ void I2C::handle_event()
       I2C_Send7bitAddress(c_->dev, addr_, I2C_Direction_Transmitter);
     }
   }
-  else
+  
+  // Sometimes we just get this over and over and over again
+  else if (last_event == MSL)
   {
-    volatile int debug = 1;
+    // MSL is cleared by clearing and resetting PE
+    I2C_Cmd(c_->dev, DISABLE);
+    I2C_Cmd(c_->dev, ENABLE);
+    error_count_++;
   }
 }
 
