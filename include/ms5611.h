@@ -85,6 +85,7 @@ private:
   uint16_t prom[8];
   uint32_t next_update_ms_;
   uint32_t last_update_ms_;
+  bool waiting_for_cb_;
   bool new_data_;
   bool baro_present_;
 
@@ -98,6 +99,7 @@ public:
   void pres_read_cb();
   void temp_start_cb();
   void pres_start_cb();
+  void reset_cb();
 };
 
 #endif // MS5611_H

@@ -38,8 +38,6 @@ bool HMC5883L::init(I2C *i2c_drv)
   i2c_ = i2c_drv;
   
   // Wait for the chip to power up
-  while (millis() < 500);
-  i2c_->write(0, 0, 0);
   
   last_update_ms_ = millis();
   next_update_ms_ = millis();

@@ -88,10 +88,11 @@ int main() {
   float diff_press(0.0), as_temp(0.0);
   airspeed.init(&i2c2);
   
-
+  uint32_t count;
   while(1)
   {
-    info.toggle();
+    if (count++ % 10 == 0)
+      info.toggle();
     baro.update();
     mag.update();
     airspeed.update();
@@ -104,9 +105,11 @@ int main() {
       pressure = 0.0;
       baro_temp = 0.0;
     }
-    printf("baro: %d.%d Pa, %d.%d K\t",
-           (int32_t)(pressure), (int32_t)(pressure*1000)%1000,
-           (int32_t)(baro_temp), (int32_t)(baro_temp*1000)%1000);
+    
+    double seconds = millis()/1000.0;
+    printf("t: %.2f\t", seconds);
+    
+    printf("baro: %d Pa, %.2f K\t", (int32_t)pressure, (double)baro_temp);
     if (mag.present())
     {
       mag.read(mag_data);
@@ -115,10 +118,10 @@ int main() {
     {
       for (int i =0; i < 3; i++) mag_data[i] = 0.0;
     }
-    printf("mag: %d.%d, %d.%d, %d.%d\t",
-           (int32_t)(mag_data[0]), (int32_t)(mag_data[0] * 1000)%1000,
-           (int32_t)(mag_data[1]), (int32_t)(mag_data[1] * 1000)%1000,
-           (int32_t)(mag_data[2]), (int32_t)(mag_data[2] * 1000)%1000);
+    printf("mag: %d, %d, %d\t",
+           (int32_t)(mag_data[0]),
+           (int32_t)(mag_data[1]),
+           (int32_t)(mag_data[2]));
     if (airspeed.present())
     {
       airspeed.read(&diff_press, &as_temp);
@@ -128,9 +131,14 @@ int main() {
       diff_press = 0.0;
       as_temp = 0.0;
     }
-    printf("as: %d.%d Pa, %d.%dK \n",
-           (int32_t)(diff_press), (int32_t)(diff_press*1000)%1000,
-           (int32_t)(as_temp), (int32_t)(as_temp*1000)%1000);
+    printf("as: %.2f Pa, %.2fC\t", (double)diff_press, (double)as_temp);
+    
+    printf ("err1: %d\t err2:%d\n", i2c1.num_errors(), i2c2.num_errors());
+    
+    if (pressure == 0.0 || baro_temp == 0.0 || mag_data[0] == 0.0)
+      warn.on();
+    else
+      warn.off();
            
     
 
