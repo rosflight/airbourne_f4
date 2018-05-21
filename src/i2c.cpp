@@ -392,6 +392,7 @@ bool I2C::handle_error()
   I2C_ClearFlag(c_->dev, I2C_SR1_OVR | I2C_SR1_AF | I2C_SR1_ARLO | I2C_SR1_BERR);
   current_status_ = IDLE;
   log_line;
+  transfer_complete_cb();
   return return_code;
 }
 

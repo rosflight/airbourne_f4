@@ -100,6 +100,7 @@ public:
   void pres_read_cb();
   void temp_start_cb();
   void pres_start_cb();
+  void write_zero_cb();
   void reset_cb();
 };
 

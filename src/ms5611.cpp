@@ -31,7 +31,7 @@
 
 #include "ms5611.h"
 
-#define REBOOT_PERIOD_MS 1000*60*1 // reboot the device every 10 minutes
+#define REBOOT_PERIOD_MS 500 // reboot the device every 10 minutes
 
 
 bool MS5611::init(I2C* _i2c)
@@ -277,6 +277,16 @@ void MS5611::pres_start_cb()
 }
 
 void MS5611::reset_cb()
+{
+  last_update_ms_ = millis();
+  next_update_ms_ = last_update_ms_ + 10;
+  next_reboot_ms_ = last_update_ms_ + REBOOT_PERIOD_MS;
+  waiting_for_cb_ = false;
+  i2c_->write(0, 0, 0, std::bind(&MS5611::write_zero_cb, this), false);
+  
+}
+
+void MS5611::write_zero_cb()
 {
   last_update_ms_ = millis();
   next_update_ms_ = last_update_ms_ + 10;
