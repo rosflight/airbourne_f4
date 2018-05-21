@@ -31,7 +31,7 @@
 
 #include "ms5611.h"
 
-#define REBOOT_PERIOD_MS 500 // reboot the device every 10 minutes
+#define REBOOT_PERIOD_MS 1000 * 60 * 30 // reboot the device every 30 minutes
 
 
 bool MS5611::init(I2C* _i2c)
