@@ -86,7 +86,7 @@ void MS5611::update()
   // Sometimes the barometer fails to respond.  If this happens, then reset it
   // the barometer also seems to stop responding after 72 minutes (suspiciously close to a overflow of uint32_t with a microsecond timer)
   // to avoid that, just reboot periodically
-  if (waiting_for_cb_ && now_ms > last_update_ms_ + 210 || now_ms > next_reboot_ms_)
+  if (waiting_for_cb_ && now_ms > last_update_ms_ + 20 || now_ms > next_reboot_ms_)
   {
     last_update_ms_ = now_ms;
     i2c_->write(ADDR, RESET, 1, std::bind(&MS5611::reset_cb, this), false);
@@ -98,33 +98,26 @@ void MS5611::update()
     {
     case START_TEMP:
       if (start_temp_meas())
-      {
         next_update_ms_ += 100;
-      }
       break;
     case READ_TEMP:
       if (read_temp_mess())
-      {
         next_update_ms_ += 100;
-      }
       break;
     case START_PRESS:
       if (start_pres_meas())
-      {
         next_update_ms_ += 100;
-      }
       break;
     case READ_PRESS:
       if (read_pres_mess())
-      {
         next_update_ms_ += 100;
-      }
       break;
     default:
       state_ = START_TEMP;
       break;
     }
   }
+  
   if (new_data_)
   {
     convert();
@@ -253,7 +246,7 @@ void MS5611::temp_read_cb()
 {
   waiting_for_cb_ = false;
   last_update_ms_ = millis();
-  next_update_ms_ = last_update_ms_ + 20;
+  next_update_ms_ = last_update_ms_ + 10;
   state_ = START_PRESS;
   new_data_ = true;
 }
@@ -261,7 +254,8 @@ void MS5611::temp_read_cb()
 void MS5611::pres_read_cb()
 {
   waiting_for_cb_ = false;
-  next_update_ms_ = last_update_ms_ + 20;
+  last_update_ms_ = millis();
+  next_update_ms_ = last_update_ms_ + 10;
   state_ = START_TEMP;
   new_data_ = true;
 }
@@ -269,21 +263,24 @@ void MS5611::pres_read_cb()
 void MS5611::temp_start_cb()
 {
   waiting_for_cb_ = false;
-  next_update_ms_ = millis() + 10;
+  last_update_ms_ = millis();
+  next_update_ms_ = last_update_ms_ + 10;
   state_ = READ_TEMP;
 }
 
 void MS5611::pres_start_cb()
 {
   waiting_for_cb_ = false;
-  next_update_ms_ = millis() + 10;
+  last_update_ms_ = millis();
+  next_update_ms_ = last_update_ms_ + 10;
   state_ = READ_PRESS;
 }
 
 void MS5611::reset_cb()
 {
-  next_update_ms_ = millis() + 10;
-  next_reboot_ms_ = next_update_ms_ - 10 + REBOOT_PERIOD_MS;
+  last_update_ms_ = millis();
+  next_update_ms_ = last_update_ms_ + 10;
+  next_reboot_ms_ = last_update_ms_ + REBOOT_PERIOD_MS;
   waiting_for_cb_ = false;
   state_ = START_TEMP;
 }
