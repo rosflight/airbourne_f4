@@ -504,6 +504,9 @@ bool I2C::check_busy()
     if (micros() > last_event_us_ + 2000)
     {
       error_count_++;
+      // Clear and Reset PE
+      I2C_Cmd(c_->dev, DISABLE);
+      I2C_Cmd(c_->dev, ENABLE);
       log_line;
       return false;    
     }

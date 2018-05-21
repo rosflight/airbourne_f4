@@ -31,6 +31,8 @@
 
 #include "ms5611.h"
 
+#define REBOOT_PERIOD_MS 1000*60*1 // reboot the device every 10 minutes
+
 
 bool MS5611::init(I2C* _i2c)
 {
@@ -64,6 +66,8 @@ bool MS5611::init(I2C* _i2c)
   new_data_ = false;
 
   baro_present_ = true;
+  
+  next_reboot_ms_ = REBOOT_PERIOD_MS;
 
   return true;
 }
@@ -80,13 +84,15 @@ void MS5611::update()
   uint32_t now_ms = millis();
   
   // Sometimes the barometer fails to respond.  If this happens, then reset it
-  if (waiting_for_cb_ && now_ms > last_update_ms_ + 10)
+  // the barometer also seems to stop responding after 72 minutes (suspiciously close to a overflow of uint32_t with a microsecond timer)
+  // to avoid that, just reboot periodically
+  if (waiting_for_cb_ && now_ms > last_update_ms_ + 210 || now_ms > next_reboot_ms_)
   {
     last_update_ms_ = now_ms;
     i2c_->write(ADDR, RESET, 1, std::bind(&MS5611::reset_cb, this), false);
   }
 
-  if (now_ms > next_update_ms_)
+  else if (now_ms > next_update_ms_)
   {
     switch (state_)
     {
@@ -276,8 +282,9 @@ void MS5611::pres_start_cb()
 
 void MS5611::reset_cb()
 {
-  waiting_for_cb_ = false;
   next_update_ms_ = millis() + 10;
+  next_reboot_ms_ = next_update_ms_ - 10 + REBOOT_PERIOD_MS;
+  waiting_for_cb_ = false;
   state_ = START_TEMP;
 }
 

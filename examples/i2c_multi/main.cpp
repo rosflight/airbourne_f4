@@ -67,13 +67,13 @@ int main() {
   // Initialize the I2C peripherals1
   I2C i2c1;
   I2C i2c2;
-  i2c1.init(&i2c_config[BARO_I2C]);
-  i2c2.init(&i2c_config[EXTERNAL_I2C]);
+  i2c1.init(&i2c_config[EXTERNAL_I2C]);
+//  i2c2.init(&i2c_config[EXTERNAL_I2C]);
   
   // Initialize the sensors
   MS5611 baro;
   HMC5883L mag;
-  MS4525 airspeed;
+//  MS4525 airspeed;
   
   
   // Initialize the barometer
@@ -86,7 +86,7 @@ int main() {
   
   // Initialize the airspeed Sensor
   float diff_press(0.0), as_temp(0.0);
-  airspeed.init(&i2c2);
+//  airspeed.init(&i2c2);
   
   uint32_t count;
   while(1)
@@ -95,7 +95,7 @@ int main() {
       info.toggle();
     baro.update();
     mag.update();
-    airspeed.update();
+//    airspeed.update();
     if (baro.present())
     {
       baro.read(&pressure, &baro_temp);
@@ -122,16 +122,16 @@ int main() {
            (int32_t)(mag_data[0]),
            (int32_t)(mag_data[1]),
            (int32_t)(mag_data[2]));
-    if (airspeed.present())
-    {
-      airspeed.read(&diff_press, &as_temp);
-    }
-    else
-    {
-      diff_press = 0.0;
-      as_temp = 0.0;
-    }
-    printf("as: %.2f Pa, %.2fC\t", (double)diff_press, (double)as_temp);
+//    if (airspeed.present())
+//    {
+//      airspeed.read(&diff_press, &as_temp);
+//    }
+//    else
+//    {
+//      diff_press = 0.0;
+//      as_temp = 0.0;
+//    }
+//    printf("as: %.2f Pa, %.2fC\t", (double)diff_press, (double)as_temp);
     
     printf ("err1: %d\t err2:%d\n", i2c1.num_errors(), i2c2.num_errors());
     

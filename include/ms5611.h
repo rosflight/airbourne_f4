@@ -84,6 +84,7 @@ private:
   float temperature_;
   uint16_t prom[8];
   uint32_t next_update_ms_;
+  uint32_t next_reboot_ms_;
   uint32_t last_update_ms_;
   bool waiting_for_cb_;
   bool new_data_;
