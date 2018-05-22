@@ -73,7 +73,7 @@ void HMC5883L::update()
   if ( millis() > next_update_ms_)
   {
     if (i2c_->read(HMC58X3_ADDR, HMC58X3_DATA, 6, i2c_buf_, std::bind(&HMC5883L::read_cb, this)) == SUCCESS)
-      last_update_ms_ += 10;
+      next_update_ms_ += 10;
   }
 }
 
