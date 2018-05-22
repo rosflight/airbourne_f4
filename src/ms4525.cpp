@@ -31,14 +31,22 @@
 
 #include "ms4525.h"
 
+MS4525* as_ptr;
+
+static void cb(uint8_t result)
+{
+  as_ptr->read_cb(result);
+}
+
 MS4525::MS4525(){}
 
 bool MS4525::init(I2C *_i2c)
 {
+  as_ptr = this;
   i2c_ = _i2c;
   sensor_present_ = false;
   uint8_t buf[1];
-  if (i2c_->read(ADDR, 0xFF, buf) == SUCCESS)
+  if (i2c_->read(ADDR, 0xFF, buf) == I2C::RESULT_SUCCESS)
     sensor_present_ = true;
   else
     sensor_present_ = false;
@@ -57,7 +65,7 @@ void MS4525::update()
 {
   if (millis() > next_update_ms_)
   {
-    if (i2c_->read(ADDR, 0xFF, 4, buf_, std::bind(&MS4525::read_cb, this, std::placeholders::_1)))
+    if (i2c_->read(ADDR, 0xFF, 4, buf_, &cb))
       next_update_ms_ += 100;
   }
 }

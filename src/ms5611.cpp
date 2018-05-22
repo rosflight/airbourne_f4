@@ -31,24 +31,24 @@
 
 #include "ms5611.h"
 
-#define REBOOT_PERIOD_MS 1000 * 60 * 30 // reboot the device every 30 minutes
+MS5611* baro_ptr;
+static void cb(uint8_t result);
 
-using namespace std;
-using namespace placeholders;
+#define REBOOT_PERIOD_MS 1000 * 60 * 30 // reboot the device every 30 minutes
 
 bool MS5611::init(I2C* _i2c)
 {
+  baro_ptr = this;
   i2c_ = _i2c;
   baro_present_ = false;
   while (millis() < 10);  // wait for chip to power on
   
   next_update_ms_ = millis();
   last_update_ms_ = millis();
-
-  uint8_t byte;
+  
   i2c_->write(0, 0, 0);
   delay(1);
-  if (i2c_->read(ADDR, 0xFF, &byte) != SUCCESS)
+  if (i2c_->write(ADDR, RESET, 1) != I2C::RESULT_SUCCESS)
   {
     baro_present_ = false;
     return false;
@@ -58,7 +58,7 @@ bool MS5611::init(I2C* _i2c)
     baro_present_ = true;
   }
 
-  reset();
+  delay(3);
 
   // Read the PROM (try a couple times if it fails)
   bool got_valid_prom = false;
@@ -107,7 +107,8 @@ void MS5611::update()
   if ((waiting_for_cb_ && now_ms) > last_update_ms_ + 20 || (now_ms > next_reboot_ms_))
   {
     last_update_ms_ = now_ms;
-    i2c_->write(ADDR, RESET, 1, bind(&MS5611::reset_cb, this, _1), false);
+    callback_type_ = CB_RESET;
+    i2c_->write(ADDR, RESET, 1, &cb, false);
   }
 
   else if (now_ms > next_update_ms_)
@@ -145,8 +146,7 @@ void MS5611::update()
 
 void MS5611::reset()
 {
-  i2c_->write(ADDR, RESET, 1);
-  delay(3);
+
 }
 
 bool MS5611::read_prom()
@@ -279,28 +279,32 @@ bool MS5611::start_temp_meas()
 {
   waiting_for_cb_ = true;
   last_update_ms_ = millis();
-  return i2c_->write(ADDR, 0xFF, ADC_CONV + ADC_D2 + ADC_4096, bind(&MS5611::temp_start_cb, this, _1)) > 0;
+  callback_type_ = CB_TEMP_START;
+  return i2c_->write(ADDR, 0xFF, ADC_CONV + ADC_D2 + ADC_4096, &cb) > 0;
 }
 
 bool MS5611::start_pres_meas()
 {
   waiting_for_cb_ = true;
   last_update_ms_ = millis();
-  return i2c_->write(ADDR, 0XFF, ADC_CONV + ADC_D1 + ADC_4096, bind(&MS5611::pres_start_cb, this, _1)) > 0;
+  callback_type_ = CB_PRES_START;
+  return i2c_->write(ADDR, 0XFF, ADC_CONV + ADC_D1 + ADC_4096, &cb) > 0;
 }
 
 bool MS5611::read_pres_mess()
 {
   waiting_for_cb_ = true;
   last_update_ms_ = millis();
-  return i2c_->write(ADDR, 0xFF, ADC_READ, bind(&MS5611::pres_read_cb1, this, _1)) > 0;
+  callback_type_ = CB_PRES_READ1;
+  return i2c_->write(ADDR, 0xFF, ADC_READ, &cb) > 0;
 }
 
 bool MS5611::read_temp_mess()
 {
   waiting_for_cb_ = true;
   last_update_ms_ = millis();
-  return (i2c_->write(ADDR, 0xFF, ADC_READ, bind(&MS5611::temp_read_cb1, this, _1)) > 0);
+  callback_type_ = CB_TEMP_READ1;
+  return (i2c_->write(ADDR, 0xFF, ADC_READ, &cb) > 0);
 }
 
 void MS5611::temp_read_cb1(uint8_t result)
@@ -308,7 +312,8 @@ void MS5611::temp_read_cb1(uint8_t result)
   (void) result;
   waiting_for_cb_ = false;
   last_update_ms_ = millis();
-  i2c_->read(ADDR, 0xFF, 3, temp_buf_, bind(&MS5611::temp_read_cb2, this, _1));  
+  callback_type_ = CB_TEMP_READ2;
+  i2c_->read(ADDR, 0xFF, 3, temp_buf_, &cb);  
 }
 
 void MS5611::pres_read_cb1(uint8_t result)
@@ -316,7 +321,8 @@ void MS5611::pres_read_cb1(uint8_t result)
   (void) result;
   waiting_for_cb_ = false;
   last_update_ms_ = millis();
-  i2c_->read(ADDR, 0xFF, 3, pres_buf_, bind(&MS5611::pres_read_cb2, this, _1));  
+  callback_type_ = CB_PRES_READ2;
+  i2c_->read(ADDR, 0xFF, 3, pres_buf_, &cb);  
 }
 
 
@@ -365,8 +371,8 @@ void MS5611::reset_cb(uint8_t result)
   next_update_ms_ = last_update_ms_ + 10;
   next_reboot_ms_ = last_update_ms_ + REBOOT_PERIOD_MS;
   waiting_for_cb_ = false;
-  i2c_->write(0, 0, 0, bind(&MS5611::write_zero_cb, this, _1), false);
-  
+  callback_type_ = CB_WRITE_ZERO;
+  i2c_->write(0, 0, 0, &cb, false);
 }
 
 void MS5611::write_zero_cb(uint8_t result)
@@ -383,4 +389,42 @@ void MS5611::read(float * press, float* temp)
 {
   (*press) = pressure_;
   (*temp) = temperature_;
+}
+
+void MS5611::master_cb(uint8_t result)
+{
+  if (result == I2C::RESULT_SUCCESS)
+    baro_present_ = true;
+  switch (callback_type_)
+  {
+  case CB_TEMP_READ1:
+    temp_read_cb1(result);
+    break;
+  case CB_TEMP_READ2:
+    temp_read_cb2(result);
+    break;
+  case CB_PRES_READ1:
+    pres_read_cb1(result);
+    break;
+  case CB_PRES_READ2:
+    pres_read_cb2(result);
+    break;
+  case CB_TEMP_START:
+    temp_start_cb(result);
+    break;
+  case CB_PRES_START:
+    pres_start_cb(result);
+    break;
+  case CB_RESET:
+    reset_cb(result);
+    break;
+  case CB_WRITE_ZERO:
+    write_zero_cb(result);
+    break;
+  }
+}
+
+void cb(uint8_t result)
+{
+  baro_ptr->master_cb(result);
 }

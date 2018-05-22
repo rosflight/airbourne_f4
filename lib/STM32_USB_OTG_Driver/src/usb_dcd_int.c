@@ -582,22 +582,29 @@ static uint32_t DCD_HandleSof_ISR(USB_OTG_CORE_HANDLE *pdev)
 * @param  pdev: device instance
 * @retval status
 */
+__attribute__((optimize("O0"))) 
 static uint32_t DCD_HandleRxStatusQueueLevel_ISR(USB_OTG_CORE_HANDLE *pdev)
 {
   USB_OTG_GINTMSK_TypeDef  int_mask;
   USB_OTG_DRXSTS_TypeDef   status;
   USB_OTG_EP *ep;
+  __disable_irq();
 
   /* Disable the Rx Status Queue Level interrupt */
   int_mask.d32 = 0;
   int_mask.b.rxstsqlvl = 1;
+  volatile uint32_t GREG_PREV = (uint32_t) pdev->regs.GREGS;
   USB_OTG_MODIFY_REG32( &pdev->regs.GREGS->GINTMSK, int_mask.d32, 0);
 
   /* Get the Status from the top of the FIFO */
   status.d32 = USB_OTG_READ_REG32( &pdev->regs.GREGS->GRXSTSP );
+  
 
   ep = &pdev->dev.out_ep[status.b.epnum];
 
+    
+  volatile uint32_t GREG1 = (uint32_t) pdev->regs.GREGS;
+  volatile uint32_t GREG2, GREG3, GREG4;
   switch (status.b.pktsts)
   {
   case STS_GOUT_NAK:
@@ -605,7 +612,8 @@ static uint32_t DCD_HandleRxStatusQueueLevel_ISR(USB_OTG_CORE_HANDLE *pdev)
   case STS_DATA_UPDT:
     if (status.b.bcnt)
     {
-      USB_OTG_ReadPacket(pdev,ep->xfer_buff, status.b.bcnt);
+      USB_OTG_ReadPacket(pdev, ep->xfer_buff, status.b.bcnt);
+      GREG2 = (uint32_t) pdev->regs.GREGS;
       ep->xfer_buff += status.b.bcnt;
       ep->xfer_count += status.b.bcnt;
     }
@@ -625,6 +633,7 @@ static uint32_t DCD_HandleRxStatusQueueLevel_ISR(USB_OTG_CORE_HANDLE *pdev)
 
   /* Enable the Rx Status Queue Level interrupt */
   USB_OTG_MODIFY_REG32( &pdev->regs.GREGS->GINTMSK, 0, int_mask.d32);
+  __enable_irq();
 
   return 1;
 }

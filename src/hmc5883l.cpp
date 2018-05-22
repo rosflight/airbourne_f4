@@ -32,8 +32,12 @@
 
 #include "hmc5883l.h"
 
+static HMC5883L* mag_ptr;
+static void read_cb(uint8_t result);
+
 bool HMC5883L::init(I2C *i2c_drv)
 {
+  mag_ptr = this;
   mag_present_ = false;
   i2c_ = i2c_drv;
   
@@ -44,14 +48,14 @@ bool HMC5883L::init(I2C *i2c_drv)
 
   // Detect Magnetometer
   uint8_t byte = 0;
-  if (i2c_->read(HMC58X3_ADDR, 0xFF, &byte) != SUCCESS)
+  if (i2c_->read(HMC58X3_ADDR, 0xFF, &byte) != I2C::RESULT_SUCCESS)
   {
     mag_present_ = false;
     return false;
   }
   else
   {
-    bool result = SUCCESS;
+    bool result = true;
     // Configure HMC5833L
     result &= i2c_->write(HMC58X3_ADDR, HMC58X3_CRA, HMC58X3_CRA_DO_75 | HMC58X3_CRA_NO_AVG | HMC58X3_CRA_MEAS_MODE_NORMAL ); // 75 Hz Measurement, no bias, no averaging
     result &= i2c_->write(HMC58X3_ADDR, HMC58X3_CRB, HMC58X3_CRB_GN_390); // 390 LSB/Gauss
@@ -72,18 +76,24 @@ void HMC5883L::update()
 {
   if ( millis() > next_update_ms_)
   {
-    if (i2c_->read(HMC58X3_ADDR, HMC58X3_DATA, 6, i2c_buf_, std::bind(&HMC5883L::read_cb, this)) == SUCCESS)
+    if (i2c_->read(HMC58X3_ADDR, HMC58X3_DATA, 6, i2c_buf_, &read_cb) == I2C::RESULT_SUCCESS)
       next_update_ms_ += 10;
   }
 }
 
-void HMC5883L::read_cb(void)
+void HMC5883L::cb(uint8_t result)
 {
-  mag_present_ = true;
+  if (result == I2C::RESULT_SUCCESS)
+    mag_present_ = true;
   last_update_ms_ = millis();
   data_[0] = static_cast<float>(static_cast<int16_t>((i2c_buf_[0] << 8) | i2c_buf_[1]));
   data_[1] = static_cast<float>(static_cast<int16_t>((i2c_buf_[2] << 8) | i2c_buf_[3]));
   data_[2] = static_cast<float>(static_cast<int16_t>((i2c_buf_[4] << 8) | i2c_buf_[5]));
+}
+
+void read_cb(uint8_t result)
+{
+  mag_ptr->cb(result);
 }
 
 bool HMC5883L::read(float mag_data[3])

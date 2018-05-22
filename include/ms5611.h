@@ -63,6 +63,18 @@ private:
     READ_PRESS = 3,
   } state_t;
   state_t state_;
+  
+  typedef enum
+  {
+    CB_TEMP_READ1,
+    CB_TEMP_READ2,
+    CB_PRES_READ1,
+    CB_PRES_READ2,
+    CB_TEMP_START,
+    CB_PRES_START,
+    CB_RESET,
+    CB_WRITE_ZERO,
+  } callback_type_t;
 
   static const uint8_t ADDR = 0x77;
 
@@ -89,6 +101,8 @@ private:
   bool waiting_for_cb_;
   bool new_data_;
   bool baro_present_;
+  
+  callback_type_t callback_type_;
 
 public:
   bool init(I2C* _i2c);
@@ -96,6 +110,7 @@ public:
   void read(float *press, float *temp);
   bool present();
 
+  void master_cb(uint8_t result);
   void temp_read_cb1(uint8_t result);
   void pres_read_cb1(uint8_t result);
   void temp_read_cb2(uint8_t result);
@@ -105,5 +120,6 @@ public:
   void write_zero_cb(uint8_t result);
   void reset_cb(uint8_t result);
 };
+
 
 #endif // MS5611_H

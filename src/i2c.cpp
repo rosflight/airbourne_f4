@@ -176,7 +176,7 @@ void I2C::unstick()
 }
 
 
-int8_t I2C::read(uint8_t addr, uint8_t reg, uint8_t num_bytes, uint8_t* data, std::function<void(uint8_t)> callback, bool blocking)
+int8_t I2C::read(uint8_t addr, uint8_t reg, uint8_t num_bytes, uint8_t* data, void(*callback)(uint8_t), bool blocking)
 {
   if (check_busy())
     return RESULT_BUSY;
@@ -255,13 +255,14 @@ int8_t I2C::read(uint8_t addr, uint8_t reg, uint8_t *data)
     I2C_Send7bitAddress(c_->dev, addr << 1, I2C_Direction_Transmitter);
     uint32_t timeout = 500;
     while (!I2C_CheckEvent(c_->dev, I2C_EVENT_MASTER_TRANSMITTER_MODE_SELECTED) && --timeout != 0);
-    if (timeout != 0 && return_code_ != RESULT_ERROR)
+    if (timeout != 0)
     {
       I2C_GenerateSTOP(c_->dev, ENABLE);
       I2C_Cmd(c_->dev, DISABLE);
     }
     else
     {
+      return_code_ = RESULT_ERROR;
       log_line;
       return return_code_;
     }
@@ -278,9 +279,13 @@ int8_t I2C::read(uint8_t addr, uint8_t reg, uint8_t *data)
   I2C_Send7bitAddress(c_->dev, addr << 1, I2C_Direction_Receiver);
   uint32_t timeout = 500;
   while (!I2C_CheckEvent(c_->dev, I2C_EVENT_MASTER_BYTE_RECEIVED) && --timeout != 0);
-  if (timeout != 0 && return_code_ != RESULT_ERROR)
+  if (timeout != 0)
   {
     *data = I2C_ReceiveData(c_->dev);
+  }
+  else
+  {
+    return_code_ = RESULT_ERROR;
   }
   I2C_GenerateSTOP(c_->dev, ENABLE);
   I2C_Cmd(c_->dev, DISABLE);
@@ -290,7 +295,7 @@ int8_t I2C::read(uint8_t addr, uint8_t reg, uint8_t *data)
 }
 
 // asynchronous write, for commanding adc conversions
-int8_t I2C::write(uint8_t addr, uint8_t reg, uint8_t data, std::function<void(uint8_t)> callback, bool blocking)
+int8_t I2C::write(uint8_t addr, uint8_t reg, uint8_t data, void(*callback)(uint8_t), bool blocking)
 {
   if (check_busy())
     return RESULT_BUSY;

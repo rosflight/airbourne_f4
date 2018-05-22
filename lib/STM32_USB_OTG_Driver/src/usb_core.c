@@ -194,19 +194,20 @@ USB_OTG_STS USB_OTG_WritePacket(USB_OTG_CORE_HANDLE *pdev,
 * @param  bytes : No. of bytes
 * @retval None
 */
-void *USB_OTG_ReadPacket(USB_OTG_CORE_HANDLE *pdev,
-                         uint8_t *dest,
+__attribute__((optimize("O0")))
+void *USB_OTG_ReadPacket(USB_OTG_CORE_HANDLE *pdev, 
+                         uint8_t *dest, 
                          uint16_t len)
 {
   uint32_t i=0;
   uint32_t count32b = (len + 3) / 4;
-
+  
   __IO uint32_t *fifo = pdev->regs.DFIFO[0];
-
+  
   for ( i = 0; i < count32b; i++, dest += 4 )
   {
     *(__packed uint32_t *)dest = USB_OTG_READ_REG32(fifo);
-
+    
   }
   return ((void *)dest);
 }
