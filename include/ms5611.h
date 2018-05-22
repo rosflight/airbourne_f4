@@ -67,7 +67,7 @@ private:
   static const uint8_t ADDR = 0x77;
 
   void reset();
-  void read_prom();
+  bool read_prom();
   int8_t calc_crc();
   bool read_pres_mess();
   bool read_temp_mess();
@@ -78,8 +78,8 @@ private:
   I2C* i2c_;
   uint8_t pres_buf_[3];
   uint8_t temp_buf_[3];
-  uint32_t pres_raw_;
-  uint32_t temp_raw_;
+  int32_t pres_raw_;
+  int32_t temp_raw_;
   float pressure_;
   float temperature_;
   uint16_t prom[8];
@@ -96,8 +96,10 @@ public:
   void read(float *press, float *temp);
   bool present();
 
-  void temp_read_cb();
-  void pres_read_cb();
+  void temp_read_cb1();
+  void pres_read_cb1();
+  void temp_read_cb2();
+  void pres_read_cb2();
   void temp_start_cb();
   void pres_start_cb();
   void write_zero_cb();

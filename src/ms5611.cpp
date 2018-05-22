@@ -51,25 +51,41 @@ bool MS5611::init(I2C* _i2c)
     baro_present_ = false;
     return false;
   }
+  else
+  {
+    baro_present_ = true;
+  }
 
   reset();
 
-  // Read the PROM
-  read_prom();
+  // Read the PROM (try a couple times if it fails)
+  bool got_valid_prom = false;
+  for (int i = 0; i < 5; i++)
+  {
+    if (read_prom() == true)
+    {
+      if (calc_crc() != 0)
+        continue;
+      else
+      {
+        got_valid_prom = true;
+        break;
+      }
+    }
+  }
 
-    // Check crc
-  if (calc_crc() != 0)
+  if (got_valid_prom)
+  {
+    state_ = START_TEMP;
+    new_data_ = false;  
+    baro_present_ = true;    
+    next_reboot_ms_ = REBOOT_PERIOD_MS;
+    return true;
+  }
+  else
+  {
     return false;
-
-  
-  state_ = START_TEMP;
-  new_data_ = false;
-
-  baro_present_ = true;
-  
-  next_reboot_ms_ = REBOOT_PERIOD_MS;
-
-  return true;
+  }
 }
 
 bool MS5611::present()
@@ -86,7 +102,7 @@ void MS5611::update()
   // Sometimes the barometer fails to respond.  If this happens, then reset it
   // the barometer also seems to stop responding after 72 minutes (suspiciously close to a overflow of uint32_t with a microsecond timer)
   // to avoid that, just reboot periodically
-  if (waiting_for_cb_ && now_ms > last_update_ms_ + 20 || now_ms > next_reboot_ms_)
+  if ((waiting_for_cb_ && now_ms) > last_update_ms_ + 20 || (now_ms > next_reboot_ms_))
   {
     last_update_ms_ = now_ms;
     i2c_->write(ADDR, RESET, 1, std::bind(&MS5611::reset_cb, this), false);
@@ -131,14 +147,27 @@ void MS5611::reset()
   delay(3);
 }
 
-void MS5611::read_prom()
+bool MS5611::read_prom()
 {
-  uint8_t buf[2];
+  uint8_t buf[2] = {0, 0};
+  
+  // try a few times
   for (int i = 0; i < 8; i++)
   {
-    i2c_->read(ADDR, PROM_RD + i*2, 2, buf, nullptr, true);
-    prom[i] = static_cast<uint16_t>(buf[0] << 8 | buf[1]);
+    i2c_->write(ADDR, 0xFF, PROM_RD + 2* i);
+    if (i2c_->read(ADDR, 0xFF, 2, buf, nullptr, true) == I2C::RESULT_SUCCESS)
+      prom[i] = static_cast<uint16_t>(buf[0] << 8 | buf[1]);
+    else
+    {
+      reset();
+      delay(3);
+      i2c_->write(0, 0, 0);
+      delay(3);
+      // didn't work, try again
+      return false;
+    }
   }
+  return true;
 }
 
 int8_t MS5611::calc_crc()
@@ -173,16 +202,45 @@ int8_t MS5611::calc_crc()
   return -1;
 }
 
+//int8_t MS5611::calc_crc()
+//{    
+//  uint16_t n_rem;                      // crc reminder 
+//  uint16_t crc_read;                   // original value of the crc 
+//  uint8_t  n_bit; 
+//  n_rem = 0x00; 
+//  crc_read=prom[7];                      //save read CRC 
+//  prom[7]=(0xFF00 & (prom[7]));        //CRC byte is replaced by 0 
+//  for (uint8_t cnt = 0; cnt < 16; cnt++)                 // operation is performed on bytes 
+//  {// choose LSB or MSB 
+//    if (cnt%2==1) n_rem ^= ((prom[cnt>>1]) & 0x00FF); 
+//    else n_rem ^=  (prom[cnt>>1]>>8); 
+//    for (n_bit = 8; n_bit > 0; n_bit--) 
+//    { 
+//      if (n_rem & (0x8000)) 
+//      { 
+//        n_rem = (n_rem << 1) ^ 0x3000; 
+//      } 
+//      else 
+//      { 
+//        n_rem = (n_rem << 1); 
+//      } 
+//    } 
+//  } 
+//  n_rem=  (0x000F & (n_rem >> 12));       // final 4-bit reminder is CRC code 
+//  prom[7]=crc_read;               // restore the crc_read to its original place 
+//  return (n_rem ^ 0x0); 
+//}   
+
 void MS5611::convert()
 {
   int32_t press = 0;
-  int64_t temp = 0;
+  int32_t temp = 0;
   int64_t delta = 0;
   temp_raw_ = (temp_buf_[0] << 16) | (temp_buf_[1] << 8) | temp_buf_[2];
   pres_raw_ = (pres_buf_[0] << 16) | (pres_buf_[1] << 8) | pres_buf_[2];
   if(pres_raw_ > 9085466 * 2 / 3 && temp_raw_ > 0)
   {  
-    int64_t dT = static_cast<int64_t>(temp_raw_) - (static_cast<int64_t>(prom[5]) << 8);
+    int32_t dT = temp_raw_ - (static_cast<int32_t>(prom[5]) << 8);
     int64_t off = (static_cast<int64_t>(prom[2]) << 16) + ((static_cast<int64_t>(prom[4]) * dT) >> 7);
     int64_t sens = (static_cast<int64_t>(prom[1]) << 15) + ((static_cast<int64_t>(prom[3]) * dT) >> 8);
     temp = 2000 + ((dT * static_cast<int64_t>(prom[6])) >> 23);
@@ -206,8 +264,9 @@ void MS5611::convert()
 
       temp -= ((dT * dT) >> 31);
     }
-    press = (((static_cast<uint64_t>(pres_raw_) * sens) >> 21) - off) >> 15;
 
+    press = (((static_cast<uint64_t>(pres_raw_) * sens) >> 21) - off) >> 15;
+    
     pressure_ = static_cast<float>(press); // Pa
     temperature_ = static_cast<float>(temp) / 100.0 + 273.0; // K
   }
@@ -218,31 +277,46 @@ bool MS5611::start_temp_meas()
 {
   waiting_for_cb_ = true;
   last_update_ms_ = millis();
-  return i2c_->write(ADDR, ADC_CONV + ADC_D2 + ADC_4096, 1, std::bind(&MS5611::temp_start_cb, this)) > 0;
+  return i2c_->write(ADDR, 0xFF, ADC_CONV + ADC_D2 + ADC_4096, std::bind(&MS5611::temp_start_cb, this)) > 0;
 }
 
 bool MS5611::start_pres_meas()
 {
   waiting_for_cb_ = true;
   last_update_ms_ = millis();
-  return i2c_->write(ADDR, ADC_CONV + ADC_D1 + ADC_4096, 1, std::bind(&MS5611::pres_start_cb, this)) > 0;
+  return i2c_->write(ADDR, 0XFF, ADC_CONV + ADC_D1 + ADC_4096, std::bind(&MS5611::pres_start_cb, this)) > 0;
 }
 
 bool MS5611::read_pres_mess()
 {
   waiting_for_cb_ = true;
   last_update_ms_ = millis();
-  return i2c_->read(ADDR, ADC_READ, 3, pres_buf_, std::bind(&MS5611::pres_read_cb, this)) > 0;
+  return i2c_->write(ADDR, 0xFF, ADC_READ, std::bind(&MS5611::pres_read_cb1, this)) > 0;
 }
 
 bool MS5611::read_temp_mess()
 {
   waiting_for_cb_ = true;
   last_update_ms_ = millis();
-  return (i2c_->read(ADDR, ADC_READ, 3, temp_buf_, std::bind(&MS5611::temp_read_cb, this)) > 0);
+  return (i2c_->write(ADDR, 0xFF, ADC_READ, std::bind(&MS5611::temp_read_cb1, this)) > 0);
 }
 
-void MS5611::temp_read_cb()
+void MS5611::temp_read_cb1()
+{
+  waiting_for_cb_ = false;
+  last_update_ms_ = millis();
+  i2c_->read(ADDR, 0xFF, 3, temp_buf_, std::bind(&MS5611::temp_read_cb2, this));  
+}
+
+void MS5611::pres_read_cb1()
+{
+  waiting_for_cb_ = false;
+  last_update_ms_ = millis();
+  i2c_->read(ADDR, 0xFF, 3, pres_buf_, std::bind(&MS5611::temp_read_cb2, this));  
+}
+
+
+void MS5611::temp_read_cb2()
 {
   waiting_for_cb_ = false;
   last_update_ms_ = millis();
@@ -251,7 +325,7 @@ void MS5611::temp_read_cb()
   new_data_ = true;
 }
 
-void MS5611::pres_read_cb()
+void MS5611::pres_read_cb2()
 {
   waiting_for_cb_ = false;
   last_update_ms_ = millis();

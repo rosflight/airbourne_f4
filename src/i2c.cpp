@@ -39,7 +39,7 @@
   if (!timeout_var) \
 { \
   handle_hardware_failure();\
-  result = ERROR; \
+  result = RESULT_ERROR; \
   }\
   }
 
@@ -179,9 +179,10 @@ void I2C::unstick()
 int8_t I2C::read(uint8_t addr, uint8_t reg, uint8_t num_bytes, uint8_t* data, std::function<void(void)> callback, bool blocking)
 {
   if (check_busy())
-    return BUSY;
+    return RESULT_BUSY;
   log_line;
   current_status_ = READING;
+  error_status_ = false;
   addr_ = addr << 1;
   cb_ = callback;
   reg_ = reg;
@@ -195,7 +196,7 @@ int8_t I2C::read(uint8_t addr, uint8_t reg, uint8_t num_bytes, uint8_t* data, st
   DMA_Init(c_->DMA_Stream, &DMA_InitStructure_);
   
   I2C_Cmd(c_->dev, ENABLE);
-  bool result = SUCCESS;
+  bool result = RESULT_SUCCESS;
   
   while_check (I2C_GetFlagStatus(c_->dev, I2C_FLAG_BUSY), result);
   
@@ -214,9 +215,12 @@ int8_t I2C::read(uint8_t addr, uint8_t reg, uint8_t num_bytes, uint8_t* data, st
   {
     log_line;
     while(check_busy());
+    if (error_status_)
+      result = RESULT_ERROR;
   }
   log_line;
   last_event_us_ = micros();
+  
   return result;
 }
 
@@ -234,9 +238,9 @@ void I2C::transfer_complete_cb()
 int8_t I2C::read(uint8_t addr, uint8_t reg, uint8_t *data)
 {
   if (check_busy())
-    return BUSY;
+    return RESULT_BUSY;
   log_line;
-  int8_t return_code = SUCCESS;
+  int8_t return_code = RESULT_SUCCESS;
   
   // Turn off interrupts while blocking
   I2C_ITConfig(c_->dev, I2C_IT_EVT | I2C_IT_ERR, DISABLE);
@@ -252,7 +256,7 @@ int8_t I2C::read(uint8_t addr, uint8_t reg, uint8_t *data)
     I2C_Send7bitAddress(c_->dev, addr << 1, I2C_Direction_Transmitter);
     uint32_t timeout = 500;
     while (!I2C_CheckEvent(c_->dev, I2C_EVENT_MASTER_TRANSMITTER_MODE_SELECTED) && --timeout != 0);
-    if (timeout != 0 && return_code != ERROR)
+    if (timeout != 0 && return_code != RESULT_ERROR)
     {
       I2C_GenerateSTOP(c_->dev, ENABLE);
       I2C_Cmd(c_->dev, DISABLE);
@@ -275,7 +279,7 @@ int8_t I2C::read(uint8_t addr, uint8_t reg, uint8_t *data)
   I2C_Send7bitAddress(c_->dev, addr << 1, I2C_Direction_Receiver);
   uint32_t timeout = 500;
   while (!I2C_CheckEvent(c_->dev, I2C_EVENT_MASTER_BYTE_RECEIVED) && --timeout != 0);
-  if (timeout != 0 && return_code != ERROR)
+  if (timeout != 0 && return_code != RESULT_ERROR)
   {
     *data = I2C_ReceiveData(c_->dev);
   }
@@ -290,7 +294,7 @@ int8_t I2C::read(uint8_t addr, uint8_t reg, uint8_t *data)
 int8_t I2C::write(uint8_t addr, uint8_t reg, uint8_t data, std::function<void(void)> callback, bool blocking)
 {
   if (check_busy())
-    return BUSY;
+    return RESULT_BUSY;
   
   log_line;
   current_status_ = WRITING;
@@ -304,7 +308,7 @@ int8_t I2C::write(uint8_t addr, uint8_t reg, uint8_t data, std::function<void(vo
   
   I2C_Cmd(c_->dev, ENABLE);
   
-  bool return_code = SUCCESS;
+  bool return_code = RESULT_SUCCESS;
   
   while_check (I2C_GetFlagStatus(c_->dev, I2C_FLAG_BUSY), return_code);
   
@@ -326,9 +330,9 @@ int8_t I2C::write(uint8_t addr, uint8_t reg, uint8_t data, std::function<void(vo
 int8_t I2C::write(uint8_t addr, uint8_t reg, uint8_t data)
 {
   if (check_busy())
-    return BUSY;
+    return RESULT_BUSY;
   log_line;
-  bool return_code = SUCCESS;
+  bool return_code = RESULT_SUCCESS;
   while_check (I2C_GetFlagStatus(c_->dev, I2C_FLAG_BUSY), return_code);
   
   // Turn off interrupts for blocking write
@@ -346,7 +350,7 @@ int8_t I2C::write(uint8_t addr, uint8_t reg, uint8_t data)
     log_line;
     I2C_GenerateSTOP(c_->dev, ENABLE);
     I2C_Cmd(c_->dev, DISABLE);
-    return ERROR;
+    return RESULT_ERROR;
   }
   
   // Send the register
@@ -382,7 +386,7 @@ bool I2C::handle_error()
 {
   log_line;
   I2C_Cmd(c_->dev, DISABLE);
-  bool return_code = SUCCESS;
+  bool return_code = RESULT_SUCCESS;
   while_check (I2C_GetFlagStatus(c_->dev, I2C_FLAG_BUSY), return_code);
   
   // Turn off the interrupts
@@ -392,6 +396,7 @@ bool I2C::handle_error()
   I2C_ClearFlag(c_->dev, I2C_SR1_OVR | I2C_SR1_AF | I2C_SR1_ARLO | I2C_SR1_BERR);
   current_status_ = IDLE;
   log_line;
+  error_status_ = true;
   transfer_complete_cb();
   return return_code;
 }

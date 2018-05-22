@@ -70,12 +70,7 @@ private:
   
   void handle_hardware_failure();
   
-  enum : int8_t
-  {
-    RESULT_ERROR = 0,
-    RESULT_SUCCESS = 1,
-    RESULT_BUSY = -1
-  };
+
   
   typedef enum
   {
@@ -91,6 +86,7 @@ private:
   
   //Variables for current job:
   volatile current_status_t current_status_;
+  volatile bool error_status_;
   bool subaddress_sent_ = false;
   bool done_ = false;
   
@@ -104,24 +100,14 @@ private:
   const i2c_hardware_struct_t *c_;
   
 public:
-  enum 
+  
+  enum : int8_t
   {
-    INIT,
-    UNSTICK,
-    START_READ,
-    START_WRITE,
-    WAITING_FOR_BLOCKING_READ,
-    START_BLOCKING_READ,
-    START_BLOCKING_WRITE,
-    SEND_START,
-    SEND_ADDRESS,
-    REPEATED_START,
-    SEND_SUBADDRESS,
-    START_DMA_READ,
-    SEND_STOP,
-    CALLED_CALLBACK,
-    FINISHED
+    RESULT_ERROR = 0,
+    RESULT_SUCCESS = 1,
+    RESULT_BUSY = -1
   };
+  
   class Debug_History
   {
     uint32_t history_[60];
