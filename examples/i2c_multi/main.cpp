@@ -67,7 +67,7 @@ int main() {
   // Initialize the I2C peripherals1
   I2C i2c1;
   I2C i2c2;
-  i2c1.init(&i2c_config[EXTERNAL_I2C]);
+  i2c1.init(&i2c_config[BARO_I2C]);
 //  i2c2.init(&i2c_config[EXTERNAL_I2C]);
   
   // Initialize the sensors
@@ -92,8 +92,6 @@ int main() {
   uint32_t last_print = 0;
   while(1)
   {
-    if (count++ % 10 == 0)
-      info.toggle();
     baro.update();
     mag.update();
 //    airspeed.update();
@@ -134,6 +132,8 @@ int main() {
            
     if (millis() > last_print + 20)
     {
+      if (count++ % 10 == 0)
+        info.toggle();
       last_print = millis();
       printf("t: %.2f\t", seconds);
       printf("baro: %d Pa, %.2f K\t", (int32_t)pressure, (double)baro_temp);
