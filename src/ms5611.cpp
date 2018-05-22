@@ -33,6 +33,8 @@
 
 #define REBOOT_PERIOD_MS 1000 * 60 * 30 // reboot the device every 30 minutes
 
+using namespace std;
+using namespace placeholders;
 
 bool MS5611::init(I2C* _i2c)
 {
@@ -105,7 +107,7 @@ void MS5611::update()
   if ((waiting_for_cb_ && now_ms) > last_update_ms_ + 20 || (now_ms > next_reboot_ms_))
   {
     last_update_ms_ = now_ms;
-    i2c_->write(ADDR, RESET, 1, std::bind(&MS5611::reset_cb, this), false);
+    i2c_->write(ADDR, RESET, 1, bind(&MS5611::reset_cb, this, _1), false);
   }
 
   else if (now_ms > next_update_ms_)
@@ -277,91 +279,99 @@ bool MS5611::start_temp_meas()
 {
   waiting_for_cb_ = true;
   last_update_ms_ = millis();
-  return i2c_->write(ADDR, 0xFF, ADC_CONV + ADC_D2 + ADC_4096, std::bind(&MS5611::temp_start_cb, this)) > 0;
+  return i2c_->write(ADDR, 0xFF, ADC_CONV + ADC_D2 + ADC_4096, bind(&MS5611::temp_start_cb, this, _1)) > 0;
 }
 
 bool MS5611::start_pres_meas()
 {
   waiting_for_cb_ = true;
   last_update_ms_ = millis();
-  return i2c_->write(ADDR, 0XFF, ADC_CONV + ADC_D1 + ADC_4096, std::bind(&MS5611::pres_start_cb, this)) > 0;
+  return i2c_->write(ADDR, 0XFF, ADC_CONV + ADC_D1 + ADC_4096, bind(&MS5611::pres_start_cb, this, _1)) > 0;
 }
 
 bool MS5611::read_pres_mess()
 {
   waiting_for_cb_ = true;
   last_update_ms_ = millis();
-  return i2c_->write(ADDR, 0xFF, ADC_READ, std::bind(&MS5611::pres_read_cb1, this)) > 0;
+  return i2c_->write(ADDR, 0xFF, ADC_READ, bind(&MS5611::pres_read_cb1, this, _1)) > 0;
 }
 
 bool MS5611::read_temp_mess()
 {
   waiting_for_cb_ = true;
   last_update_ms_ = millis();
-  return (i2c_->write(ADDR, 0xFF, ADC_READ, std::bind(&MS5611::temp_read_cb1, this)) > 0);
+  return (i2c_->write(ADDR, 0xFF, ADC_READ, bind(&MS5611::temp_read_cb1, this, _1)) > 0);
 }
 
-void MS5611::temp_read_cb1()
+void MS5611::temp_read_cb1(uint8_t result)
 {
+  (void) result;
   waiting_for_cb_ = false;
   last_update_ms_ = millis();
-  i2c_->read(ADDR, 0xFF, 3, temp_buf_, std::bind(&MS5611::temp_read_cb2, this));  
+  i2c_->read(ADDR, 0xFF, 3, temp_buf_, bind(&MS5611::temp_read_cb2, this, _1));  
 }
 
-void MS5611::pres_read_cb1()
+void MS5611::pres_read_cb1(uint8_t result)
 {
+  (void) result;
   waiting_for_cb_ = false;
   last_update_ms_ = millis();
-  i2c_->read(ADDR, 0xFF, 3, pres_buf_, std::bind(&MS5611::temp_read_cb2, this));  
+  i2c_->read(ADDR, 0xFF, 3, pres_buf_, bind(&MS5611::pres_read_cb2, this, _1));  
 }
 
 
-void MS5611::temp_read_cb2()
+void MS5611::temp_read_cb2(uint8_t result)
 {
-  waiting_for_cb_ = false;
-  last_update_ms_ = millis();
-  next_update_ms_ = last_update_ms_ + 10;
+  (void) result;
   state_ = START_PRESS;
-  new_data_ = true;
-}
-
-void MS5611::pres_read_cb2()
-{
   waiting_for_cb_ = false;
   last_update_ms_ = millis();
   next_update_ms_ = last_update_ms_ + 10;
+  new_data_ = true;
+}
+
+void MS5611::pres_read_cb2(uint8_t result)
+{
+  (void) result;
   state_ = START_TEMP;
+  waiting_for_cb_ = false;
+  last_update_ms_ = millis();
+  next_update_ms_ = last_update_ms_ + 10;
   new_data_ = true;
 }
 
-void MS5611::temp_start_cb()
+void MS5611::temp_start_cb(uint8_t result)
 {
-  waiting_for_cb_ = false;
-  last_update_ms_ = millis();
-  next_update_ms_ = last_update_ms_ + 10;
+  (void) result;
   state_ = READ_TEMP;
-}
-
-void MS5611::pres_start_cb()
-{
   waiting_for_cb_ = false;
   last_update_ms_ = millis();
   next_update_ms_ = last_update_ms_ + 10;
-  state_ = READ_PRESS;
 }
 
-void MS5611::reset_cb()
+void MS5611::pres_start_cb(uint8_t result)
 {
+  (void) result;
+  state_ = READ_PRESS;
+  waiting_for_cb_ = false;
+  last_update_ms_ = millis();
+  next_update_ms_ = last_update_ms_ + 10;
+}
+
+void MS5611::reset_cb(uint8_t result)
+{
+  (void) result;
   last_update_ms_ = millis();
   next_update_ms_ = last_update_ms_ + 10;
   next_reboot_ms_ = last_update_ms_ + REBOOT_PERIOD_MS;
   waiting_for_cb_ = false;
-  i2c_->write(0, 0, 0, std::bind(&MS5611::write_zero_cb, this), false);
+  i2c_->write(0, 0, 0, bind(&MS5611::write_zero_cb, this, _1), false);
   
 }
 
-void MS5611::write_zero_cb()
+void MS5611::write_zero_cb(uint8_t result)
 {
+  (void) result;
   last_update_ms_ = millis();
   next_update_ms_ = last_update_ms_ + 10;
   next_reboot_ms_ = last_update_ms_ + REBOOT_PERIOD_MS;

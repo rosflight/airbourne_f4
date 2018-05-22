@@ -96,14 +96,14 @@ public:
   void read(float *press, float *temp);
   bool present();
 
-  void temp_read_cb1();
-  void pres_read_cb1();
-  void temp_read_cb2();
-  void pres_read_cb2();
-  void temp_start_cb();
-  void pres_start_cb();
-  void write_zero_cb();
-  void reset_cb();
+  void temp_read_cb1(uint8_t result);
+  void pres_read_cb1(uint8_t result);
+  void temp_read_cb2(uint8_t result);
+  void pres_read_cb2(uint8_t result);
+  void temp_start_cb(uint8_t result);
+  void pres_start_cb(uint8_t result);
+  void write_zero_cb(uint8_t result);
+  void reset_cb(uint8_t result);
 };
 
 #endif // MS5611_H

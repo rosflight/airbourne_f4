@@ -86,7 +86,7 @@ private:
   
   //Variables for current job:
   volatile current_status_t current_status_;
-  volatile bool error_status_;
+  volatile bool return_code_;
   bool subaddress_sent_ = false;
   bool done_ = false;
   
@@ -129,14 +129,14 @@ public:
   
   uint64_t last_event_us_;
   
-  std::function<void(void)> cb_;
+  std::function<void(uint8_t)> cb_;
   
   void init(const i2c_hardware_struct_t *c);
   void unstick();
   void hardware_failure();
   bool check_busy();
-  int8_t read(uint8_t addr, uint8_t reg, uint8_t num_bytes, uint8_t* data, std::function<void(void)> callback, bool blocking = false);
-  int8_t write(uint8_t addr, uint8_t reg, uint8_t data, std::function<void(void)> callback, bool blocking = false);
+  int8_t read(uint8_t addr, uint8_t reg, uint8_t num_bytes, uint8_t* data, std::function<void(uint8_t)> callback, bool blocking = false);
+  int8_t write(uint8_t addr, uint8_t reg, uint8_t data, std::function<void(uint8_t)> callback, bool blocking = false);
   
   int8_t write(uint8_t addr, uint8_t reg, uint8_t data);
   int8_t read(uint8_t addr, uint8_t reg, uint8_t *data);
@@ -144,7 +144,7 @@ public:
   inline uint16_t num_errors() { return error_count_; }
   
   //interrupt handlers
-  bool handle_error();
+  void handle_error();
   void handle_event();
   void transfer_complete_cb();
 };
