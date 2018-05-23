@@ -20,7 +20,7 @@ void UBLOX::init(UART* uart_drv)
   // Find the right baudrate
   uint32_t timeout_ms = 100;
   looking_for_nmea_ = true;
-  serial_->register_rx_callback(std::bind(&UBLOX::read_cb, this, std::placeholders::_1));    
+  serial_->register_rx_callback([this](uint8_t byte){this->read_cb(byte);});
   current_baudrate_ = 0;
   for (int i = 0; i < sizeof(baudrates)/sizeof(uint32_t); i++)
   {

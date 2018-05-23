@@ -25,8 +25,12 @@
   ******************************************************************************
   */
 
+#pragma GCC push_options
+#pragma GCC optimize ("O0")
+
 /* Includes ------------------------------------------------------------------*/
 #include "usb_dcd_int.h"
+#include "usbd_cdc_core.h"
 /** @addtogroup USB_OTG_DRIVER
 * @{
 */
@@ -208,6 +212,7 @@ uint32_t USBD_OTG_EP1IN_ISR_Handler (USB_OTG_CORE_HANDLE *pdev)
 */
 uint32_t USBD_OTG_ISR_Handler (USB_OTG_CORE_HANDLE *pdev)
 {
+  uint32_t pdev_first_thing = ((uint32_t*)pdev)[0];
   USB_OTG_GINTSTS_TypeDef  gintr_status;
   uint32_t retval = 0;
 
@@ -222,11 +227,19 @@ uint32_t USBD_OTG_ISR_Handler (USB_OTG_CORE_HANDLE *pdev)
     if (gintr_status.b.outepintr)
     {
       retval |= DCD_HandleOutEP_ISR(pdev);
+      if (pdev_first_thing != ((uint32_t*)pdev)[0])
+      {
+        while(1);
+      }
     }
 
     if (gintr_status.b.inepint)
     {
       retval |= DCD_HandleInEP_ISR(pdev);
+      if (pdev_first_thing != ((uint32_t*)pdev)[0])
+      {
+        while(1);
+      }
     }
 
     if (gintr_status.b.modemismatch)
@@ -237,47 +250,83 @@ uint32_t USBD_OTG_ISR_Handler (USB_OTG_CORE_HANDLE *pdev)
       gintsts.d32 = 0;
       gintsts.b.modemismatch = 1;
       USB_OTG_WRITE_REG32(&pdev->regs.GREGS->GINTSTS, gintsts.d32);
+      if (pdev_first_thing != ((uint32_t*)pdev)[0])
+      {
+        while(1);
+      }
     }
 
     if (gintr_status.b.wkupintr)
     {
       retval |= DCD_HandleResume_ISR(pdev);
+      if (pdev_first_thing != ((uint32_t*)pdev)[0])
+      {
+        while(1);
+      }
     }
 
     if (gintr_status.b.usbsuspend)
     {
       retval |= DCD_HandleUSBSuspend_ISR(pdev);
+      if (pdev_first_thing != ((uint32_t*)pdev)[0])
+      {
+        while(1);
+      }
     }
     if (gintr_status.b.sofintr)
     {
       retval |= DCD_HandleSof_ISR(pdev);
+      if (pdev_first_thing != ((uint32_t*)pdev)[0])
+      {
+        while(1);
+      }
 
     }
 
     if (gintr_status.b.rxstsqlvl)
     {
       retval |= DCD_HandleRxStatusQueueLevel_ISR(pdev);
+      if (pdev_first_thing != ((uint32_t*)pdev)[0])
+      {
+        while(1);
+      }
 
     }
 
     if (gintr_status.b.usbreset)
     {
       retval |= DCD_HandleUsbReset_ISR(pdev);
+      if (pdev_first_thing != ((uint32_t*)pdev)[0])
+      {
+        while(1);
+      }
 
     }
     if (gintr_status.b.enumdone)
     {
       retval |= DCD_HandleEnumDone_ISR(pdev);
+      if (pdev_first_thing != ((uint32_t*)pdev)[0])
+      {
+        while(1);
+      }
     }
 
     if (gintr_status.b.incomplisoin)
     {
       retval |= DCD_IsoINIncomplete_ISR(pdev);
+      if (pdev_first_thing != ((uint32_t*)pdev)[0])
+      {
+        while(1);
+      }
     }
 
     if (gintr_status.b.incomplisoout)
     {
       retval |= DCD_IsoOUTIncomplete_ISR(pdev);
+      if (pdev_first_thing != ((uint32_t*)pdev)[0])
+      {
+        while(1);
+      }
     }
 #ifdef VBUS_SENSING_ENABLED
     if (gintr_status.b.sessreqintr)
@@ -588,12 +637,10 @@ static uint32_t DCD_HandleRxStatusQueueLevel_ISR(USB_OTG_CORE_HANDLE *pdev)
   USB_OTG_GINTMSK_TypeDef  int_mask;
   USB_OTG_DRXSTS_TypeDef   status;
   USB_OTG_EP *ep;
-  __disable_irq();
 
   /* Disable the Rx Status Queue Level interrupt */
   int_mask.d32 = 0;
   int_mask.b.rxstsqlvl = 1;
-  volatile uint32_t GREG_PREV = (uint32_t) pdev->regs.GREGS;
   USB_OTG_MODIFY_REG32( &pdev->regs.GREGS->GINTMSK, int_mask.d32, 0);
 
   /* Get the Status from the top of the FIFO */
@@ -601,10 +648,7 @@ static uint32_t DCD_HandleRxStatusQueueLevel_ISR(USB_OTG_CORE_HANDLE *pdev)
   
 
   ep = &pdev->dev.out_ep[status.b.epnum];
-
-    
-  volatile uint32_t GREG1 = (uint32_t) pdev->regs.GREGS;
-  volatile uint32_t GREG2, GREG3, GREG4;
+  volatile uint32_t dest = (uint32_t) ep->xfer_buff;
   switch (status.b.pktsts)
   {
   case STS_GOUT_NAK:
@@ -612,10 +656,19 @@ static uint32_t DCD_HandleRxStatusQueueLevel_ISR(USB_OTG_CORE_HANDLE *pdev)
   case STS_DATA_UPDT:
     if (status.b.bcnt)
     {
-      USB_OTG_ReadPacket(pdev, ep->xfer_buff, status.b.bcnt);
-      GREG2 = (uint32_t) pdev->regs.GREGS;
-      ep->xfer_buff += status.b.bcnt;
-      ep->xfer_count += status.b.bcnt;
+      // Sometimes we get way more bytes than will fit on the buffer, 
+      // Maybe in the future we can be smart about that, but for now, we just 
+      // let it blast away
+      if ((uint32_t)USB_Rx_Buffer_end - dest >= status.b.bcnt)
+      {
+        USB_OTG_ReadPacket(pdev, ep->xfer_buff, status.b.bcnt);
+        ep->xfer_buff += status.b.bcnt;
+        ep->xfer_count += status.b.bcnt;
+      }
+      else
+      {
+        volatile int debug = 1;
+      }
     }
     break;
   case STS_XFER_COMP:
@@ -633,7 +686,6 @@ static uint32_t DCD_HandleRxStatusQueueLevel_ISR(USB_OTG_CORE_HANDLE *pdev)
 
   /* Enable the Rx Status Queue Level interrupt */
   USB_OTG_MODIFY_REG32( &pdev->regs.GREGS->GINTMSK, 0, int_mask.d32);
-  __enable_irq();
 
   return 1;
 }
@@ -882,5 +934,7 @@ static uint32_t DCD_ReadDevInEP (USB_OTG_CORE_HANDLE *pdev, uint8_t epnum)
 /**
 * @}
 */
+
+#pragma GCC pop_options
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

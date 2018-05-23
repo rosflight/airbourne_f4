@@ -51,9 +51,9 @@ void I2CSonar::async_update()
   {
     last_update_=now;
     if (ready_to_ping_)
-      i2c_->write(DEFAULT_ADDRESS, DEFAULT_REGISTER, PING_COMMAND, std::bind(&I2CSonar::cb_start_read,this));
+      i2c_->write(DEFAULT_ADDRESS, DEFAULT_REGISTER, PING_COMMAND, [this]{this->cb_start_read();});
     else
-      i2c_->read(DEFAULT_ADDRESS, DEFAULT_REGISTER, 2, buffer_, std::bind(&I2CSonar::cb_finished_read,this));
+      i2c_->read(DEFAULT_ADDRESS, DEFAULT_REGISTER, 2, buffer_, [this]{this->cb_finished_read();});
   }
 }
 //Returns the most recent reading

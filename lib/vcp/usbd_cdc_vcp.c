@@ -23,6 +23,9 @@
 #pragma     data_alignment = 4
 #endif /* USB_OTG_HS_INTERNAL_DMA_ENABLED */
 
+#pragma GCC push_options
+#pragma GCC optimize ("O0")
+
 /* Includes ------------------------------------------------------------------*/
 #include "usbd_cdc_vcp.h"
 #include "stm32f4xx_conf.h"
@@ -324,5 +327,7 @@ uint32_t CDC_BaudRate(void)
 {
   return g_lc.bitrate;
 }
+
+#pragma GCC pop_options
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

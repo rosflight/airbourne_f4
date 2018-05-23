@@ -84,6 +84,8 @@
 #define SEND_BREAK                              0x23
 #define NO_CMD                                  0xFF
 
+extern uint8_t* USB_Rx_Buffer_end;
+
 /**
   * @}
   */ 
