@@ -140,8 +140,6 @@ INCLUDE_DIRS =  $(SRC_DIR) \
                 $(PRINTF_DIR) \
                 $(VCP_DIR)
 
-$(info VPATH = $(VPATH))
-
 #################################
 # Object List
 #################################

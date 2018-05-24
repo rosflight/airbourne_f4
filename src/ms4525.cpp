@@ -77,7 +77,7 @@ void MS4525::read_cb(uint8_t result)
     new_data_ = true;
     sensor_present_ = true;
   }
-  next_update_ms_ += 20;
+  next_update_ms_ = millis() + 20;
   last_update_ms_ = millis();
 }
 
