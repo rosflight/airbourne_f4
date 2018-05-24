@@ -32,7 +32,7 @@ BOARD ?= REVO
 
 DEBUG ?= GDB
 
-SERIAL_DEVICE ?= /dev/ttyUSB0
+SERIAL_DEVICE ?= /dev/ttyACM0
 
 #################################
 # GNU ARM Embedded Toolchain
