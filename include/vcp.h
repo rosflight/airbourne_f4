@@ -64,8 +64,13 @@ public:
   void unregister_rx_callback();
 
   std::function<void(uint8_t)> cb_;
+  bool connected_ = false;
+  bool reset_ = false;
 
 private:
+  
+  bool connected();
+  void perform_maintenance();
 
   void send_disconnect_signal();
 
@@ -75,6 +80,7 @@ private:
 
   GPIO rx_pin_;
   GPIO tx_pin_;
+  GPIO vbus_sens_;
 };
 
 #endif 

@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    usbd_cdc_core.c
   * @author  MCD Application Team
-  * @version V1.1.0
-  * @date    19-March-2012
+  * @version V1.2.0
+  * @date    09-November-2015
   * @brief   This file provides the high layer firmware functions to manage the 
   *          following functionalities of the USB CDC Class:
   *           - Initialization and Configuration of high and low layer
@@ -46,7 +46,7 @@
   ******************************************************************************
   * @attention
   *
-  * <h2><center>&copy; COPYRIGHT 2012 STMicroelectronics</center></h2>
+  * <h2><center>&copy; COPYRIGHT 2015 STMicroelectronics</center></h2>
   *
   * Licensed under MCD-ST Liberty SW License Agreement V2, (the "License");
   * You may not use this file except in compliance with the License.
@@ -90,6 +90,11 @@
 /** @defgroup usbd_cdc_Private_Defines
   * @{
   */ 
+
+#define USB_CDC_IDLE         0
+#define USB_CDC_BUSY         1
+#define USB_CDC_ZLP          2
+
 /**
   * @}
   */ 
@@ -110,13 +115,13 @@
 /*********************************************
    CDC Device library callbacks
  *********************************************/
-static uint8_t  usbd_cdc_Init        (void  *pdev, uint8_t cfgidx);
-static uint8_t  usbd_cdc_DeInit      (void  *pdev, uint8_t cfgidx);
-static uint8_t  usbd_cdc_Setup       (void  *pdev, USB_SETUP_REQ *req);
-static uint8_t  usbd_cdc_EP0_RxReady  (void *pdev);
-static uint8_t  usbd_cdc_DataIn      (void *pdev, uint8_t epnum);
-static uint8_t  usbd_cdc_DataOut     (void *pdev, uint8_t epnum);
-static uint8_t  usbd_cdc_SOF         (void *pdev);
+uint8_t  usbd_cdc_Init        (void  *pdev, uint8_t cfgidx);
+uint8_t  usbd_cdc_DeInit      (void  *pdev, uint8_t cfgidx);
+uint8_t  usbd_cdc_Setup       (void  *pdev, USB_SETUP_REQ *req);
+uint8_t  usbd_cdc_EP0_RxReady  (void *pdev);
+uint8_t  usbd_cdc_DataIn      (void *pdev, uint8_t epnum);
+uint8_t  usbd_cdc_DataOut     (void *pdev, uint8_t epnum);
+uint8_t  usbd_cdc_SOF         (void *pdev);
 
 /*********************************************
    CDC specific management functions
@@ -163,7 +168,6 @@ __ALIGN_BEGIN static __IO uint32_t  usbd_cdc_AltSet  __ALIGN_END = 0;
   #endif
 #endif /* USB_OTG_HS_INTERNAL_DMA_ENABLED */
 __ALIGN_BEGIN uint8_t USB_Rx_Buffer   [CDC_DATA_MAX_PACKET_SIZE] __ALIGN_END ;
-uint8_t* USB_Rx_Buffer_end = USB_Rx_Buffer + CDC_DATA_MAX_PACKET_SIZE;
 
 #ifdef USB_OTG_HS_INTERNAL_DMA_ENABLED
   #if defined ( __ICCARM__ ) /*!< IAR Compiler */
@@ -184,7 +188,7 @@ uint32_t APP_Rx_ptr_in  = 0;
 uint32_t APP_Rx_ptr_out = 0;
 uint32_t APP_Rx_length  = 0;
 
-uint8_t  USB_Tx_State = 0;
+uint8_t  USB_Tx_State = USB_CDC_IDLE;
 
 static uint32_t cdcCmd = 0xFF;
 static uint32_t cdcLen = 0;
@@ -321,7 +325,7 @@ __ALIGN_BEGIN uint8_t usbd_cdc_CfgDesc[USB_CDC_CONFIG_DESC_SIZ]  __ALIGN_END =
 #endif /* USB_OTG_HS_INTERNAL_DMA_ENABLED */ 
 __ALIGN_BEGIN uint8_t usbd_cdc_OtherCfgDesc[USB_CDC_CONFIG_DESC_SIZ]  __ALIGN_END =
 { 
-  0x09,   /* bLength: Configuation Descriptor size */
+  0x09,   /* bLength: Configuration Descriptor size */
   USB_DESC_TYPE_OTHER_SPEED_CONFIGURATION,   
   USB_CDC_CONFIG_DESC_SIZ,
   0x00,
@@ -422,16 +426,18 @@ __ALIGN_BEGIN uint8_t usbd_cdc_OtherCfgDesc[USB_CDC_CONFIG_DESC_SIZ]  __ALIGN_EN
 
 /**
   * @brief  usbd_cdc_Init
-  *         Initilaize the CDC interface
+  *         Initialize the CDC interface
   * @param  pdev: device instance
   * @param  cfgidx: Configuration index
   * @retval status
   */
-static uint8_t  usbd_cdc_Init (void  *pdev, 
+uint8_t  usbd_cdc_Init (void  *pdev, 
                                uint8_t cfgidx)
 {
   uint8_t *pbuf;
 
+  (void)pdev;
+  (void)cfgidx;
   /* Open EP IN */
   DCD_EP_Open(pdev,
               CDC_IN_EP,
@@ -473,9 +479,11 @@ static uint8_t  usbd_cdc_Init (void  *pdev,
   * @param  cfgidx: Configuration index
   * @retval status
   */
-static uint8_t  usbd_cdc_DeInit (void  *pdev, 
+uint8_t  usbd_cdc_DeInit (void  *pdev, 
                                  uint8_t cfgidx)
 {
+	  (void)pdev;
+	  (void)cfgidx;
   /* Open EP IN */
   DCD_EP_Close(pdev,
               CDC_IN_EP);
@@ -501,12 +509,9 @@ static uint8_t  usbd_cdc_DeInit (void  *pdev,
   * @param  req: usb requests
   * @retval status
   */
-static uint8_t  usbd_cdc_Setup (void  *pdev, 
+uint8_t  usbd_cdc_Setup (void  *pdev, 
                                 USB_SETUP_REQ *req)
 {
-  uint16_t len=USB_CDC_DESC_SIZ;
-  uint8_t  *pbuf=usbd_cdc_CfgDesc + 9;
-  
   switch (req->bmRequest & USB_REQ_TYPE_MASK)
   {
     /* CDC Class Requests -------------------------------*/
@@ -525,7 +530,7 @@ static uint8_t  usbd_cdc_Setup (void  *pdev,
                             CmdBuff,
                             req->wLength);          
         }
-        else /* Host-to-Device requeset */
+        else /* Host-to-Device request */
         {
           /* Set the value of the current command to be processed */
           cdcCmd = req->bRequest;
@@ -542,7 +547,7 @@ static uint8_t  usbd_cdc_Setup (void  *pdev,
       else /* No Data request */
       {
         /* Transfer the command to the interface layer */
-        APP_FOPS.pIf_Ctrl(req->bRequest, NULL, 0);
+        APP_FOPS.pIf_Ctrl(req->bRequest, (uint8_t *)&req->wValue, sizeof(req->wValue));
       }
       
       return USBD_OK;
@@ -551,27 +556,13 @@ static uint8_t  usbd_cdc_Setup (void  *pdev,
       USBD_CtlError (pdev, req);
       return USBD_FAIL;
     
-      
-      
     /* Standard Requests -------------------------------*/
   case USB_REQ_TYPE_STANDARD:
     switch (req->bRequest)
     {
     case USB_REQ_GET_DESCRIPTOR: 
-      if( (req->wValue >> 8) == CDC_DESCRIPTOR_TYPE)
-      {
-#ifdef USB_OTG_HS_INTERNAL_DMA_ENABLED
-        pbuf = usbd_cdc_Desc;   
-#else
-        pbuf = usbd_cdc_CfgDesc + 9 + (9 * USBD_ITF_MAX_NUM);
-#endif 
-        len = MIN(USB_CDC_DESC_SIZ , req->wLength);
-      }
-      
-      USBD_CtlSendData (pdev, 
-                        pbuf,
-                        len);
-      break;
+      USBD_CtlError (pdev, req);
+      return USBD_FAIL;
       
     case USB_REQ_GET_INTERFACE :
       USBD_CtlSendData (pdev,
@@ -598,11 +589,12 @@ static uint8_t  usbd_cdc_Setup (void  *pdev,
 /**
   * @brief  usbd_cdc_EP0_RxReady
   *         Data received on control endpoint
-  * @param  pdev: device device instance
+  * @param  pdev: device instance
   * @retval status
   */
-static uint8_t  usbd_cdc_EP0_RxReady (void  *pdev)
+uint8_t  usbd_cdc_EP0_RxReady (void  *pdev)
 { 
+	(void)pdev;
   if (cdcCmd != NO_CMD)
   {
     /* Process the data */
@@ -615,6 +607,7 @@ static uint8_t  usbd_cdc_EP0_RxReady (void  *pdev)
   return USBD_OK;
 }
 
+
 /**
   * @brief  usbd_audio_DataIn
   *         Data sent on non-control IN endpoint
@@ -622,22 +615,18 @@ static uint8_t  usbd_cdc_EP0_RxReady (void  *pdev)
   * @param  epnum: endpoint number
   * @retval status
   */
-static uint8_t  usbd_cdc_DataIn (void *pdev, uint8_t epnum)
+uint8_t  usbd_cdc_DataIn (void *pdev, uint8_t epnum)
 {
+	(void)pdev;
+	(void)epnum;
   uint16_t USB_Tx_ptr;
   uint16_t USB_Tx_length;
-
-  if (USB_Tx_State == 1)
+  
+  if (USB_Tx_State == USB_CDC_BUSY)
   {
     if (APP_Rx_length == 0) 
     {
-// AKA      USB_Tx_State = 0;                                                                 // AKA corrected for below
-     if (((USB_OTG_CORE_HANDLE*)pdev)->dev.in_ep[epnum].xfer_len != CDC_DATA_IN_PACKET_SIZE)  // HJI Patch from STM Forum, Tags: stm32 usb library cdc device !bug
-     {                                                                                        // HJI Patch from STM Forum, Tags: stm32 usb library cdc device !bug
-       USB_Tx_State = 0;                                                                      // HJI Patch from STM Forum, Tags: stm32 usb library cdc device !bug
-       return USBD_OK;                                                                        // HJI Patch from STM Forum, Tags: stm32 usb library cdc device !bug
-     }                                                                                        // HJI Patch from STM Forum, Tags: stm32 usb library cdc device !bug
-     USB_Tx_length = 0;                                                                       // HJI Patch from STM Forum, Tags: stm32 usb library cdc device !bug
+      USB_Tx_State = USB_CDC_IDLE;
     }
     else 
     {
@@ -655,16 +644,32 @@ static uint8_t  usbd_cdc_DataIn (void *pdev, uint8_t epnum)
         
         APP_Rx_ptr_out += APP_Rx_length;
         APP_Rx_length = 0;
+        if(USB_Tx_length == CDC_DATA_IN_PACKET_SIZE)
+        {
+          USB_Tx_State = USB_CDC_ZLP;
+        }
       }
-    } // AKA                                                                                  // AKA corrected with above
+      
       /* Prepare the available data buffer to be sent on IN endpoint */
       DCD_EP_Tx (pdev,
                  CDC_IN_EP,
                  (uint8_t*)&APP_Rx_Buffer[USB_Tx_ptr],
                  USB_Tx_length);
-// AKA    }                                                                                   // AKA corrected with above
+      return USBD_OK;
+    }
   }  
   
+  /* Avoid any asynchronous transfer during ZLP */
+  if (USB_Tx_State == USB_CDC_ZLP)
+  {
+    /*Send ZLP to indicate the end of the current transfer */
+    DCD_EP_Tx (pdev,
+               CDC_IN_EP,
+               NULL,
+               0);
+    
+    USB_Tx_State = USB_CDC_IDLE;
+  }
   return USBD_OK;
 }
 
@@ -675,7 +680,7 @@ static uint8_t  usbd_cdc_DataIn (void *pdev, uint8_t epnum)
   * @param  epnum: endpoint number
   * @retval status
   */
-static uint8_t  usbd_cdc_DataOut (void *pdev, uint8_t epnum)
+uint8_t  usbd_cdc_DataOut (void *pdev, uint8_t epnum)
 {      
   uint16_t USB_Rx_Cnt;
   
@@ -683,7 +688,7 @@ static uint8_t  usbd_cdc_DataOut (void *pdev, uint8_t epnum)
   USB_Rx_Cnt = ((USB_OTG_CORE_HANDLE*)pdev)->dev.out_ep[epnum].xfer_count;
   
   /* USB data will be immediately processed, this allow next USB traffic being 
-     NAKed till the end of the application Xfer */
+  NAKed till the end of the application Xfer */
   APP_FOPS.pIf_DataRx(USB_Rx_Buffer, USB_Rx_Cnt);
   
   /* Prepare Out endpoint to receive next packet */
@@ -691,7 +696,7 @@ static uint8_t  usbd_cdc_DataOut (void *pdev, uint8_t epnum)
                    CDC_OUT_EP,
                    (uint8_t*)(USB_Rx_Buffer),
                    CDC_DATA_OUT_PACKET_SIZE);
-
+  
   return USBD_OK;
 }
 
@@ -702,7 +707,7 @@ static uint8_t  usbd_cdc_DataOut (void *pdev, uint8_t epnum)
   * @param  epnum: endpoint number
   * @retval status
   */
-static uint8_t  usbd_cdc_SOF (void *pdev)
+uint8_t  usbd_cdc_SOF (void *pdev)
 {      
   static uint32_t FrameCount = 0;
   
@@ -729,7 +734,7 @@ static void Handle_USBAsynchXfer (void *pdev)
   uint16_t USB_Tx_ptr;
   uint16_t USB_Tx_length;
   
-  if(USB_Tx_State != 1)
+  if(USB_Tx_State == USB_CDC_IDLE)
   {
     if (APP_Rx_ptr_out == APP_RX_DATA_SIZE)
     {
@@ -738,22 +743,22 @@ static void Handle_USBAsynchXfer (void *pdev)
     
     if(APP_Rx_ptr_out == APP_Rx_ptr_in) 
     {
-      USB_Tx_State = 0; 
+      USB_Tx_State = USB_CDC_IDLE; 
       return;
     }
     
     if(APP_Rx_ptr_out > APP_Rx_ptr_in) /* rollback */
     { 
       APP_Rx_length = APP_RX_DATA_SIZE - APP_Rx_ptr_out;
-    
+      
     }
     else 
     {
       APP_Rx_length = APP_Rx_ptr_in - APP_Rx_ptr_out;
-     
+      
     }
 #ifdef USB_OTG_HS_INTERNAL_DMA_ENABLED
-     APP_Rx_length &= ~0x03;
+    APP_Rx_length &= ~0x03;
 #endif /* USB_OTG_HS_INTERNAL_DMA_ENABLED */
     
     if (APP_Rx_length > CDC_DATA_IN_PACKET_SIZE)
@@ -763,6 +768,7 @@ static void Handle_USBAsynchXfer (void *pdev)
       
       APP_Rx_ptr_out += CDC_DATA_IN_PACKET_SIZE;	
       APP_Rx_length -= CDC_DATA_IN_PACKET_SIZE;
+      USB_Tx_State = USB_CDC_BUSY;
     }
     else
     {
@@ -771,15 +777,21 @@ static void Handle_USBAsynchXfer (void *pdev)
       
       APP_Rx_ptr_out += APP_Rx_length;
       APP_Rx_length = 0;
+      if(USB_Tx_length == CDC_DATA_IN_PACKET_SIZE)
+      {
+        USB_Tx_State = USB_CDC_ZLP;
+      }
+      else
+      {
+        USB_Tx_State = USB_CDC_BUSY;
+      }
     }
-    USB_Tx_State = 1; 
-
+    
     DCD_EP_Tx (pdev,
                CDC_IN_EP,
                (uint8_t*)&APP_Rx_Buffer[USB_Tx_ptr],
                USB_Tx_length);
   }  
-  
 }
 
 /**
@@ -791,6 +803,7 @@ static void Handle_USBAsynchXfer (void *pdev)
   */
 static uint8_t  *USBD_cdc_GetCfgDesc (uint8_t speed, uint16_t *length)
 {
+	(void)speed;
   *length = sizeof (usbd_cdc_CfgDesc);
   return usbd_cdc_CfgDesc;
 }
