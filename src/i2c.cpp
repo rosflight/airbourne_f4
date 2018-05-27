@@ -33,7 +33,7 @@
 
 #define while_check(cond, result) \
 {\
-  int32_t timeout_var = 5000; \
+  int32_t timeout_var = 200; \
   while ((cond) && timeout_var) \
   timeout_var--; \
   if (!timeout_var) \
