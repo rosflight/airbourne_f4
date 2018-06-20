@@ -518,7 +518,9 @@ bool I2C::check_busy()
       return_code_ = RESULT_SUCCESS;
       while_check (c_->dev->SR2 & BUSY, return_code_)
           
-      // Force reset of the BUS
+      // Force reset of the bus
+      // This is really slow, but it seems to be the only
+      // way to regain a connection if bad things happen
       if (return_code_ == RESULT_ERROR)
       {
         I2C_Cmd(c_->dev, DISABLE);
