@@ -74,7 +74,8 @@ int main() {
     warn.off();
   }
 
-  float diff_press, temp;
+  float diff_press(0), temp(0);
+  uint32_t last_print_ms = 0;
   while(1) {
     info.on();
     airspeed.update();
@@ -82,15 +83,18 @@ int main() {
     {
       airspeed.read(&diff_press, &temp);
       warn.off();
-      printf("%d.%dPa, %d.%dC\n",
-             (int32_t)(diff_press), (int32_t)(diff_press*1000)%1000,
-             (int32_t)(temp), (int32_t)(temp*1000)%1000);
     }
     else
     {
-      warn.on();
-      printf("error\n");
+      warn.on();      
     }
-    delay(50);
+    
+    if (millis() > last_print_ms + 50)
+    {
+      last_print_ms = millis();        
+      printf("%d.%dPa, %d.%dC\n",
+               (int32_t)(diff_press), (int32_t)(diff_press*1000)%1000,
+               (int32_t)(temp), (int32_t)(temp*1000)%1000);
+    }
   }
 }

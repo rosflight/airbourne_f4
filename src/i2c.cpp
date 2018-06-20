@@ -83,8 +83,8 @@ void I2C::init(const i2c_hardware_struct_t *c)
   
   // Interrupts
   NVIC_InitTypeDef NVIC_InitStructure;
-  NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0x02;
-  NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0x01;
+  NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0x01;
+  NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0x00;
   NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
   NVIC_InitStructure.NVIC_IRQChannel = c->I2C_EV_IRQn;
   NVIC_Init(&NVIC_InitStructure);
@@ -513,9 +513,36 @@ bool I2C::check_busy()
     if (micros() > last_event_us_ + 2000)
     {
       error_count_++;
-      // Clear and Reset PE
-      I2C_Cmd(c_->dev, DISABLE);
-      I2C_Cmd(c_->dev, ENABLE);
+      // Send a stop condition
+      I2C_GenerateSTOP(c_->dev, ENABLE);
+      return_code_ = RESULT_SUCCESS;
+      while_check (c_->dev->SR2 & BUSY, return_code_)
+          
+      // Force reset of the BUS
+      if (return_code_ == RESULT_ERROR)
+      {
+        I2C_Cmd(c_->dev, DISABLE);
+        scl_.set_mode(GPIO::OUTPUT);
+        sda_.set_mode(GPIO::OUTPUT);
+        
+        // Write Pins low
+        scl_.write(GPIO::LOW);
+        sda_.write(GPIO::LOW);
+        delayMicroseconds(1);
+        
+        // Send a stop
+        scl_.write(GPIO::HIGH);
+        delayMicroseconds(1);
+        sda_.write(GPIO::HIGH);
+        delayMicroseconds(1);
+        
+        // turn things back on
+        scl_.set_mode(GPIO::PERIPH_IN_OUT);
+        sda_.set_mode(GPIO::PERIPH_IN_OUT);
+        I2C_Cmd(c_->dev, ENABLE);
+        
+        current_status_ = IDLE;  
+      }
       log_line;
       return false;    
     }
