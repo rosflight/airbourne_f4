@@ -68,7 +68,7 @@ int main()
     float pqr[3];
     float mag[3];
     float baro;
-    uint32_t time;
+    uint32_t imu_time, ins_time, mag_time;
     
     uint32_t last_print_ms = millis();
     while(1)
@@ -77,9 +77,9 @@ int main()
         {
             if (uins.present())
             {
-                uins.read_INS(ned, uvw, q, &time);
-                uins.read_IMU(pqr, acc, &time);
-                uins.read_other_sensors(mag, &baro, &time);
+                uins.read_INS(ned, uvw, q, &imu_time);
+                uins.read_IMU(pqr, acc, &ins_time);
+                uins.read_other_sensors(mag, &baro, &mag_time);
             }
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wdouble-promotion"
@@ -92,6 +92,7 @@ int main()
             printf("baro: %.3f, time: %dms\n\n", baro, time);
             last_print_ms = millis();
 #pragma GCC diagnostic pop
+//            printf("IMU: %d, INS: %d, MAG: %d, skew: %d\n", imu_time, ins_time, mag_time, uins.time_skew_count());
         }
     }
 }

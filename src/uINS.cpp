@@ -239,7 +239,10 @@ uint32_t uINS::system_time_from_start_time(const uint32_t time_ms)
     int32_t y_offset = millis() - time_ms;
     // If we are way off, then just directly upate
     if (abs(y_offset - INS_local_offset_ms_) > 100)
+    {
       INS_local_offset_ms_ = y_offset;
+      time_skew_++;
+    }
     else
       INS_local_offset_ms_ = round(0.005 * y_offset + 0.995 * INS_local_offset_ms_);
   }
@@ -249,6 +252,11 @@ uint32_t uINS::system_time_from_start_time(const uint32_t time_ms)
 uint32_t uINS::system_time_from_tow(const double tow) 
 {
   return uINS::system_time_from_start_time(tow*1e3L - gps_.towOffset*1e3L);
+}
+
+uint32_t uINS::time_skew_count()
+{
+  return time_skew_;
 }
 
 

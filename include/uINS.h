@@ -54,6 +54,7 @@ public:
   void read_other_sensors(float mag[3], float* baro, uint32_t* time_ms);
   void reset(); 
   void set_current_pos_as_refLLa();
+  uint32_t time_skew_count();
   
   
 private:
@@ -64,6 +65,7 @@ private:
   bool successfully_configured_ = false;
   
   uint32_t nav_dt_ms_ = 4;
+  uint32_t time_skew_ = 0;
   
   bool get_flash_config();
 
