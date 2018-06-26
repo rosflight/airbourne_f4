@@ -33,13 +33,21 @@
 #include "rc_sbus.h"
 #include <functional>
 
+RC_SBUS* rcPtr;
+
+void _read_cb(uint8_t byte)
+{
+    rcPtr->read_cb(byte);
+}
+
 void RC_SBUS::init(GPIO* inv_pin, UART *uart)
 {
+  rcPtr = this;
   uart_ = uart;
   inv_pin_ = inv_pin;
 
   uart_->set_mode(100000, UART::MODE_8E2);
-  uart_->register_rx_callback([this](uint8_t byte){this->read_cb(byte);});
+  uart_->register_rx_callback(&_read_cb);
 
   // turn on the serial inverter
   inv_pin_->write(GPIO::HIGH);

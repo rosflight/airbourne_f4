@@ -30,11 +30,13 @@
  */
 
 #include "uINS.h"
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wold-style-cast"
 
 #include <cmath>
 uINS* uINSPtr;
 
-void _read_cb(uint8_t byte)
+void _uINS_read_cb(uint8_t byte)
 {
   uINSPtr->read_cb(byte);
 }
@@ -48,7 +50,7 @@ void uINS::init(UART* _dev)
   
   // Speed up the UART becuase the uINS sends a lot of data
   uart_->set_mode(3000000, UART::MODE_8N1);
-  uart_->register_rx_callback(_read_cb);
+  uart_->register_rx_callback(_uINS_read_cb);
   
   // Initialize the uINS parser
   comm_.buffer = message_buffer_;
@@ -63,7 +65,7 @@ void uINS::init(UART* _dev)
   // Make sure the navigation rate is right, if it's not, then we need to change and reset it.
   if (flash_.startupNavDtMs != nav_dt_ms_)
   {
-    messageSize = is_comm_set_data(&comm_, DID_FLASH_CONFIG, offsetof(nvm_flash_cfg_t, startupNavDtMs), sizeof(uint32_t), (void*)&nav_dt_ms_);
+    messageSize = is_comm_set_data(&comm_, DID_FLASH_CONFIG, offsetof(nvm_flash_cfg_t, startupNavDtMs), sizeof(uint32_t), reinterpret_cast<void*>(&nav_dt_ms_));
     uart_->write(message_buffer_, messageSize);
     reset();
     
@@ -75,7 +77,7 @@ void uINS::init(UART* _dev)
   if (successfully_configured_)
   {
     // stop all broadcasts
-    uint32_t messageSize = is_comm_stop_broadcasts(&comm_);
+    messageSize = is_comm_stop_broadcasts(&comm_);
     uart_->write(message_buffer_, messageSize);
     
     // Configure the dynamic model
@@ -95,11 +97,28 @@ bool uINS::present()
   return successfully_configured_;
 }
 
+bool uINS::got_fix()
+{
+    uint32_t fix_status = (gps_.status & GPS_STATUS_FIX_MASK);
+    return (fix_status == GPS_STATUS_FIX_3D) || (fix_status == GPS_STATUS_FIX_RTK_FIX);
+}
+
 void uINS::update()
 {
   // Try re-connecting if it didn't work before
   if (!successfully_configured_)
     init(uart_);
+}
+
+bool uINS::new_imu_data()
+{
+  if (new_imu_)
+  {
+    new_imu_ = false;
+    return true;
+  }
+  else
+    return false;
 }
 
 void uINS::read_INS(float ned[], float uvw[], float q[], uint32_t *time_ms)
@@ -122,13 +141,20 @@ void uINS::read_INS(float ned[], float uvw[], float q[], uint32_t *time_ms)
 
 void uINS::read_IMU(float pqr[], float acc[], uint32_t *time_ms)
 {
-  pqr[0] = imu_.I[0].pqr[0];
-  pqr[1] = imu_.I[0].pqr[1];
-  pqr[2] = imu_.I[0].pqr[2];
-  
-  acc[0] = imu_.I[0].acc[0];
-  acc[1] = imu_.I[0].acc[1];
-  acc[2] = imu_.I[0].acc[2];
+  for (int i = 0; i < 3; i++)
+  {
+    if (std::isfinite(imu_.I[0].pqr[i]) && std::isfinite(imu_.I[0].acc[i]))
+    {
+      pqr[0] = imu_.I[0].pqr[0];
+      pqr[1] = imu_.I[0].pqr[1];
+      pqr[2] = imu_.I[0].pqr[2];
+        
+      acc[0] = imu_.I[0].acc[0];
+      acc[1] = imu_.I[0].acc[1];
+      acc[2] = imu_.I[0].acc[2];
+    }
+  }
+
   *time_ms = system_time_from_start_time(imu_.time);
 }
 
@@ -145,7 +171,7 @@ void uINS::read_other_sensors(float mag[], float *baro, uint32_t *time_ms)
 
 #define CALLBACK(DID, T, mem_) { \
   case DID: \
-    mem_ = *((T*)message_buffer_); \
+    mem_ = *(reinterpret_cast<T*>(message_buffer_)); \
     break; \
 }
 
@@ -167,9 +193,12 @@ void uINS::read_cb(uint8_t byte)
     CALLBACK(DID_PREINTEGRATED_IMU, preintegrated_imu_t, preint_imu_);
     CALLBACK(DID_STROBE_IN_TIME, strobe_in_time_t, strobe_);   
     default:
+      int debug = 1;
       // Unhandled message
       break;
     }
+    if (message_type == DID_DUAL_IMU)
+        new_imu_ = true;
   }
 }
 
@@ -183,6 +212,7 @@ bool uINS::perform_multi_mag_cal()
   uint32_t multi_axis_command = 0;
   int messageSize = is_comm_set_data(&comm_, DID_MAG_CAL, offsetof(mag_cal_t, enMagRecal), sizeof(uint32_t), &multi_axis_command);
   uart_->write(message_buffer_, messageSize);  
+  return true;
 }
   
 bool uINS::get_flash_config() 
@@ -224,7 +254,7 @@ uint32_t uINS::system_time_from_week_and_tow(const uint32_t week, const uint32_t
 {
   (void)week;
   // If we have a fix, use GPS time
-  return system_time_from_start_time(timeOfWeekMs - (uint32_t)(gps_.towOffset*1e3L));
+  return system_time_from_start_time(timeOfWeekMs - static_cast<uint32_t>(gps_.towOffset*1e3L));
 }
 
 uint32_t uINS::system_time_from_start_time(const uint32_t time_ms) 
@@ -259,5 +289,6 @@ uint32_t uINS::time_skew_count()
   return time_skew_;
 }
 
+#pragma GCC diagnostic pop
 
 

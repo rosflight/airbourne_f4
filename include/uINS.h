@@ -37,7 +37,7 @@
 #include "inertialsense_serial_protocol/ISComm.h"
 
 #ifndef UINS_BUFFER_SIZE
-#define UINS_BUFFER_SIZE 512
+#define UINS_BUFFER_SIZE 256
 #endif
 
 class uINS
@@ -53,6 +53,8 @@ public:
   void read_IMU(float pqr[3], float acc[3], uint32_t* time_ms);
   void read_other_sensors(float mag[3], float* baro, uint32_t* time_ms);
   void reset(); 
+  bool new_imu_data();
+  bool got_fix();
   void set_current_pos_as_refLLa();
   uint32_t time_skew_count();
   
@@ -66,6 +68,8 @@ private:
   
   uint32_t nav_dt_ms_ = 4;
   uint32_t time_skew_ = 0;
+  
+  bool new_imu_ = 0;
   
   bool get_flash_config();
 
