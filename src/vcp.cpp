@@ -151,7 +151,7 @@ bool VCP::flush()
 }
 
 
-void VCP::register_rx_callback(std::function<void(uint8_t)> cb)
+void VCP::register_rx_callback(void(*cb)(uint8_t))
 {
   cb_ = cb;
 //  Register_CDC_RxCallback(&vcp_rx_callback);

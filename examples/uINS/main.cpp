@@ -29,64 +29,69 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef UART_H
-#define UART_H
-
-// from serial.h
-#define RX_BUFFER_SIZE 64
-#define TX_BUFFER_SIZE 64
-#include <functional>
 
 #include "system.h"
+#include "uart.h"
+#include "uINS.h"
+#include "vcp.h"
+#include "revo_f4.h"
+#include "printf.h"
 
-#include "serial.h"
-#include "gpio.h"
+VCP* uartPtr = NULL;
 
-class UART : Serial
+static void _putc(void *p, char c)
 {
-public:
+    (void)p; // avoid compiler warning about unused variable
+    uartPtr->put_byte(c);
+}
 
-  typedef enum{
-    MODE_8N1,
-    MODE_8E2
-  } uart_mode_t;
 
-  UART();
-  void init(const uart_hardware_struct_t *conf, uint32_t baudrate_, uart_mode_t mode=MODE_8N1);
-
-  void write(const uint8_t*ch, uint8_t len);
-  uint32_t rx_bytes_waiting();
-  uint32_t tx_bytes_free();
-  uint8_t read_byte();
-  bool set_mode(uint32_t baud, uart_mode_t mode);
-  bool tx_buffer_empty();
-  void put_byte(uint8_t ch);
-  bool flush();
-  void register_rx_callback(void(*cb)(uint8_t));
-  void unregister_rx_callback();
-
-  void DMA_Tx_IRQ_callback();
-  void DMA_Rx_IRQ_callback();
-  void USART_IRQ_callback();
-
-private:
-  void init_UART(uint32_t baudrate_, uart_mode_t mode = MODE_8N1);
-  void init_DMA();
-  void init_NVIC();
-  void startDMA();
-
-  const uart_hardware_struct_t* c_;
-
-  uint32_t baudrate_;
-  uint8_t rx_buffer_[RX_BUFFER_SIZE];
-  uint8_t tx_buffer_[TX_BUFFER_SIZE];
-  uint16_t rx_buffer_head_;
-  uint16_t rx_buffer_tail_;
-  uint16_t tx_buffer_head_;
-  uint16_t tx_buffer_tail_;
-  GPIO rx_pin_;
-  GPIO tx_pin_;
-  void(*receive_CB_)(uint8_t) = nullptr;
-};
-
-#endif // UART_H
+int main()
+{
+    systemInit();
+    
+    VCP vcp;
+    vcp.init();
+    uartPtr = &vcp;
+    init_printf(NULL, _putc);
+    
+    UART uart;
+    uart.init(&uart_config[UART1], 3000000);
+    
+    uINS uins;
+    uins.init(&uart);
+    
+    float ned[3];
+    float uvw[3];
+    float q[4];
+    float acc[3];
+    float pqr[3];
+    float mag[3];
+    float baro;
+    uint32_t time;
+    
+    uint32_t last_print_ms = millis();
+    while(1)
+    {
+        if (millis() - last_print_ms > 30)
+        {
+            if (uins.present())
+            {
+                uins.read_INS(ned, uvw, q, &time);
+                uins.read_IMU(pqr, acc, &time);
+                uins.read_other_sensors(mag, &baro, &time);
+            }
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdouble-promotion"
+            printf("ned: %.3f, %.3f, %.3f", ned[0], ned[1], ned[2]);
+            printf(" | uvw: %.3f, %.3f, %.3f", uvw[0], uvw[1], uvw[2]);
+            printf(" | q: %.3f, %.3f, %.3f, %.3f\n", q[0], q[1], q[2], q[3]);
+            printf("acc: %.3f, %.3f, %.3f", acc[0], acc[1], acc[2]);
+            printf(" | pqr: %.3f, %.3f, %.3f", pqr[0], pqr[1], pqr[2]);
+            printf(" | mag: %.3f, %.3f, %.3f", mag[0], mag[1], mag[2]);
+            printf("baro: %.3f, time: %dms\n\n", baro, time);
+            last_print_ms = millis();
+#pragma GCC diagnostic pop
+        }
+    }
+}

@@ -60,10 +60,10 @@ public:
   bool tx_buffer_empty();
   void put_byte(uint8_t ch);
   bool flush();
-  void register_rx_callback(std::function<void(uint8_t)> cb);
+  void register_rx_callback(void(*cb)(uint8_t));
   void unregister_rx_callback();
 
-  std::function<void(uint8_t)> cb_;
+  void(*cb_)(uint8_t);
   bool connected_ = false;
   bool reset_ = false;
 

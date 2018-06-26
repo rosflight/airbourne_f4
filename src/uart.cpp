@@ -319,7 +319,7 @@ void UART::DMA_Tx_IRQ_callback()
   }
 }
 
-void UART::register_rx_callback(std::function<void(uint8_t)> cb)
+void UART::register_rx_callback(void(*cb)(uint8_t))
 {
   receive_CB_ = cb;
 }
