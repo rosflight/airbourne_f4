@@ -29,59 +29,91 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <functional>
-
 #include "mb1242.h"
 
-I2CSonar::I2CSonar (I2C *i2cIn)
+I2CSonar* sonarPtr;
+
+void _I2C_Sonar_start_read_cb(uint8_t result)
 {
-  i2c_=i2cIn;
-  new_data_=false;
-  value_=0;
-  last_update_=millis();
-  ready_to_ping_=true;
+  (void)result;
+  sonarPtr->cb_start_read();
 }
-//Tries to either start a measurement, or read it from the sensor
-//Does nothing if it has done something in the last UPDATE_WAIT_MILLIS ms
-//Feel free to call it more often, though.
-void I2CSonar::async_update()
+
+void _I2C_Sonar_finished_read_cb(uint8_t result)
+{
+  (void)result;
+  sonarPtr->cb_finished_read();
+}
+
+I2CSonar::I2CSonar()
+{
+  sonarPtr = this;
+}
+
+void I2CSonar::init(I2C *_i2c)
+{
+  i2c_ = _i2c;
+  new_data_ = false;
+  value_ = 0;
+  last_update_ = millis();
+  ready_to_ping_ = true;
+  if (i2c_->write(MB1242_DEFAULT_ADDRESS, MB1242_DEFAULT_REGISTER, MB1242_PING_COMMAND) == I2C::RESULT_SUCCESS)
+    sensor_present_ = true;
+  else
+    sensor_present_ = false;
+}
+
+bool I2CSonar::present()
+{
+  return sensor_present_;
+}
+
+// Tries to either start a measurement, or read it from the sensor
+// Does nothing if it has done something in the last UPDATE_WAIT_MILLIS ms
+// Feel free to call it more often, though.
+void I2CSonar::update()
 {
   uint64_t now=millis();
-  if (now>last_update_+UPDATE_WAIT_MILLIS)
+  if (now>last_update_ + MB1242_UPDATE_WAIT_MILLIS)
   {
-    last_update_=now;
+    last_update_ = now;
     if (ready_to_ping_)
-      i2c_->write(DEFAULT_ADDRESS, DEFAULT_REGISTER, PING_COMMAND, [this]{this->cb_start_read();});
+      i2c_->write(MB1242_DEFAULT_ADDRESS, MB1242_DEFAULT_REGISTER, MB1242_PING_COMMAND, &_I2C_Sonar_start_read_cb);
     else
-      i2c_->read(DEFAULT_ADDRESS, DEFAULT_REGISTER, 2, buffer_, [this]{this->cb_finished_read();});
+      i2c_->read(MB1242_DEFAULT_ADDRESS, MB1242_DEFAULT_REGISTER, 2, buffer_, &_I2C_Sonar_finished_read_cb);
   }
 }
+
 //Returns the most recent reading
 //It is during this method that the reading is converted to meters, as well
 //If there has not yet been a successful reading, returns 0
-float I2CSonar::async_read()
+float I2CSonar::read()
 {
   if (new_data_)
   {
-    uint16_t centimeters=buffer_[0]<<8|buffer_[1];//Convert to a single number
+    uint16_t centimeters = buffer_[0] << 8 | buffer_[1];//Convert to a single number
 #ifdef MB1242_RAW
-    value=(float)centimeters*.01;
+    value=(float)centimeters * 0.01;
 #else
     //Calibration from BreezySTM32 by Simon D. Levy
-    value_=(1.071*(float)centimeters+3.103)/100.0;
+    value_=(1.071 * (float)centimeters + 3.103) / 100.0;
 #endif
     new_data_=false;
   }
   return value_;
 }
+
 //callback after the measure command has been sent to the sensor
 void I2CSonar::cb_start_read()
 {
-    ready_to_ping_=false;
+  sensor_present_ = true;
+  ready_to_ping_ = false;
 }
+
 //callback after reading from the sensor has finished
 void I2CSonar::cb_finished_read()
 {
-    new_data_=true;
-    ready_to_ping_=true;
+  sensor_present_ = true;
+  new_data_ = true;
+  ready_to_ping_ = true;
 }
