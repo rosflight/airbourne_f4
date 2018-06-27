@@ -335,6 +335,7 @@ int8_t I2C::write(uint8_t addr, uint8_t reg, uint8_t data)
 {
   if (check_busy())
     return RESULT_BUSY;
+  
   log_line;
   return_code_ = RESULT_SUCCESS;
   while_check (I2C_GetFlagStatus(c_->dev, I2C_FLAG_BUSY), return_code_);
@@ -348,8 +349,10 @@ int8_t I2C::write(uint8_t addr, uint8_t reg, uint8_t data)
   while_check (!I2C_CheckEvent(c_->dev, I2C_EVENT_MASTER_MODE_SELECT), return_code_);
   I2C_Send7bitAddress(c_->dev, addr << 1, I2C_Direction_Transmitter);
   uint32_t timeout = 500;
-  while (!I2C_CheckEvent(c_->dev, I2C_EVENT_MASTER_TRANSMITTER_MODE_SELECTED) && --timeout);
-  if (!timeout)
+  while (!I2C_CheckEvent(c_->dev, I2C_EVENT_MASTER_TRANSMITTER_MODE_SELECTED) && !(I2C_GetLastEvent(c_->dev) & AF) && timeout--);
+  
+  // No acknowledgement or timeout
+  if (I2C_GetLastEvent(c_->dev) & AF || timeout == 0) 
   {
     log_line;
     I2C_GenerateSTOP(c_->dev, ENABLE);
@@ -491,9 +494,9 @@ void I2C::handle_event()
   }
   
   // Sometimes we just get this over and over and over again
-  else if (last_event == MSL)
+  else if (last_event == SB)
   {
-    // MSL is cleared by clearing and resetting PE
+    // SB is cleared by clearing and resetting PE
     I2C_Cmd(c_->dev, DISABLE);
     I2C_Cmd(c_->dev, ENABLE);
     error_count_++;

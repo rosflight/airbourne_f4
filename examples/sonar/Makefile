@@ -148,7 +148,10 @@ INCLUDE_DIRS =  $(SRC_DIR) \
                 $(PRINTF_DIR) \
                 $(VCP_DIR)
 
-$(info VPATH = $(VPATH))
+
+#   text	   data	    bss	    dec	    hex	filename
+# 41696	    460	   8680	  50836	   c694	../../boards/airbourne/build/rosflight_REVO_Debug.elf
+#   40520	    416	   8392	  49328	   c0b0	obj/sonar.elf
 
 #################################
 # Object List

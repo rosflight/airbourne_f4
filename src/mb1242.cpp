@@ -106,7 +106,7 @@ float I2CSonar::read()
     value=(float)centimeters * 0.01;
 #else
     //Calibration from BreezySTM32 by Simon D. Levy
-    value_=(1.071 * (float)centimeters + 3.103) / 100.0;
+    value_=(1.071 * static_cast<float>(centimeters) + 3.103) / 100.0;
 #endif
     new_data_=false;
   }

@@ -120,7 +120,7 @@ const spi_hardware_struct_t spi_config[NUM_SPI] =
 const i2c_hardware_struct_t i2c_config[NUM_I2C] = {
   { I2C1, 400000, I2C1_EV_IRQn, I2C1_ER_IRQn, GPIOB, GPIO_AF_I2C1, GPIO_PinSource8, GPIO_Pin_8, 
   	GPIO_PinSource9, GPIO_Pin_9, DMA1_Stream0, DMA_Channel_1, DMA1_Stream0_IRQn, DMA_FLAG_TCIF0 },
-  { I2C2, 400000, I2C2_EV_IRQn, I2C2_ER_IRQn, GPIOB, GPIO_AF_I2C2, GPIO_PinSource10, GPIO_Pin_10, 
+  { I2C2, 100000, I2C2_EV_IRQn, I2C2_ER_IRQn, GPIOB, GPIO_AF_I2C2, GPIO_PinSource10, GPIO_Pin_10, 
   	GPIO_PinSource11, GPIO_Pin_11, DMA1_Stream2, DMA_Channel_7, DMA1_Stream2_IRQn, DMA_FLAG_TCIF2 }
 };
 #define MAG_I2C 0

@@ -39,32 +39,33 @@
 
 class I2C
 {
+//    BUSY, MSL, ADDR, TXE and TRA flags
 private:
   // [SR2 << 8 | SR1] Bits
   enum {
-    SB = 0x0001 << 16,
-    ADDR = 0x0002 << 16,
-    BTF = 0x0004 << 16,
-    ADD10 = 0x0008 << 16,
-    STOPF = 0x0010 << 16,
-    RES1 = 0x0020 << 16,
-    RXNE = 0x0040 << 16,
-    TXE = 0x0080 << 16,
-    BERR = 0x0100 << 16,
-    ARLO = 0x0200 << 16,
-    AF = 0x0400 << 16,
-    OVR = 0x0800 << 16,
-    PEC_ERR = 0x1000 << 16,
-    RES2 = 0x2000 << 16,
-    TIMEOUT = 0x4000 << 16,
-    SMB_ALERT = 0x8000 << 16,
-    MSL = 0x1,
-    BUSY = 0x2,
-    TRA = 0x4,
-    RES3 = 0x8,
-    GEN_CALL = 0x10,
-    SMBDE_FAULT = 0x20,
-    DUALF = 0x40
+    SB = 0x0001,
+    ADDR = 0x0002,
+    BTF = 0x0004,
+    ADD10 = 0x0008,
+    STOPF = 0x0010,
+    RES1 = 0x0020,
+    RXNE = 0x0040,
+    TXE = 0x0080,
+    BERR = 0x0100,
+    ARLO = 0x0200,
+    AF = 0x0400,
+    OVR = 0x0800,
+    PEC_ERR = 0x1000,
+    RES2 = 0x2000,
+    TIMEOUT = 0x4000,
+    SMB_ALERT = 0x8000,
+    MSL = 0x1 << 16,
+    BUSY = 0x2 << 16,
+    TRA = 0x4 << 16,
+    RES3 = 0x8 << 16,
+    GEN_CALL = 0x10 << 16,
+    SMBDE_FAULT = 0x20 << 16,
+    DUALF = 0x40 << 16,
   };
   
   void handle_hardware_failure();

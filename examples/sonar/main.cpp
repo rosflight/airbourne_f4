@@ -56,7 +56,7 @@ int main() {
   vcp.init();
   uartPtr = &vcp;
   
-  init_printf(NULL, _putc);
+//  init_printf(NULL, _putc);
   
   I2C i2c1;
   i2c1.init(&i2c_config[EXTERNAL_I2C]);
@@ -74,11 +74,11 @@ int main() {
       if (sonar.present())
       {
         dist = sonar.read();
-        printf("sonar read %.3f\n", dist);
+//        printf("sonar read %.3f\n", dist);
       }
       else
       {
-        printf("sonar unavailable\n");
+//        printf("sonar unavailable\n");
       }
       next_print_ms += 20;
     }
