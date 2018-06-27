@@ -36,13 +36,13 @@ I2CSonar* sonarPtr;
 void _I2C_Sonar_start_read_cb(uint8_t result)
 {
   (void)result;
-  sonarPtr->cb_start_read();
+  sonarPtr->cb_start_read(result);
 }
 
 void _I2C_Sonar_finished_read_cb(uint8_t result)
 {
   (void)result;
-  sonarPtr->cb_finished_read();
+  sonarPtr->cb_finished_read(result);
 }
 
 I2CSonar::I2CSonar()
@@ -55,16 +55,26 @@ void I2CSonar::init(I2C *_i2c)
   i2c_ = _i2c;
   new_data_ = false;
   value_ = 0;
-  last_update_ = millis();
+  last_update_ms_ = millis();
   ready_to_ping_ = true;
   if (i2c_->write(MB1242_DEFAULT_ADDRESS, MB1242_DEFAULT_REGISTER, MB1242_PING_COMMAND) == I2C::RESULT_SUCCESS)
+  {
     sensor_present_ = true;
+    last_callback_ms_ = millis();
+  }
   else
+  {
     sensor_present_ = false;
+    last_callback_ms_ = 0;
+  }
 }
 
 bool I2CSonar::present()
 {
+  if (sensor_present_ && millis() > last_callback_ms_ + 500)
+  {
+    sensor_present_ = false;
+  }
   return sensor_present_;
 }
 
@@ -74,9 +84,9 @@ bool I2CSonar::present()
 void I2CSonar::update()
 {
   uint64_t now=millis();
-  if (now>last_update_ + MB1242_UPDATE_WAIT_MILLIS)
+  if (now > (last_update_ms_ + MB1242_UPDATE_WAIT_MILLIS))
   {
-    last_update_ = now;
+    last_update_ms_ = now;
     if (ready_to_ping_)
       i2c_->write(MB1242_DEFAULT_ADDRESS, MB1242_DEFAULT_REGISTER, MB1242_PING_COMMAND, &_I2C_Sonar_start_read_cb);
     else
@@ -104,16 +114,24 @@ float I2CSonar::read()
 }
 
 //callback after the measure command has been sent to the sensor
-void I2CSonar::cb_start_read()
+void I2CSonar::cb_start_read(uint8_t result)
 {
-  sensor_present_ = true;
-  ready_to_ping_ = false;
+  if (result == I2C::RESULT_SUCCESS)
+  {
+    sensor_present_ = true;
+    last_callback_ms_ = millis();
+    ready_to_ping_ = false;
+  }
 }
 
 //callback after reading from the sensor has finished
-void I2CSonar::cb_finished_read()
+void I2CSonar::cb_finished_read(uint8_t result)
 {
-  sensor_present_ = true;
-  new_data_ = true;
-  ready_to_ping_ = true;
+  if (result == I2C::RESULT_SUCCESS)
+  {
+    sensor_present_ = true;
+    new_data_ = true;
+    last_callback_ms_ = millis();
+    ready_to_ping_ = true;
+  }
 }

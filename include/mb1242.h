@@ -57,7 +57,8 @@
 class I2CSonar
 {
 private:
-    uint32_t last_update_; // The last time that async_update was called
+    uint32_t last_update_ms_; // The last time that async_update was called
+    uint32_t last_callback_ms_; // The last time the sensor responded
     float value_; // the latest reading from the sensor
     bool new_data_; // Whether or not new data is ready to be returned
     I2C *i2c_; // The i2c object used for communication
@@ -76,8 +77,8 @@ public:
     // Calling it more frequently won't break anything
 
     // Callbacks. For internal use only, but public so the I2C peripheral can call them
-    void cb_start_read(); // callback after the measure command has been sent to the sensor
-    void cb_finished_read(); // callback after reading from the sensor has finished
+    void cb_start_read(uint8_t result); // callback after the measure command has been sent to the sensor
+    void cb_finished_read(uint8_t result); // callback after reading from the sensor has finished
 };
 
 
