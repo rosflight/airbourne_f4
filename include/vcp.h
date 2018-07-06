@@ -27,7 +27,6 @@ public:
   uint8_t read_byte() override;
   bool set_baud_rate(uint32_t baud);
   bool tx_buffer_empty() override;
-  bool set_mode(uint8_t mode_);
   void put_byte(uint8_t ch) override;
   bool flush() override;
   void begin_write();

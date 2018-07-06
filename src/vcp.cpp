@@ -55,10 +55,6 @@ bool VCP::tx_buffer_empty()
   return CDC_Send_FreeBytes() > 0;
 }
 
-bool VCP::set_mode(uint8_t mode)
-{
-  (void)mode;
-}
 
 void VCP::put_byte(uint8_t ch)
 {
