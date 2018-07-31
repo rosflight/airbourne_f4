@@ -67,8 +67,8 @@ BIN_DIR       = obj
 # Source Files
 #################################
 VPATH := $(VPATH):$(STARTUP_DIR)
-LDSCRIPT = $(STARTUP_DIR)/stm32_flash_f405_1024k.ld
-ASOURCES = startup_stm32f40_41xxx.s
+LDSCRIPT = $(STARTUP_DIR)/stm32f405.ld
+ASOURCES = $(STARTUP_DIR)/stm32f405.s
 
 # Search path and source files for the CMSIS sources
 VPATH	 := $(VPATH):$(CMSIS_DIR)/CM4/CoreSupport
@@ -103,7 +103,8 @@ EXCLUDES	= usb_bsp_template.c \
             usb_hcd_int.c \
             usb_hcd.c \
             usb_otg.c \
-            usbd_cdc_if_template.c
+            usbd_cdc_if_template.c \
+            usbd_cdc_core_loopback.c
 USBCDC_SRC := $(filter-out ${EXCLUDES}, $(USBCDC_SRC))
 USBOTG_SRC := $(filter-out ${EXCLUDES}, $(USBOTG_SRC))
 
@@ -184,9 +185,9 @@ CXX_FILE_SIZE_FLAGS = $(C_FILE_SIZE_FLAGS) -fno-rtti
 
 MCFLAGS=-mcpu=cortex-m4 -mthumb -march=armv7e-m -mfloat-abi=hard -mfpu=fpv4-sp-d16 -fsingle-precision-constant -Wdouble-promotion
 DEFS=-DSTM32F40_41xxx -D__CORTEX_M4 -D__FPU_PRESENT -DWORDS_STACK_SIZE=200 -DUSE_STDPERIPH_DRIVER -DTARGET_$(BOARD)
-CFLAGS=-c $(MCFLAGS) $(DEFS) $(OPTIMIZE) $(DEBUG_FLAGS) $(FILE_SIZE_FLAGS) $(addprefix -I,$(INCLUDE_DIRS)) -std=c99
+CFLAGS=-c $(MCFLAGS) $(DEFS) $(OPTIMIZE) $(DEBUG_FLAGS) $(FILE_SIZE_FLAGS) $(addprefix -I,$(INCLUDE_DIRS)) -std=c99 -Wl,-Map=main.map
 CXXFLAGS=-c $(MCFLAGS) $(DEFS) $(OPTIMIZE) $(DEBUG_FLAGS) $(CXX_FILE_SIZE_FLAGS) $(CXX_STRICT_FLAGS) $(addprefix -I,$(INCLUDE_DIRS)) -std=c++11
-LDFLAGS =-T $(LDSCRIPT) $(MCFLAGS) -lm -lc --specs=nano.specs --specs=rdimon.specs $(ARCH_FLAGS)  $(LTO_FLAGS)  $(DEBUG_FLAGS) -static  -Wl,-gc-sections
+LDFLAGS =-T $(LDSCRIPT) $(MCFLAGS) -lm -lc --specs=nano.specs --specs=rdimon.specs $(ARCH_FLAGS)  $(LTO_FLAGS)  $(DEBUG_FLAGS) -static  -Wl,-gc-sections  -Xlinker -Map=output.map 
 
 #################################
 # Build

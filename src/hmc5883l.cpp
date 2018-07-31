@@ -32,57 +32,68 @@
 
 #include "hmc5883l.h"
 
+static HMC5883L* mag_ptr;
+static void read_cb(uint8_t result);
+
 bool HMC5883L::init(I2C *i2c_drv)
 {
+  mag_ptr = this;
   mag_present_ = false;
   i2c_ = i2c_drv;
+  
   // Wait for the chip to power up
-  while (millis() < 500);
+  
+  last_update_ms_ = millis();
+  next_update_ms_ = millis();
 
   // Detect Magnetometer
   uint8_t byte = 0;
-  if(!i2c_->read(HMC58X3_ADDR, HMC58X3_ID1, &byte))
+  if (i2c_->read(HMC58X3_ADDR, 0xFF, &byte) != I2C::RESULT_SUCCESS)
   {
     mag_present_ = false;
     return false;
   }
   else
   {
+    bool result = true;
     // Configure HMC5833L
-    i2c_->write(HMC58X3_ADDR, HMC58X3_CRA, HMC58X3_CRA_DO_75 | HMC58X3_CRA_NO_AVG | HMC58X3_CRA_MEAS_MODE_NORMAL ); // 75 Hz Measurement, no bias, no averaging
-    i2c_->write(HMC58X3_ADDR, HMC58X3_CRB, HMC58X3_CRB_GN_390); // 390 LSB/Gauss
-    i2c_->write(HMC58X3_ADDR, HMC58X3_MODE, HMC58X3_MODE_CONTINUOUS); // Continuous Measurement Mode
-
-    // Start a measurement transfer
-    last_update_ms_ = 0;
-    update();
-
+    result &= i2c_->write(HMC58X3_ADDR, HMC58X3_CRA, HMC58X3_CRA_DO_75 | HMC58X3_CRA_NO_AVG | HMC58X3_CRA_MEAS_MODE_NORMAL ); // 75 Hz Measurement, no bias, no averaging
+    result &= i2c_->write(HMC58X3_ADDR, HMC58X3_CRB, HMC58X3_CRB_GN_390); // 390 LSB/Gauss
+    result &= i2c_->write(HMC58X3_ADDR, HMC58X3_MODE, HMC58X3_MODE_CONTINUOUS); // Continuous Measurement Mode
     mag_present_ = true;
-    return true;
+    return result;
   }
 }
 
 bool HMC5883L::present()
 {
+  if (mag_present_ && millis() > last_update_ms_ + 200)
+    mag_present_ = false;
   return mag_present_;
 }
 
 void HMC5883L::update()
 {
-  uint32_t now_ms = millis();
-  if (now_ms > last_update_ms_ + 10)
+  if ( millis() > next_update_ms_)
   {
-//    std::function<void(void)> callback_fn =
-    i2c_->read(HMC58X3_ADDR, HMC58X3_DATA, 6, i2c_buf_, std::bind(&HMC5883L::convert, this));
-    last_update_ms_ = now_ms;
+    if (i2c_->read(HMC58X3_ADDR, HMC58X3_DATA, 6, i2c_buf_, &read_cb) == I2C::RESULT_SUCCESS)
+      next_update_ms_ += 10;
   }
 }
 
-void HMC5883L::convert(void)
+void HMC5883L::cb(uint8_t result)
 {
+  if (result == I2C::RESULT_SUCCESS)
+    mag_present_ = true;
+  last_update_ms_ = millis();
   data_[0] = static_cast<float>(static_cast<int16_t>((i2c_buf_[0] << 8) | i2c_buf_[1]));
   data_[1] = static_cast<float>(static_cast<int16_t>((i2c_buf_[2] << 8) | i2c_buf_[3]));
   data_[2] = static_cast<float>(static_cast<int16_t>((i2c_buf_[4] << 8) | i2c_buf_[5]));
+}
+
+void read_cb(uint8_t result)
+{
+  mag_ptr->cb(result);
 }
 
 bool HMC5883L::read(float mag_data[3])

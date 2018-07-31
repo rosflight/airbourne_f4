@@ -36,31 +36,52 @@
 #include "i2c.h"
 #include "mpu6000.h"
 #include "mb1242.h"
+#include "vcp.h"
+#include "printf.h"
+
+VCP* uartPtr = NULL;
+
+static void _putc(void *p, char c)
+{
+  (void)p; // avoid compiler warning about unused variable
+  uartPtr->put_byte(c);
+}
 
 
 int main() {
-
+  
   systemInit();
-
-//  VCP vcp;
-//  vcp.init();
-//  uartPtr = &vcp;
-
+  
+  VCP vcp;
+  vcp.init();
+  uartPtr = &vcp;
+  
 //  init_printf(NULL, _putc);
-
+  
   I2C i2c1;
   i2c1.init(&i2c_config[EXTERNAL_I2C]);
-  I2CSonar sonar(&i2c1);
+  I2CSonar sonar;
+  sonar.init(&i2c1);
   
-
+  
   volatile float dist;
+  uint32_t next_print_ms = millis();
   while(true)
   {
-    sonar.async_update();
-    delay(100);
-    dist=sonar.async_read();
-    //I usual put a breakpoint here when testing to read the dist value
-    delay(100);
+    sonar.update();
+    if (millis() > next_print_ms)
+    {
+      if (sonar.present())
+      {
+        dist = sonar.read();
+//        printf("sonar read %.3f\n", dist);
+      }
+      else
+      {
+//        printf("sonar unavailable\n");
+      }
+      next_print_ms += 20;
+    }
   }
-
+  
 }

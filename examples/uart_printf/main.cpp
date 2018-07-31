@@ -46,7 +46,7 @@ int main()
   systemInit();
 
   UART uart;
-  uart.init(&uart_config[0], 115200);
+  uart.init(&uart_config[UART1], 115200);
   uartPtr = &uart;
 
   uart.register_rx_callback(rx_callback);  // Uncomment to test callback version
@@ -54,7 +54,7 @@ int main()
   while(1)
   {
     uint8_t hello_string[9] = "testing\n";
-//    uart.write(hello_string, 8); // Uncomment to test Tx
+    uart.write(hello_string, 8); // Uncomment to test Tx
     delay(200);
 
     // Polling version (uncomment to test)

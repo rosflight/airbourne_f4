@@ -62,34 +62,30 @@ int main() {
 
   info.on();
   I2C i2c1;
-  i2c1.init(&i2c_config[MAG_I2C]);
+  i2c1.init(&i2c_config[EXTERNAL_I2C]);
   HMC5883L mag;
 
 
-  if (!mag.init(&i2c1))
-  {
-    warn.on();
-    delay(100);
-    warn.off();
-  }
+  mag.init(&i2c1);
 
   float mag_data[3] = {0., 0., 0.};
-  while(1) {
-    info.toggle();
+  while(1) 
+  {
     mag.update();
-    if (mag.read(mag_data))
+    if (mag.present())
     {
       warn.off();
+      info.toggle();
+      mag.read(mag_data);
       printf("%d, %d, %d\n",
              (int32_t)(mag_data[0]),
              (int32_t)(mag_data[1]),
              (int32_t)(mag_data[2]));
-
     }
-    else
+    else 
     {
       warn.on();
-      printf("error\n");
+      printf("error\n");     
     }
     delay(10);
   }

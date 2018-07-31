@@ -42,7 +42,7 @@ public:
   void update();
   void read(float *differential_pressure, float *temp);
 
-  void read_cb();
+  void read_cb(uint8_t result);
 
 private:
   static const uint8_t ADDR = 0x28;
@@ -52,6 +52,7 @@ private:
   float diff_press_;
   float temp_;
   uint32_t next_update_ms_;
+  uint32_t last_update_ms_;
   bool new_data_;
   bool sensor_present_;
 };

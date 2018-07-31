@@ -65,11 +65,17 @@ bool GPIO::read()
   // If it's an input pin, use the read input data
   if(mode_ == INPUT)
   {
-    return port_->IDR & pin_;
+    if(port_->IDR & pin_)
+      return HIGH;
+    else
+      return LOW;
   }
   else
   {
-    return port_->ODR & pin_;
+    if(port_->ODR & pin_)
+      return HIGH;
+    else
+      return LOW;
   }
 }
 

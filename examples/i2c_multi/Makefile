@@ -26,7 +26,7 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-TARGET = sonar
+TARGET = i2c_multi
 
 BOARD ?= REVO
 
@@ -130,11 +130,13 @@ CSOURCES =  $(CMSIS_SRC) \
 
 CXXSOURCES = $(PRINTF_SRC) \
 			 gpio.cpp \
+             led.cpp \
              main.cpp \
              vcp.cpp \
              i2c.cpp \
              ms5611.cpp \
-             mb1242.cpp
+             ms4525.cpp \
+             hmc5883l.cpp
 
 INCLUDE_DIRS =  $(SRC_DIR) \
                 $(ROOT)/include \
@@ -148,10 +150,7 @@ INCLUDE_DIRS =  $(SRC_DIR) \
                 $(PRINTF_DIR) \
                 $(VCP_DIR)
 
-
-#   text	   data	    bss	    dec	    hex	filename
-# 41696	    460	   8680	  50836	   c694	../../boards/airbourne/build/rosflight_REVO_Debug.elf
-#   40520	    416	   8392	  49328	   c0b0	obj/sonar.elf
+$(info VPATH = $(VPATH))
 
 #################################
 # Object List
@@ -173,9 +172,10 @@ TARGET_BIN=$(BIN_DIR)/$(TARGET).bin
 ifeq ($(DEBUG), GDB)
 $(info ************  BUILDING DEBUG SYMBOLS ************)
 DEBUG_FLAGS = -ggdb3
-OPTIMIZE = -O0
+OPTIMIZE = -Og
 else
 $(info ************  BUILDING RELEASE ************)
+DEBUG_FLAGS = -g0
 OPTIMIZE = -O3
 LTO_FLAGS = -flto -fuse-linker-plugin $(OPTIMIZE)
 endif
@@ -194,7 +194,7 @@ CXX_FILE_SIZE_FLAGS = $(C_FILE_SIZE_FLAGS) -fno-rtti
 MCFLAGS=-mcpu=cortex-m4 -mthumb -march=armv7e-m -mfloat-abi=hard -mfpu=fpv4-sp-d16 -fsingle-precision-constant -Wdouble-promotion
 DEFS=-DSTM32F40_41xxx -D__CORTEX_M4 -D__FPU_PRESENT -DWORDS_STACK_SIZE=200 -DUSE_STDPERIPH_DRIVER -DTARGET_$(BOARD)
 CFLAGS=-c $(MCFLAGS) $(DEFS) $(OPTIMIZE) $(DEBUG_FLAGS) $(FILE_SIZE_FLAGS) $(addprefix -I,$(INCLUDE_DIRS)) -std=c99
-CXXFLAGS=-c $(MCFLAGS) $(DEFS) $(OPTIMIZE) $(DEBUG_FLAGS) $(CXX_FILE_SIZE_FLAGS) $(CXX_STRICT_FLAGS) $(addprefix -I,$(INCLUDE_DIRS)) -std=c++11
+CXXFLAGS=-c $(MCFLAGS) $(DEFS) $(OPTIMIZE) $(DEBUG_FLAGS) $(CXX_FILE_SIZE_FLAGS) $(CXX_STRICT_FLAGS) $(addprefix -I,$(INCLUDE_DIRS)) -std=c++14
 LDFLAGS =-T $(LDSCRIPT) $(MCFLAGS) -lm -lc --specs=nano.specs --specs=rdimon.specs $(ARCH_FLAGS)  $(LTO_FLAGS)  $(DEBUG_FLAGS) -static  -Wl,-gc-sections
 
 #################################

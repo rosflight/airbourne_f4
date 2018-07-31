@@ -137,6 +137,17 @@ void MPU6000::exti_cb()
   spi->transfer(raw, 15, raw, &cs_, &data_transfer_cb);
 }
 
+bool MPU6000::new_data() 
+  {
+    if (new_data_)
+    {
+      new_data_ = false;
+      return true;
+    }
+    else
+      return false;
+  }
+
 extern "C"
 {
 

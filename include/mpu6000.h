@@ -164,7 +164,7 @@ public:
   void read(float *accel_data, float *gyro_data, float *temp_data, uint64_t *time_us);
   void data_transfer_callback();
   void exti_cb();
-  inline bool new_data() {return new_data_;}
+  bool new_data(); 
 
 private:
   void write(uint8_t reg, uint8_t data);

@@ -63,29 +63,46 @@ private:
     READ_PRESS = 3,
   } state_t;
   state_t state_;
+  
+  typedef enum
+  {
+    CB_TEMP_READ1,
+    CB_TEMP_READ2,
+    CB_PRES_READ1,
+    CB_PRES_READ2,
+    CB_TEMP_START,
+    CB_PRES_START,
+    CB_RESET,
+    CB_WRITE_ZERO,
+  } callback_type_t;
 
   static const uint8_t ADDR = 0x77;
 
   void reset();
-  void read_prom();
+  bool read_prom();
   int8_t calc_crc();
-  void read_pres_mess();
-  void read_temp_mess();
-  void start_temp_meas();
-  void start_pres_meas();
+  bool read_pres_mess();
+  bool read_temp_mess();
+  bool start_temp_meas();
+  bool start_pres_meas();
   void convert();
 
   I2C* i2c_;
   uint8_t pres_buf_[3];
   uint8_t temp_buf_[3];
-  uint32_t pres_raw_;
-  uint32_t temp_raw_;
+  int32_t pres_raw_;
+  int32_t temp_raw_;
   float pressure_;
   float temperature_;
   uint16_t prom[8];
   uint32_t next_update_ms_;
+  uint32_t next_reboot_ms_;
+  uint32_t last_update_ms_;
+  bool waiting_for_cb_;
   bool new_data_;
   bool baro_present_;
+  
+  callback_type_t callback_type_;
 
 public:
   bool init(I2C* _i2c);
@@ -93,10 +110,16 @@ public:
   void read(float *press, float *temp);
   bool present();
 
-  void temp_read_cb();
-  void pres_read_cb();
-  void temp_start_cb();
-  void pres_start_cb();
+  void master_cb(uint8_t result);
+  void temp_read_cb1(uint8_t result);
+  void pres_read_cb1(uint8_t result);
+  void temp_read_cb2(uint8_t result);
+  void pres_read_cb2(uint8_t result);
+  void temp_start_cb(uint8_t result);
+  void pres_start_cb(uint8_t result);
+  void write_zero_cb(uint8_t result);
+  void reset_cb(uint8_t result);
 };
+
 
 #endif // MS5611_H

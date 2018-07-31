@@ -32,7 +32,7 @@ BOARD ?= REVO
 
 DEBUG ?= GDB
 
-SERIAL_DEVICE ?= /dev/ttyUSB0
+SERIAL_DEVICE ?= /dev/ttyACM0
 
 #################################
 # GNU ARM Embedded Toolchain
@@ -67,8 +67,8 @@ BIN_DIR       = obj
 # Source Files
 #################################
 VPATH := $(VPATH):$(STARTUP_DIR)
-LDSCRIPT = $(STARTUP_DIR)/stm32_flash_f405_1024k.ld
-ASOURCES = startup_stm32f40_41xxx.s
+LDSCRIPT = $(STARTUP_DIR)/stm32f405.ld
+ASOURCES = stm32f405.s
 
 # Search path and source files for the CMSIS sources
 VPATH	 := $(VPATH):$(CMSIS_DIR)/CM4/CoreSupport
@@ -139,8 +139,6 @@ INCLUDE_DIRS =  $(SRC_DIR) \
                 $(CMSIS_DIR)/CM4/DeviceSupport/ST/STM32F4xx/Include \
                 $(PRINTF_DIR) \
                 $(VCP_DIR)
-
-$(info VPATH = $(VPATH))
 
 #################################
 # Object List

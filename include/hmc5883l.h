@@ -80,19 +80,21 @@
 
 #define HMC58X3_TIMEOUT 30000
 
+
 class HMC5883L
 {
 public:
   bool init(I2C* i2c_drv);
   void update();
   bool read(float mag_data[]);
-  void convert(void);
   bool present();
+  void cb(uint8_t result);
 
 private:
   I2C* i2c_;
   uint8_t i2c_buf_[6];
-  float data_[3];
+  volatile float data_[3];
   uint32_t last_update_ms_;
+  uint32_t next_update_ms_;
   bool mag_present_;
 };
