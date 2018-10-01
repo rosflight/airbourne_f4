@@ -46,7 +46,7 @@ void RC_SBUS::init(GPIO* inv_pin, UART *uart)
   inv_pin_ = inv_pin;
 
   uart_->set_mode(100000, UART::MODE_8E2);
-  uart_->register_rx_callback([this](uint8_t byte){this->read_cb(byte);});
+  uart_->register_rx_callback(rx_callback);
 
   // turn on the serial inverter
   inv_pin_->write(GPIO::HIGH);
