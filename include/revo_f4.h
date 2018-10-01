@@ -60,7 +60,7 @@
 //} uart_hardware_struct_t;
 #define UART1 0
 #define UART2 1
-#define UART3 0
+#define UART3 2
 const uart_hardware_struct_t uart_config[NUM_UART] =
 {
   {USART1, GPIOA, GPIO_Pin_10, GPIO_Pin_9, GPIO_PinSource10, GPIO_PinSource9,
@@ -72,9 +72,6 @@ const uart_hardware_struct_t uart_config[NUM_UART] =
   {USART3, GPIOB, GPIO_Pin_11, GPIO_Pin_10, GPIO_PinSource11, GPIO_PinSource10,
    GPIO_AF_USART3, USART3_IRQn, DMA1_Stream1_IRQn, DMA1_Stream3_IRQn, DMA1_Stream1,
    DMA1_Stream3, DMA_Channel_4, DMA_IT_TCIF1, DMA_IT_TCIF3},
-//    {USART3, GPIOB, GPIO_Pin_10, GPIO_Pin_9, GPIO_PinSource10, GPIO_PinSource9,
-//      GPIO_AF_USART3, USART3_IRQn, DMA1_Stream1_IRQn, DMA1_Stream3_IRQn, DMA1_Stream1,
-//    DMA1_Stream3, DMA_Channel_4, DMA_IT_TCIF1, DMA_IT_TCIF3},
 };
 
 #define SBUS_UART 0

@@ -49,6 +49,7 @@ void UART::init(const uart_hardware_struct_t* conf, uint32_t baudrate, uart_mode
   GPIO_PinAFConfig(c_->GPIO, c_->Rx_PinSource, c_->GPIO_AF);
   GPIO_PinAFConfig(c_->GPIO, c_->Tx_PinSource, c_->GPIO_AF);
 
+
   //Save the pointer, for callbacks
   if (c_->dev == USART1)
   {
