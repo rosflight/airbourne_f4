@@ -46,7 +46,7 @@ int main()
   systemInit();
 
   UART uart;
-  uart.init(&uart_config[UART3], 115200);
+  uart.init(&uart_config[UART1], 115200);
   uartPtr = &uart;
 
   uart.register_rx_callback(rx_callback);  // Uncomment to test callback version
