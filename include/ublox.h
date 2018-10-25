@@ -316,6 +316,24 @@ public:
     int16_t magDec; // 1e-2 deg Magnetic declination
     uint16_t magAcc; // 1e-2 deg Magnetic declination accuracy
   }__attribute__((packed)) NAV_PVT_t;
+
+  typedef struct
+  {
+    uint32_t iTOW;
+    int32_t ecefX;
+    int32_t ecefY;
+    int32_t ecefZ;
+    uint32_t pAcc;
+  }__attribute__((packed)) NAV_POSECEF_t;
+
+  typedef struct
+  {
+    uint32_t iTOW;
+    int32_t ecefVX;
+    int32_t ecefVY;
+    int32_t ecefVZ;
+    uint32_t sAcc;
+  }__attribute__((packed)) NAV_VELECEF_t;
   
   typedef union {
     uint8_t buffer[UBLOX_BUFFER_SIZE];
@@ -326,14 +344,19 @@ public:
     CFG_RATE_t CFG_RATE;
     CFG_NAV5_t CFG_NAV5;
     NAV_PVT_t NAV_PVT;
+    NAV_POSECEF_t NAV_POSECEF;
+    NAV_VELECEF_t NAV_VELECEF;
   } UBX_message_t;
   
   void init(UART* uart_drv);
   
-  void read(double* lla, float* vel, uint8_t &fix_type);
   void read_cb(uint8_t byte);
-  inline bool new_data() {return new_data_;}
-  uint32_t num_messages_received() {return num_messages_received_;}
+  inline bool new_data() { return new_data_; }
+  inline uint32_t num_messages_received() { return num_messages_received_; }
+  inline const NAV_PVT_t& get_nav_data() const { return nav_message_; }
+  void get_pos_ecef(double* pos_ecef, uint32_t* t_ms);
+  void get_vel_ecef(float* vel_ecef, uint32_t* t_ms);
+  void read(double* lla, float* vel, uint8_t* fix_type, uint32_t* t_ms);
   
 private:
   void convert_data();
@@ -351,7 +374,7 @@ private:
   UBX_message_t out_message_;
   UBX_message_t in_message_;
   
-  uint8_t debug_buffer_[15];
+  char debug_buffer_[15];
   uint16_t debug_buffer_head_ = 0;
   
   uint16_t buffer_head_ = 0;
@@ -376,7 +399,10 @@ private:
   UART* serial_;
   
   bool new_data_;
+  int32_t system_start_tow_ms_;
   NAV_PVT_t nav_message_;
+  NAV_POSECEF_t pos_ecef_message_;
+  NAV_VELECEF_t vel_ecef_message_;
 };
 
 #endif // UBLOX_H
