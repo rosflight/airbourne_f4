@@ -187,7 +187,7 @@ void UART::write(const uint8_t *ch, uint8_t len)
   {
     startDMA();
   }
-  this->flush();//testing
+//  this->flush();//testing
 }
 
 
@@ -260,21 +260,14 @@ uint32_t UART::rx_bytes_waiting()
 
 uint32_t UART::tx_bytes_free()
 {
-  tx_buffer_head_ = DMA_GetCurrDataCounter(c_->Tx_DMA_Stream);
-  if (tx_buffer_head_ > tx_buffer_tail_)
+  // Remember, the DMA CNDTR counts down
+  tx_buffer_head_ = DMA_GetCurrDataCounter(c_->Rx_DMA_Stream);
+  if (tx_buffer_head_ >= tx_buffer_tail_)
   {
-    return rx_buffer_head_ - rx_buffer_tail_;
-  }
-  else if (tx_buffer_head_ < tx_buffer_tail_)
-  {
-    // Add the parts on either end of the buffer
-    // I'm pretty sure this is wrong
-    return tx_buffer_head_ + RX_BUFFER_SIZE - rx_buffer_tail_;
+    return TX_BUFFER_SIZE - (tx_buffer_head_ - tx_buffer_tail_);
   }
   else
-  {
-    return 0;
-  }
+    return tx_buffer_tail_ - rx_buffer_head_;
 }
 
 bool UART::set_mode(uint32_t baud, uart_mode_t mode)

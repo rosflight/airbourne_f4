@@ -34,6 +34,7 @@ public:
   void register_rx_callback(void (*rx_callback_ptr)(uint8_t data)) override;
   void unregister_rx_callback() override;
   bool in_bulk_mode();
+  bool connected();
 
   std::function<void(uint8_t)> cb_;
   bool connected_ = false;
@@ -41,7 +42,6 @@ public:
 
 private:
   
-  bool connected();
   void perform_maintenance();
 
   void send_disconnect_signal();

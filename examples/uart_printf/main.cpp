@@ -51,11 +51,12 @@ int main()
 
   uart.register_rx_callback(rx_callback);  // Uncomment to test callback version
 
+  int i = 0;
   while(1)
   {
     uint8_t hello_string[9] = "testing\n";
-    uart.write(hello_string, 8); // Uncomment to test Tx
-    delay(200);
+    //uart.write(hello_string, 8); // Uncomment to test Tx
+    delay(100);
 
     // Polling version (uncomment to test)
 //    while (uart.rx_bytes_waiting())
