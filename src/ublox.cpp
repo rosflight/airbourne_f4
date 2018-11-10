@@ -8,7 +8,6 @@
 #define M_PI 3.14159
 #endif
 
-std::vector<std::string> fix_names;
 UBLOX* gps_Ptr;
 
 void cb(uint8_t byte)
@@ -29,7 +28,6 @@ void UBLOX::init(UART* uart)
   length_ = 0;
   ck_a_ = 0;
   ck_b_ = 0;
-  fix_names = create_fix_names_map();
 
   // Find the right baudrate
   looking_for_nmea_ = true;
@@ -54,7 +52,7 @@ void UBLOX::init(UART* uart)
 bool UBLOX::detect_baudrate()
 {
   current_baudrate_ = 0;
-  for (int i = 0; i < sizeof(baudrates)/sizeof(uint32_t); i++)
+  for (uint32_t i = 0; i < sizeof(baudrates)/sizeof(uint32_t); i++)
   {
     DBG("Trying %d baudrate\n", baudrates[i]);
     serial_->set_mode(baudrates[i], UART::MODE_8N1);
@@ -111,6 +109,11 @@ void UBLOX::set_baudrate(const uint32_t baudrate)
   delayMicroseconds(10000);
   serial_->set_mode(baudrate, UART::MODE_8N1);
   current_baudrate_ = baudrate;
+}
+
+bool UBLOX::present()
+{
+  return got_message_;
 }
 
 void UBLOX::set_dynamic_mode()
@@ -187,7 +190,7 @@ void UBLOX::read_cb(uint8_t byte)
     parse_state_ = GOT_LENGTH1;
     break;
   case GOT_LENGTH1:
-    length_ |= (uint16_t) byte << 8;
+    length_ |= static_cast<uint16_t>(byte) << 8;
     parse_state_ = GOT_LENGTH2;
     if (length_ > UBLOX_BUFFER_SIZE)
     {
@@ -240,7 +243,7 @@ void UBLOX::read_cb(uint8_t byte)
   prev_byte_ = byte;
 }
 
-void UBLOX::read(double* lla, float* vel, uint8_t* fix_type, uint32_t* t_ms)
+void UBLOX::read(double* lla, float* vel, uint8_t* fix_type, uint32_t* t_ms, float* hacc, float* vacc, float* sacc)
 {
   if (new_data_)
   {
@@ -254,6 +257,9 @@ void UBLOX::read(double* lla, float* vel, uint8_t* fix_type, uint32_t* t_ms)
   }
   (*fix_type) = nav_message_.fixType;
   (*t_ms) = nav_message_.iTOW;
+  (*hacc) = nav_message_.hAcc*1e-3;
+  (*vacc) = nav_message_.vAcc*1e-3;
+  (*sacc) = nav_message_.sAcc*1e-3;
 }
 
 bool UBLOX::decode_message()
@@ -331,8 +337,8 @@ bool UBLOX::decode_message()
 
 void UBLOX::convert_data()
 {
-  lla_[0] = (double)(nav_message_.lat) * 1e-7;
-  lla_[1] = (double)(nav_message_.lon) * 1e-7;
+  lla_[0] = static_cast<double>(nav_message_.lat) * 1e-7L;
+  lla_[1] = static_cast<double>(nav_message_.lon) * 1e-7L;
   lla_[2] = nav_message_.height * 1e-3;
 
   vel_[0] = nav_message_.velN * 1e-3;
@@ -342,8 +348,6 @@ void UBLOX::convert_data()
 
 void UBLOX::calculate_checksum(const uint8_t msg_cls, const uint8_t msg_id, const uint16_t len, const UBX_message_t payload, uint8_t& ck_a, uint8_t& ck_b) const
 {
-  if (msg_cls == 5)
-    volatile int debug =1;
   ck_a = ck_b = 0;
 
   // Add in class
@@ -368,15 +372,4 @@ void UBLOX::calculate_checksum(const uint8_t msg_cls, const uint8_t msg_id, cons
   }
 }
 
-std::vector<std::string> create_fix_names_map()
-{
-  std::vector<std::string> tmp;
-  tmp.resize(6);
-  tmp[UBLOX::FIX_TYPE_NO_FIX] = "FIX_TYPE_NO_FIX";
-  tmp[UBLOX::FIX_TYPE_DEAD_RECKONING] = "FIX_TYPE_DEAD_RECKONING";
-  tmp[UBLOX::FIX_TYPE_2D] = "FIX_TYPE_2D";
-  tmp[UBLOX::FIX_TYPE_3D] = "FIX_TYPE_3D";
-  tmp[UBLOX::FIX_TYPE_GPS_AND_DEAD_RECKONING] = "FIX_TYPE_GPS_AND_DEAD_RECKONING";
-  tmp[UBLOX::FIX_TYPE_TIME_ONLY] = "FIX_TYPE_TIME_ONLY";
-  return tmp;
-}
+

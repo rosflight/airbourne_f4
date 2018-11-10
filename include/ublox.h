@@ -12,9 +12,6 @@
 #include <iostream>
 
 
-std::vector<std::string> create_fix_names_map();
-extern std::vector<std::string> fix_names;
-
 class UBLOX
 {
 public:
@@ -193,16 +190,16 @@ public:
     };
 
     enum {
-      MASK_DYN            = 0b00000000001, // Apply dynamic model settings
-      MASK_MINEL 	  = 0b00000000010, // Apply minimum elevation settings
-      MASK_POSFIXMODE     = 0b00000000100, // Apply fix mode settings
-      MASK_DRLIM 	  = 0b00000001000, // Reserved
-      MASK_POSMASK 	  = 0b00000010000, // Apply position mask settings
-      MASK_TIMEMASK 	  = 0b00000100000, // Apply time mask settings
-      MASK_STATICHOLDMASK = 0b00001000000, // Apply static hold settings
-      MASK_DGPSMASK 	  = 0b00010000000, // Apply DGPS settings.
-      MASK_CNOTHRESHOLD   = 0b00100000000, // Apply CNO threshold settings (cnoThresh, cnoThreshNumSVs).
-      MASK_UTC 	          = 0b10000000000, // Apply UTC settings
+      MASK_DYN            = 0x001, // Apply dynamic model settings
+      MASK_MINEL 	        = 0x002, // Apply minimum elevation settings
+      MASK_POSFIXMODE     = 0x004, // Apply fix mode settings
+      MASK_DRLIM 	        = 0x008, // Reserved
+      MASK_POSMASK        = 0x010, // Apply position mask settings
+      MASK_TIMEMASK       = 0x020, // Apply time mask settings
+      MASK_STATICHOLDMASK = 0x040, // Apply static hold settings
+      MASK_DGPSMASK       = 0x080, // Apply DGPS settings.
+      MASK_CNOTHRESHOLD   = 0x100, // Apply CNO threshold settings (cnoThresh, cnoThreshNumSVs).
+      MASK_UTC 	          = 0x200, // Apply UTC settings
     };
 
     uint16_t mask;
@@ -235,20 +232,20 @@ public:
       PORT_SPI = 4
     };
     enum {
-      CHARLEN_8BIT = 0b11000000,
-      PARITY_NONE  = 0b100000000000,
+      CHARLEN_8BIT = 0x00C0,
+      PARITY_NONE  = 0x0800,
       STOP_BITS_1  = 0x0000
     };
     enum {
-      IN_UBX   = 0b00000001,
-      IN_NMEA  = 0b00000010,
-      IN_RTCM  = 0b00000100,
-      IN_RTCM3 = 0b00100000,
+      IN_UBX   = 0x01,
+      IN_NMEA  = 0x02,
+      IN_RTCM  = 0x04,
+      IN_RTCM3 = 0x20,
     };
     enum {
-      OUT_UBX   = 0b00000001,
-      OUT_NMEA  = 0b00000010,
-      OUT_RTCM3 = 0b00100000,
+      OUT_UBX   = 0x01,
+      OUT_NMEA  = 0x02,
+      OUT_RTCM3 = 0x20,
     };
     uint8_t portID;
     uint8_t reserved1;
@@ -276,24 +273,24 @@ public:
 
   typedef struct  {
     enum {
-      VALIDITY_FLAGS_VALIDDATE= 0b01, // Valid UTC Date (see Time Validity section for details)
-      VALIDITY_FLAGS_VALIDTIME = 0b10, // Valid UTC Time of Day (see Time Validity section for details)
-      VALIDITY_FLAGS_FULLYRESOLVED = 0b100, // UTC Time of Day has been fully resolved (no seconds uncertainty)
+      VALIDITY_FLAGS_VALIDDATE= 0x01, // Valid UTC Date (see Time Validity section for details)
+      VALIDITY_FLAGS_VALIDTIME = 0x02, // Valid UTC Time of Day (see Time Validity section for details)
+      VALIDITY_FLAGS_FULLYRESOLVED = 0x04, // UTC Time of Day has been fully resolved (no seconds uncertainty)
     };
 
     enum {
-      FIX_STATUS_GNSS_FIX_OK            = 0b00000001, // Valid Fix
-      FIX_STATUS_DIFF_SOLN              = 0b00000010, // Differential Corrections were applied
-      FIX_STATUS_PSM_STATE_NOT_ACTIVE   = 0b00000000,
-      FIX_STATUS_PSM_STATE_ENABLED      = 0b00000100,
-      FIX_STATUS_PSM_STATE_ACQUISITION  = 0b00001000,
-      FIX_STATUS_PSM_STATE_TRACKING     = 0b00001100,
-      FIX_STATUS_PSM_STATE_POWER_OPTIMIZED_TRACKING   = 0b00010000,
-      FIX_STATUS_PSM_STATE_INACTIVE     = 0b00010100,
-      FIX_STATUS_HEADING_VALID          = 0b00100000,
-      FIX_STATUS_CARR_SOLN_NONE         = 0b00000000,
-      FIX_STATUS_CARR_SOLN_FLOAT        = 0b01000000,
-      FIX_STATUS_CARR_SOLN_FIXED        = 0b10000000,
+      FIX_STATUS_GNSS_FIX_OK            = 0x01, // Valid Fix
+      FIX_STATUS_DIFF_SOLN              = 0x02, // Differential Corrections were applied
+      FIX_STATUS_PSM_STATE_NOT_ACTIVE   = 0x00,
+      FIX_STATUS_PSM_STATE_ENABLED      = 0x04,
+      FIX_STATUS_PSM_STATE_ACQUISITION  = 0x08,
+      FIX_STATUS_PSM_STATE_TRACKING     = 0x0C,
+      FIX_STATUS_PSM_STATE_POWER_OPTIMIZED_TRACKING   = 0x10,
+      FIX_STATUS_PSM_STATE_INACTIVE     = 0x14,
+      FIX_STATUS_HEADING_VALID          = 0x20,
+      FIX_STATUS_CARR_SOLN_NONE         = 0x00,
+      FIX_STATUS_CARR_SOLN_FLOAT        = 0x40,
+      FIX_STATUS_CARR_SOLN_FIXED        = 0x80,
     };
 
     uint32_t iTOW; // ms GPS time of week of the  navigation epoch . See the  description of iTOW for details.
@@ -363,10 +360,12 @@ public:
 
   void init(UART *uart);
 
-  void read(double* lla, float* vel, uint8_t *fix_type, uint32_t *t_ms);
+  bool present();
+  void read(double* lla, float* vel, uint8_t *fix_type, uint32_t *t_ms,
+            float *hacc, float *vacc, float *sacc);
   void read_cb(uint8_t byte);
-  inline volatile bool new_data() { return new_data_; }
-  uint32_t volatile num_messages_received() { return num_messages_received_; }
+  inline bool new_data() { return new_data_; }
+  uint32_t num_messages_received() { return num_messages_received_; }
 
   void lla(double* lla) const;
   void ned(float* vel) const;
@@ -403,7 +402,7 @@ private:
   uint8_t ck_a_;
   uint8_t ck_b_;
   uint32_t num_errors_ = 0;
-  uint32_t num_messages_received_ = 0;
+  volatile uint32_t num_messages_received_ = 0;
 
   double lla_[3] = {};
   float vel_[3] = {};
@@ -417,6 +416,16 @@ private:
   NAV_PVT_t nav_message_ = {};
   NAV_POSECEF_t pos_ecef_ = {};
   NAV_VELECEF_t vel_ecef_ = {};
+};
+
+const std::string fix_names[6] =
+{
+  "FIX_TYPE_NO_FIX",
+  "FIX_TYPE_DEAD_RECKONING",
+  "FIX_TYPE_2D",
+  "FIX_TYPE_3D",
+  "FIX_TYPE_GPS_AND_DEAD_RECKONING",
+  "FIX_TYPE_TIME_ONLY",
 };
 
 
