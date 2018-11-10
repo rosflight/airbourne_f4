@@ -36,6 +36,7 @@
 #include "ublox.h"
 #include "revo_f4.h"
 #include "printf.h"
+#include "led.h"
 
 Serial* serPtr = NULL;
 
@@ -61,6 +62,9 @@ int main()
   UBLOX gps;
   gps.init(&uart);
 
+  LED led1;
+  led1.init(LED1_GPIO, LED1_PIN);
+
   double lla[3] = {};
   float vel[3] = {};
   uint8_t fix_type = 0;
@@ -70,10 +74,10 @@ int main()
     if (gps.new_data())
     {
       gps.read(lla, vel, &fix_type, &t_ms);
-      printf ("fix: %s\tt: %d\tlla: %.3f, %.3f, %.3f\tvel: %.3f, %.3f, %.3f\n",
+      printf ("fix: %s\tt: %d\tlla: %6.6f, %6.6f, %4.2f\tvel: %3.3f, %3.3f, %3.3f\n",
               fix_names[fix_type].c_str(), t_ms, lla[0], lla[1], lla[2],
-              vel[1], vel[2], vel[3]);
+              (double)vel[0], (double)vel[1], (double)vel[2]);
+      led1.toggle();
     }
-
   }
 }
