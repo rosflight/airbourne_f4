@@ -35,12 +35,14 @@
 #include "vcp.h"
 #include "ublox.h"
 #include "revo_f4.h"
+#include "printf.h"
 
 Serial* serPtr = NULL;
 
-void rx_callback(uint8_t byte)
+static void _putc(void *p, char c)
 {
-  serPtr->put_byte(byte);
+    (void)p; // avoid compiler warning about unused variable
+    serPtr->put_byte(c);
 }
 
 int main()
@@ -54,20 +56,23 @@ int main()
   UART uart;
   uart.init(&uart_config[UART3], 115200);
 
-  vcp.register_rx_callback(rx_callback);
+  init_printf(NULL, _putc);
 
   UBLOX gps;
   gps.init(&uart);
 
-  double lla[3];
-  float vel[3];
-  uint8_t fix_type;
+  double lla[3] = {};
+  float vel[3] = {};
+  uint8_t fix_type = 0;
   uint32_t t_ms;
   while(1)
   {
     if (gps.new_data())
     {
       gps.read(lla, vel, &fix_type, &t_ms);
+      printf ("fix: %s\tt: %d\tlla: %.3f, %.3f, %.3f\tvel: %.3f, %.3f, %.3f\n",
+              fix_names[fix_type].c_str(), t_ms, lla[0], lla[1], lla[2],
+              vel[1], vel[2], vel[3]);
     }
 
   }

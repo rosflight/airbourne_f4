@@ -1,13 +1,24 @@
 #ifndef UBLOX_H
 #define UBLOX_H
 
-#include "uart.h"
-
 #define UBLOX_BUFFER_SIZE 128
 
+#include <stdint.h>
+#include <string>
+#include <vector>
 
-class UBLOX {
+#include "uart.h"
+
+#include <iostream>
+
+
+std::vector<std::string> create_fix_names_map();
+extern std::vector<std::string> fix_names;
+
+class UBLOX
+{
 public:
+    UBLOX();
   enum {
     FIX_TYPE_NO_FIX = 0x00,
     FIX_TYPE_DEAD_RECKONING = 0x01,
@@ -16,17 +27,19 @@ public:
     FIX_TYPE_GPS_AND_DEAD_RECKONING = 0x04,
     FIX_TYPE_TIME_ONLY = 0x05,
   };
-  
+
+
+
   enum {
     START_BYTE_1 = 0xB5,
     START_BYTE_2 = 0x62,
   };
-  
+
   enum {
     NMEA_START_BYTE1 = '$',
     NMEA_START_BYTE2 = 'G',
   };
-  
+
   enum {
     CLASS_NAV = 0x01, //    Navigation Results Messages: Position, Speed, Time, Acceleration, Heading, DOP, SVs used
     CLASS_RXM = 0x02, //    Receiver Manager Messages: Satellite Status, RTC Status
@@ -41,12 +54,12 @@ public:
     CLASS_MGA = 0x13, //    Multiple GNSS Assistance Messages: Assistance data for various GNSS
     CLASS_LOG = 0x21, //    Logging Messages: Log creation, deletion, info and retrieva
   };
-  
+
   enum {
     ACK_ACK = 0x01, // Message Acknowledged
     ACK_NACK = 0x00, // Message Not-Acknowledged
   };
-  
+
   enum {
     AID_ALM = 0x30, // Poll GPS Aiding Almanac Data
     AID_AOP = 0x33, // AssistNow Autonomous data
@@ -92,7 +105,7 @@ public:
     CFG_TXSLOT = 0x53, 	// Set TX buffer time slots configuration
     CFG_USB = 0x1B, 	// Get/Set USB Configuration
   };
-  
+
   enum {
     NAV_AOPSTATUS = 0x60,	// Periodic/Polled AssistNow Autonomous Status
     NAV_ATT = 0x05,		// Periodic/Polled Attitude Solution
@@ -125,9 +138,9 @@ public:
     NAV_VELECEF = 0x11,		// Periodic/Polled Velocity Solution in ECEF
     NAV_VELNED = 0x12,		// Periodic/Polled Velocity Solution in NED
   };
-  
+
   typedef enum {
-    START,    
+    START,
     GOT_START_FRAME,
     GOT_CLASS,
     GOT_MSG_ID,
@@ -138,23 +151,23 @@ public:
     GOT_CK_B,
     DONE,
   } parse_state_t;
-  
+
   typedef struct {
     uint8_t clsID;
     uint8_t msgID;
   }__attribute__((packed)) ACK_ACK_t;
-  
+
   typedef struct {
     uint8_t clsID;
     uint8_t msgID;
   }__attribute__((packed)) ACK_NACK_t;
-  
+
   typedef struct {
     uint8_t msgClass;
     uint8_t msgID;
     uint8_t rate;
   }__attribute__((packed)) CFG_MSG_t;
-  
+
   typedef struct {
     enum {
       DYNMODE_PORTABLE = 0,
@@ -178,7 +191,7 @@ public:
       UTC_STANDARD_RUS = 6, // UTC as operated by the former Soviet Union; derived from GLONASS time
       UTC_STANDARD_CHN = 7, // UTC as operated by the National Time Service Center, China; derived from BeiDou time
     };
-    
+
     enum {
       MASK_DYN            = 0b00000000001, // Apply dynamic model settings
       MASK_MINEL 	  = 0b00000000010, // Apply minimum elevation settings
@@ -191,10 +204,10 @@ public:
       MASK_CNOTHRESHOLD   = 0b00100000000, // Apply CNO threshold settings (cnoThresh, cnoThreshNumSVs).
       MASK_UTC 	          = 0b10000000000, // Apply UTC settings
     };
-    
+
     uint16_t mask;
     uint8_t dynModel;
-    uint8_t fixMode;  
+    uint8_t fixMode;
     int32_t fixedAlt; // (1e-2 m) Fixed altitude (mean sea level) for 2D fix mode.
     uint32_t fixedAltVar; // (0.0001 m^2)Fixed altitude variance for 2D mode.
     int8_t minElev; // (deg) Minimum Elevation for a GNSS satellite to be used in NAV
@@ -211,9 +224,9 @@ public:
     uint16_t staticHoldMax; // Dist m Static hold distance threshold (before quitting static hold)
     uint8_t utcStandard; // - UTC standard to be used:
     uint8_t reserved2[5];
-    
+
   }__attribute__((packed)) CFG_NAV5_t;
-  
+
   typedef struct {
     enum {
       PORT_I2C = 0,
@@ -224,7 +237,7 @@ public:
     enum {
       CHARLEN_8BIT = 0b11000000,
       PARITY_NONE  = 0b100000000000,
-      STOP_BITS_1  = 0x0000          
+      STOP_BITS_1  = 0x0000
     };
     enum {
       IN_UBX   = 0b00000001,
@@ -247,7 +260,7 @@ public:
     uint16_t flags;
     uint8_t reserved2[2];
   }__attribute__((packed)) CFG_PRT_t;
-  
+
   typedef struct {
     enum {
       TIME_REF_UTC = 0,
@@ -260,21 +273,21 @@ public:
     uint16_t navRate; // (cycles) The ratio between the number of measurements and the number of navigation solutions, e.g. 5 means five measurements for every navigation solution
     uint16_t timeRef; // Time system to which measurements are aligned
   }__attribute__((packed)) CFG_RATE_t;
-  
+
   typedef struct  {
     enum {
       VALIDITY_FLAGS_VALIDDATE= 0b01, // Valid UTC Date (see Time Validity section for details)
       VALIDITY_FLAGS_VALIDTIME = 0b10, // Valid UTC Time of Day (see Time Validity section for details)
       VALIDITY_FLAGS_FULLYRESOLVED = 0b100, // UTC Time of Day has been fully resolved (no seconds uncertainty)
     };
-    
+
     enum {
       FIX_STATUS_GNSS_FIX_OK            = 0b00000001, // Valid Fix
       FIX_STATUS_DIFF_SOLN              = 0b00000010, // Differential Corrections were applied
-      FIX_STATUS_PSM_STATE_NOT_ACTIVE   = 0b00000000, 
-      FIX_STATUS_PSM_STATE_ENABLED      = 0b00000100, 
-      FIX_STATUS_PSM_STATE_ACQUISITION  = 0b00001000, 
-      FIX_STATUS_PSM_STATE_TRACKING     = 0b00001100, 
+      FIX_STATUS_PSM_STATE_NOT_ACTIVE   = 0b00000000,
+      FIX_STATUS_PSM_STATE_ENABLED      = 0b00000100,
+      FIX_STATUS_PSM_STATE_ACQUISITION  = 0b00001000,
+      FIX_STATUS_PSM_STATE_TRACKING     = 0b00001100,
       FIX_STATUS_PSM_STATE_POWER_OPTIMIZED_TRACKING   = 0b00010000,
       FIX_STATUS_PSM_STATE_INACTIVE     = 0b00010100,
       FIX_STATUS_HEADING_VALID          = 0b00100000,
@@ -282,7 +295,7 @@ public:
       FIX_STATUS_CARR_SOLN_FLOAT        = 0b01000000,
       FIX_STATUS_CARR_SOLN_FIXED        = 0b10000000,
     };
-    
+
     uint32_t iTOW; // ms GPS time of week of the  navigation epoch . See the  description of iTOW for details.
     uint16_t year; // y Year (UTC)
     uint8_t month; // month Month, range 1..12 (UTC)
@@ -319,22 +332,22 @@ public:
 
   typedef struct
   {
-    uint32_t iTOW;
-    int32_t ecefX;
-    int32_t ecefY;
-    int32_t ecefZ;
-    uint32_t pAcc;
+    uint32_t iTOW; // ms GPS time of week of the  navigation epoch . See the  description of iTOW for details.
+    int32_t ecefX; // cm ECEF X coordinate
+    int32_t ecefY; // cm ECEF Y coordinate
+    int32_t ecefZ; // cm ECEF Z coordinate
+    uint32_t pAcc; // cm Position Accuracy Estimate
   }__attribute__((packed)) NAV_POSECEF_t;
 
   typedef struct
   {
-    uint32_t iTOW;
-    int32_t ecefVX;
-    int32_t ecefVY;
-    int32_t ecefVZ;
-    uint32_t sAcc;
+    uint32_t iTOW; // ms GPS time of week of the  navigation epoch . See the  description of iTOW for details.
+    int32_t ecefVX; // cm ECEF X velocity
+    int32_t ecefVY; // cm ECEF Y velocity
+    int32_t ecefVZ; // cm ECEF Z velocity
+    uint32_t sAcc; // cm Speed Accuracy Estimate
   }__attribute__((packed)) NAV_VELECEF_t;
-  
+
   typedef union {
     uint8_t buffer[UBLOX_BUFFER_SIZE];
     ACK_ACK_t ACK_ACK;
@@ -347,18 +360,23 @@ public:
     NAV_POSECEF_t NAV_POSECEF;
     NAV_VELECEF_t NAV_VELECEF;
   } UBX_message_t;
-  
-  void init(UART* uart_drv);
-  
+
+  void init(UART *uart);
+
+  void read(double* lla, float* vel, uint8_t *fix_type, uint32_t *t_ms);
   void read_cb(uint8_t byte);
-  inline bool new_data() { return new_data_; }
-  inline uint32_t num_messages_received() { return num_messages_received_; }
-  inline const NAV_PVT_t& get_nav_data() const { return nav_message_; }
-  void get_pos_ecef(double* pos_ecef, uint32_t* t_ms);
-  void get_vel_ecef(float* vel_ecef, uint32_t* t_ms);
-  void read(double* lla, float* vel, uint8_t* fix_type, uint32_t* t_ms);
-  
+  inline volatile bool new_data() { return new_data_; }
+  uint32_t volatile num_messages_received() { return num_messages_received_; }
+
+  void lla(double* lla) const;
+  void ned(float* vel) const;
+  uint8_t fix_type() const;
+  void posECEF(double* pos) const;
+  void velECEF(double* vel) const;
+
+
 private:
+  bool detect_baudrate();
   void convert_data();
   void enable_message(uint8_t msg_cls, uint8_t msg_id, uint8_t rate);
   void set_baudrate(const uint32_t baudrate);
@@ -367,16 +385,13 @@ private:
   bool decode_message();
   void calculate_checksum(const uint8_t msg_cls, const uint8_t msg_id, const uint16_t len, const UBX_message_t payload, uint8_t &ck_a, uint8_t &ck_b) const;
   bool send_message(uint8_t msg_class, uint8_t msg_id, UBX_message_t& message, uint16_t len);
-  
+
   uint32_t current_baudrate_ = 115200;
-  const uint32_t baudrates[5] = {115200, 57600, 9600, 19200, 38400};
-  
-  UBX_message_t out_message_;
-  UBX_message_t in_message_;
-  
-  char debug_buffer_[15];
-  uint16_t debug_buffer_head_ = 0;
-  
+  const uint32_t baudrates[5] = {115200, 19200, 57600, 9600, 38400};
+
+  UBX_message_t out_message_ = {};
+  UBX_message_t in_message_ = {};
+
   uint16_t buffer_head_ = 0;
   bool got_message_ = false;
   bool got_ack_ = false;
@@ -384,25 +399,26 @@ private:
   parse_state_t parse_state_;
   uint8_t message_class_;
   uint8_t message_type_;
-  uint16_t length_;  
+  uint16_t length_;
   uint8_t ck_a_;
   uint8_t ck_b_;
   uint32_t num_errors_ = 0;
   uint32_t num_messages_received_ = 0;
-  
-  double lla_[3];
-  float vel_[3];
-  
-  bool looking_for_nmea_;
+
+  double lla_[3] = {};
+  float vel_[3] = {};
+
+  bool looking_for_nmea_ = true;
   uint8_t prev_byte_ = 0;
-  
-  UART* serial_;
-  
-  bool new_data_;
-  int32_t system_start_tow_ms_;
-  NAV_PVT_t nav_message_;
-  NAV_POSECEF_t pos_ecef_message_;
-  NAV_VELECEF_t vel_ecef_message_;
+
+  UART* serial_ = nullptr;
+
+  volatile bool new_data_ = false;
+  NAV_PVT_t nav_message_ = {};
+  NAV_POSECEF_t pos_ecef_ = {};
+  NAV_VELECEF_t vel_ecef_ = {};
 };
+
+
 
 #endif // UBLOX_H
