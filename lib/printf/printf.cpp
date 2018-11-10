@@ -37,6 +37,14 @@ typedef void (*putcf) (void*,char);
 static putcf stdout_putf;
 static void* stdout_putp;
 
+static double abs(double a)
+{
+  if (a < 0)
+    return -a;
+  else
+    return a;
+}
+
 static void uli2a(unsigned long int num, unsigned int base, int uc,char * bf)
 {
     int n=0;
@@ -138,16 +146,16 @@ static void f2a(float num, int decimals, char * bf)
     *bf++ = '.';
     
     // pad with zeros
-    for (int i = mult/10; i >= 1;  i /= 10)
-    {
-        if ( dec < i)
-            *bf++ = '0';
-        else
-            break;
-    }
-    
+//    for (int i = mult/10; i >= 1;  i /= 10)
+    //    {
+    //        if ( dec < i)
+    //            *bf++ = '0';
+    //        else
+    //            break;
+    //    }
+
     // write decimal part
-    i2a(dec, bf);
+    i2a(abs(dec), bf);
 }
 
 static void putchw(void* putp,putcf putf,int n, char z, char* bf)
