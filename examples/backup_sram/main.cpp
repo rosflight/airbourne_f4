@@ -33,54 +33,25 @@
 #include "system.h"
 #include "pwm.h"
 #include "led.h"
-#include "stm32f4xx_pwr.h"
 
 #include "revo_f4.h"
+#include "backup_sram.h"
 
-struct backup_data {
-    uint32_t reset_count;
-    uint32_t answer;
-    uint32_t checksum;
-};
-
-void init_backup_sram(){
-    RCC_APB1PeriphClockCmd(RCC_APB1Periph_PWR, ENABLE);
-    RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_BKPSRAM, ENABLE);
-    PWR_BackupRegulatorCmd(ENABLE);
-
-}
-void write_backup_sram(backup_data& data){
-    PWR_BackupAccessCmd(ENABLE);
-    memcpy(reinterpret_cast<void*>(BKPSRAM_BASE),&data,sizeof(backup_data));
-    PWR_BackupAccessCmd(DISABLE);
-}
-backup_data read_backup_sram(){
-    backup_data data = *(reinterpret_cast<backup_data*>(BKPSRAM_BASE));
-    return data;
-}
-uint32_t checksum_backup_data(const backup_data& data)
-{
-    return data.reset_count ^ data.answer;
-}
-bool check_backup_data(const backup_data& data)
-{
-    return(checksum_backup_data(data)==data.checksum);
-}
 void restart(){
     NVIC_SystemReset();
 }
 int main() {
 	systemInit();
-    init_backup_sram();
-    backup_data read_data = read_backup_sram();
+    backup_sram_init();
+    backup_data_t read_data = backup_sram_read();
     uint32_t reset_count = 0;
-    if(check_backup_data(read_data))
+    if(check_backup_checksum(read_data))
         reset_count = read_data.reset_count;
-    backup_data write_data;
-    write_data.answer=42;
+    backup_data_t write_data={};
     write_data.reset_count=++reset_count;
-    write_data.checksum=checksum_backup_data(write_data);
-    write_backup_sram(write_data);
+    write_data.error_code=0xDEADBEEF;
+    write_data.checksum=generate_backup_checksum(write_data);
+    backup_sram_write(write_data);
     delay(300);
     restart();
 }

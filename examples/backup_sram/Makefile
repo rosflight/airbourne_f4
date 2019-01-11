@@ -133,7 +133,7 @@ CXXSOURCES = $(PRINTF_SRC) \
              led.cpp \
              main.cpp \
              vcp.cpp \
-             pwm.cpp
+	     backup_sram.cpp
 
 INCLUDE_DIRS =  $(SRC_DIR) \
                 $(ROOT)/include \
