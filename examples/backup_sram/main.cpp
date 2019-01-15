@@ -36,12 +36,16 @@
 
 #include "revo_f4.h"
 #include "backup_sram.h"
+#include "vcp.h"
 
 void restart(){
     NVIC_SystemReset();
 }
 int main() {
 	systemInit();
+    backup_sram_init();
+    VCP vcp;
+    vcp.init();
     backup_sram_init();
     backup_data_t read_data = backup_sram_read();
     uint32_t reset_count = 0;
@@ -51,8 +55,8 @@ int main() {
     write_data.reset_count=++reset_count;
     write_data.error_code=0xDEADBEEF;
     write_data.checksum=generate_backup_checksum(write_data);
-    backup_sram_write(write_data);
     delay(300);
+    backup_sram_write(write_data);
     restart();
 }
 

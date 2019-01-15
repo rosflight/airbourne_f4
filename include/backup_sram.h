@@ -23,4 +23,5 @@ void backup_sram_write(const backup_data_t&);
 backup_data_t backup_sram_read();
 bool check_backup_checksum(const backup_data_t&);
 uint32_t generate_backup_checksum(const backup_data_t&);
+void test_backup_sram();
 #endif // BACKUP_SRAM_H
