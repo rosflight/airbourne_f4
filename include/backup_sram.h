@@ -16,6 +16,8 @@ struct backup_data_t{
     uint32_t error_code;
     debug_info_t debug_info;
     uint32_t reset_count;
+    uint32_t arm_status;
+    //TODO add state manager info
     uint32_t checksum; //With the current implementation of the checksum, this must go last
 };
 void backup_sram_init();

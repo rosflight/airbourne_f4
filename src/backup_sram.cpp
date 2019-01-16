@@ -5,6 +5,7 @@
 
 void backup_sram_init()
 {
+    static_assert(sizeof(backup_data_t)%4==0,"Error with debug_info_t: Size is not multiple of 32 bits");
 #pragma GCC diagnostic push //Ignore old style cast from included library
 #pragma GCC diagnostic ignored "-Wold-style-cast"
     RCC_APB1PeriphResetCmd(RCC_APB1Periph_PWR, DISABLE);
