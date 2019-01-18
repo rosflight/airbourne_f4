@@ -23,12 +23,23 @@ void backup_sram_write(const rosflight_firmware::backup_data_t& data)
 #pragma GCC diagnostic pop
     PWR_BackupAccessCmd(DISABLE);
 }
-rosflight_firmware::backup_data_t backup_sram_read()
-{
+rosflight_firmware::backup_data_t do_first_read() {
 #pragma GCC diagnostic push //Ignore old style cast from included library
 #pragma GCC diagnostic ignored "-Wold-style-cast"
-    static rosflight_firmware::backup_data_t data = *(reinterpret_cast<rosflight_firmware::backup_data_t*>(BKPSRAM_BASE));
+    rosflight_firmware::backup_data_t data = *(reinterpret_cast<rosflight_firmware::backup_data_t*>(BKPSRAM_BASE));
 #pragma GCC diagnostic pop
+#pragma GCC diagnostic push //Ignore blank fields in struct
+#pragma GCC diagnostic ignored "-Wmissing-field-initializers"
+    rosflight_firmware::backup_data_t blank_data = {0};
+#pragma GCC diagnostic pop
+    if(!check_backup_checksum(data))
+        data=blank_data;
+    backup_sram_write(blank_data);
+    return data;
+}
+rosflight_firmware::backup_data_t backup_sram_read()
+{
+    static rosflight_firmware::backup_data_t data = do_first_read();
     return data;
 }
 bool check_backup_checksum(const rosflight_firmware::backup_data_t& data)
