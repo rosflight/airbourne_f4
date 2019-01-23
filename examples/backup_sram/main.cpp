@@ -47,11 +47,11 @@ int main() {
     VCP vcp;
     vcp.init();
     backup_sram_init();
-    backup_data_t read_data = backup_sram_read();
+    BackupData read_data = backup_sram_read();
     uint32_t reset_count = 0;
     if(check_backup_checksum(read_data))
         reset_count = read_data.reset_count;
-    backup_data_t write_data={};
+    BackupData write_data={};
     write_data.reset_count=++reset_count;
     write_data.error_code=0xDEADBEEF;
     write_data.checksum=generate_backup_checksum(write_data);
