@@ -23,6 +23,9 @@ private:
     uint16_t max_throttle_val_;
     uint16_t min_throttle_val_;
 
+    GPIO_TypeDef* port_;
+    uint16_t pin_;
+
 };
 
 #endif // DRV_DSHOT_H
