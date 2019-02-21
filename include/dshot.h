@@ -4,14 +4,17 @@
 
 #include "revo_f4.h"
 
-#define DHSOT_RESET_BIT_PULSE_WIDTH_NS 625
-#define DHSOT_SET_BIT_PULSE_WIDTH_NS 1250
+// we have 16 timer values for the actual payload itself
+// then the 17th time value is a zero to confirm we hold
+// the output at 0 until the bit period is over (i think)
+#define DSHOT_OUT_BUFF_SIZE 17
 
 class DSHOT_OUT {
 public:
     DSHOT_OUT();
 
-    void init();
+    // TODO: temp, change bitrate to an enum
+    void init(int dshot_bitrate);
 
     void enable();
     void disable();
@@ -34,7 +37,8 @@ private:
 
     GPIO_TypeDef* port_;
     uint16_t pin_;
-    uint32_t out_buffer_[16];
+
+    uint32_t out_buffer_[DSHOT_OUT_BUFF_SIZE];
 
 };
 
