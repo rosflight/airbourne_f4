@@ -42,6 +42,8 @@ int main()
     uint32_t last_print_ms = 0;
     uint16_t result, packet;
 
+    float ns_per_cyc = 0.0;
+
     while (1)
     {
         if (millis() > last_print_ms + 50)
@@ -55,9 +57,11 @@ int main()
             }
 
             result = dshot.write(test_value);
+            ns_per_cyc = dshot.getNSCyc();
 
             last_print_ms = millis();
             printf("For input: 0.%02d -> %04x\n", (uint32_t)(test_value*100), result);
+            printf("tim cycles per ns:: %f\n", ns_per_cyc);
         }
     }
 }
