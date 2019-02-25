@@ -10,6 +10,7 @@
 
 UBLOX* gps_Ptr;
 
+//A C style callback
 void cb(uint8_t byte)
 {
     gps_Ptr->read_cb(byte);
@@ -17,6 +18,7 @@ void cb(uint8_t byte)
 
 UBLOX::UBLOX(){}
 
+//Look for a GPS, and if found, change its settings
 void UBLOX::init(UART* uart)
 {
   gps_Ptr = this;
@@ -49,6 +51,11 @@ void UBLOX::init(UART* uart)
   enable_message(CLASS_NAV, NAV_VELECEF, 1);
 }
 
+//Attempt to detect the baudrate by trying a rate, waiting 1 s, and
+//seeing if any messages are recieved.
+//Attempted baudrates and the order in which they are tried are defined in ublox.h, in the array 'baudrates'
+//As a consequence of the changing baudrates, the sensor is treated as
+//disconnected until the procedure finishes
 bool UBLOX::detect_baudrate()
 {
   current_baudrate_ = 0;
@@ -59,6 +66,8 @@ bool UBLOX::detect_baudrate()
     uint32_t timeout_ms(1000);
     uint32_t start_ms = millis();
     uint32_t now_ms = millis();
+    //TREYDO should got_message_ be set to false here?
+    got_message_ = false;
     while (now_ms < start_ms + timeout_ms)
     {
       now_ms = millis();
@@ -79,6 +88,7 @@ bool UBLOX::send_message(uint8_t msg_class, uint8_t msg_id, UBX_message_t& messa
 {
   // First, calculate the checksum
   uint8_t ck_a, ck_b;
+  //TREYDO pass by reference, with ints?
   calculate_checksum(msg_class, msg_id, len, message, ck_a, ck_b);
 
   // Send message
@@ -94,6 +104,9 @@ bool UBLOX::send_message(uint8_t msg_class, uint8_t msg_id, UBX_message_t& messa
   return true;
 }
 
+//Set the baudrate and other settings on the GPS receiver
+//This requires the flight controller to have detected the correct, current baud rate
+//This also changes the flight controller's baud rate to match the GPS reciever
 void UBLOX::set_baudrate(const uint32_t baudrate)
 {
   DBG("Setting baudrate to %d\n", baudrate);
@@ -111,11 +124,14 @@ void UBLOX::set_baudrate(const uint32_t baudrate)
   current_baudrate_ = baudrate;
 }
 
+//Checks if there is a GPS reciever present, which is determined by checking if
+//it has ever recieved a valid message
 bool UBLOX::present()
 {
   return got_message_;
 }
 
+//Set the dynamic mode to airborne, with a max acceleration of 4G
 void UBLOX::set_dynamic_mode()
 {
   memset(&out_message_, 0, sizeof(CFG_NAV5_t));
@@ -125,6 +141,7 @@ void UBLOX::set_dynamic_mode()
   send_message(CLASS_CFG, CFG_PRT, out_message_, sizeof(CFG_NAV5_t));
 }
 
+//Set the frequency of nav messages, defined as the period in ms
 void UBLOX::set_nav_rate(uint8_t period_ms)
 {
   memset(&out_message_, 0, sizeof(CFG_RATE_t));
@@ -243,7 +260,7 @@ void UBLOX::read_cb(uint8_t byte)
   prev_byte_ = byte;
 }
 
-void UBLOX::read(double* lla, float* vel, uint8_t* fix_type, uint32_t* t_ms, float* hacc, float* vacc, float* sacc)
+void UBLOX::read(double* lla_local, float* vel, uint8_t* fix_type_local, uint32_t* t_ms, float* hacc, float* vacc, float* sacc)
 {
   if (new_data_)
   {
@@ -252,14 +269,18 @@ void UBLOX::read(double* lla, float* vel, uint8_t* fix_type, uint32_t* t_ms, flo
   }
   for (int i = 0; i < 3; i++)
   {
-    lla[i] = lla_[i];
+    lla_local[i] = lla_[i];
     vel[i] = vel_[i];
   }
-  (*fix_type) = nav_message_.fixType;
+  (*fix_type_local) = nav_message_.fixType;
   (*t_ms) = nav_message_.iTOW;
   (*hacc) = nav_message_.hAcc*1e-3;
   (*vacc) = nav_message_.vAcc*1e-3;
   (*sacc) = nav_message_.sAcc*1e-3;
+}
+void UBLOX::read_pvt(UBLOX::NAV_PVT_t  &pvt)
+{
+    pvt=this->nav_message_;
 }
 
 bool UBLOX::decode_message()
