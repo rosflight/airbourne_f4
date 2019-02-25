@@ -16,7 +16,7 @@ class UBLOX
 {
 public:
     UBLOX();
-  enum {
+  enum { //Fix types
     FIX_TYPE_NO_FIX = 0x00,
     FIX_TYPE_DEAD_RECKONING = 0x01,
     FIX_TYPE_2D = 0x02,
@@ -25,19 +25,17 @@ public:
     FIX_TYPE_TIME_ONLY = 0x05,
   };
 
-
-
-  enum {
+  enum { // Start Bytes
     START_BYTE_1 = 0xB5,
     START_BYTE_2 = 0x62,
   };
 
-  enum {
+  enum { // NMEA Start Bytes
     NMEA_START_BYTE1 = '$',
     NMEA_START_BYTE2 = 'G',
   };
 
-  enum {
+  enum { // Message Classes
     CLASS_NAV = 0x01, //    Navigation Results Messages: Position, Speed, Time, Acceleration, Heading, DOP, SVs used
     CLASS_RXM = 0x02, //    Receiver Manager Messages: Satellite Status, RTC Status
     CLASS_INF = 0x04, //    Information Messages: Printf-Style Messages, with IDs such as Error, Warning, Notice
@@ -52,12 +50,12 @@ public:
     CLASS_LOG = 0x21, //    Logging Messages: Log creation, deletion, info and retrieva
   };
 
-  enum {
+  enum { // Ack/Nack
     ACK_ACK = 0x01, // Message Acknowledged
     ACK_NACK = 0x00, // Message Not-Acknowledged
   };
 
-  enum {
+  enum { // AID enums
     AID_ALM = 0x30, // Poll GPS Aiding Almanac Data
     AID_AOP = 0x33, // AssistNow Autonomous data
     AID_EPH = 0x31, // GPS Aiding Ephemeris Input/Output Message
@@ -65,7 +63,7 @@ public:
     AID_INI = 0x01, // Aiding position, time, frequency, clock drift
   };
 
-  enum {
+  enum { // CFG Message ID's
     CFG_ANT = 0x13, 	// Get/Set Antenna Control Settings
     CFG_BATCH = 0x93, 	// Get/Set Get/Set data batching configuration
     CFG_CFG = 0x09, 	// Command Clear, Save and Load configurations
@@ -80,7 +78,7 @@ public:
     CFG_HNR = 0x5C, 	// Get/Set High Navigation Rate Settings
     CFG_INF = 0x02, 	// Poll Request Poll configuration for one protocol
     CFG_ITFM = 0x39, 	// Get/Set Jamming/Interference Monitor configuration
-    FG_LOGFILTER = 0x47,// Get/Set Data Logger Configuration
+    CFG_LOGFILTER = 0x47,// Get/Set Data Logger Configuration
     CFG_MSG = 0x01, 	// Poll Request Poll a message configuration
     CFG_NAV5 = 0x24, 	// Get/Set Navigation Engine Settings
     CFG_NAVX5 = 0x23, 	// Get/Set Navigation Engine Expert Settings
@@ -103,7 +101,7 @@ public:
     CFG_USB = 0x1B, 	// Get/Set USB Configuration
   };
 
-  enum {
+  enum { // NAV Message ID's
     NAV_AOPSTATUS = 0x60,	// Periodic/Polled AssistNow Autonomous Status
     NAV_ATT = 0x05,		// Periodic/Polled Attitude Solution
     NAV_CLOCK = 0x22,		// Periodic/Polled Clock Solution
@@ -136,7 +134,7 @@ public:
     NAV_VELNED = 0x12,		// Periodic/Polled Velocity Solution in NED
   };
 
-  typedef enum {
+  typedef enum { // State machine states
     START,
     GOT_START_FRAME,
     GOT_CLASS,
@@ -165,8 +163,8 @@ public:
     uint8_t rate;
   }__attribute__((packed)) CFG_MSG_t;
 
-  typedef struct {
-    enum {
+  typedef struct { // Navigation settings, for CFG NAV5 command
+    enum { //DYNMODE options
       DYNMODE_PORTABLE = 0,
       DYNMODE_STATIONARY = 2,
       DYNMODE_PEDESTRIAN = 3,
@@ -176,20 +174,20 @@ public:
       DYNMODE_AIRBORNE_2G = 7,
       DYNMODE_AIRBORNE_4G = 8
     };
-    enum {
+    enum { //FIXMODE options
       FIXMODE_2D_ONLY = 1,
       FIXMODE_3D_ONLY = 2,
       FIXMODE_AUTO = 3,
     };
 
-    enum{
+    enum{ //UTC options
       UTC_STANDARD_AUTO = 0, // receiver selects based on GNSS configuration (see GNSS time bases).
       UTC_STANDARD_USA = 3, // UTC as operated by the U.S. Naval Observatory (USNO); derived from GPS time
       UTC_STANDARD_RUS = 6, // UTC as operated by the former Soviet Union; derived from GLONASS time
       UTC_STANDARD_CHN = 7, // UTC as operated by the National Time Service Center, China; derived from BeiDou time
     };
 
-    enum {
+    enum { //MASK options
       MASK_DYN            = 0x001, // Apply dynamic model settings
       MASK_MINEL 	        = 0x002, // Apply minimum elevation settings
       MASK_POSFIXMODE     = 0x004, // Apply fix mode settings
@@ -224,25 +222,25 @@ public:
 
   }__attribute__((packed)) CFG_NAV5_t;
 
-  typedef struct {
-    enum {
+  typedef struct { // Port settings, for CFG PRT command
+    enum { // Serial Port choice
       PORT_I2C = 0,
       PORT_UART1 = 1,
       PORT_USB = 3,
       PORT_SPI = 4
     };
-    enum {
+    enum { // UART settings
       CHARLEN_8BIT = 0x00C0,
       PARITY_NONE  = 0x0800,
       STOP_BITS_1  = 0x0000
     };
-    enum {
+    enum { // In Protocol choice
       IN_UBX   = 0x01,
       IN_NMEA  = 0x02,
       IN_RTCM  = 0x04,
       IN_RTCM3 = 0x20,
     };
-    enum {
+    enum { // Out Protocal choice
       OUT_UBX   = 0x01,
       OUT_NMEA  = 0x02,
       OUT_RTCM3 = 0x20,
@@ -258,8 +256,8 @@ public:
     uint8_t reserved2[2];
   }__attribute__((packed)) CFG_PRT_t;
 
-  typedef struct {
-    enum {
+  typedef struct { // Ouput rate settings, for CFG RATE command
+    enum { // Time Reference choice
       TIME_REF_UTC = 0,
       TIME_REF_GPS = 1,
       TIME_REF_GLONASS = 2,
@@ -271,14 +269,14 @@ public:
     uint16_t timeRef; // Time system to which measurements are aligned
   }__attribute__((packed)) CFG_RATE_t;
 
-  typedef struct  {
-    enum {
+  typedef struct  { // Position, velocity, time packet NAV PVT
+    enum { //Time validity flags
       VALIDITY_FLAGS_VALIDDATE= 0x01, // Valid UTC Date (see Time Validity section for details)
       VALIDITY_FLAGS_VALIDTIME = 0x02, // Valid UTC Time of Day (see Time Validity section for details)
       VALIDITY_FLAGS_FULLYRESOLVED = 0x04, // UTC Time of Day has been fully resolved (no seconds uncertainty)
     };
 
-    enum {
+    enum { // Flags from the "flags" field
       FIX_STATUS_GNSS_FIX_OK            = 0x01, // Valid Fix
       FIX_STATUS_DIFF_SOLN              = 0x02, // Differential Corrections were applied
       FIX_STATUS_PSM_STATE_NOT_ACTIVE   = 0x00,
@@ -327,8 +325,17 @@ public:
     uint16_t magAcc; // 1e-2 deg Magnetic declination accuracy
   }__attribute__((packed)) NAV_PVT_t;
 
-  typedef struct
-  {
+  typedef struct  {
+      uint16_t year; // y Year (UTC)
+      uint8_t month; // month Month, range 1..12 (UTC)
+      uint8_t day; // d Day of month, range 1..31 (UTC)
+      uint8_t hour; // h Hour of day, range 0..23 (UTC)
+      uint8_t min; // min Minute of hour, range 0..59 (UTC)
+      uint8_t sec; // s Seconds of minute, range 0..60 (UTC)
+      int32_t nano; // ns Fraction of second, range -1e9 .. 1e9 (UTC)
+  } UTCTime;
+
+  typedef struct { // Earth centered, earth fixed position data
     uint32_t iTOW; // ms GPS time of week of the  navigation epoch . See the  description of iTOW for details.
     int32_t ecefX; // cm ECEF X coordinate
     int32_t ecefY; // cm ECEF Y coordinate
@@ -336,8 +343,7 @@ public:
     uint32_t pAcc; // cm Position Accuracy Estimate
   }__attribute__((packed)) NAV_POSECEF_t;
 
-  typedef struct
-  {
+  typedef struct { //Earth centered, earth fixed velocity data
     uint32_t iTOW; // ms GPS time of week of the  navigation epoch . See the  description of iTOW for details.
     int32_t ecefVX; // cm ECEF X velocity
     int32_t ecefVY; // cm ECEF Y velocity
@@ -345,7 +351,7 @@ public:
     uint32_t sAcc; // cm Speed Accuracy Estimate
   }__attribute__((packed)) NAV_VELECEF_t;
 
-  typedef union {
+  typedef union { //A union of all of the message data payloads, to allow for reinterpretation
     uint8_t buffer[UBLOX_BUFFER_SIZE];
     ACK_ACK_t ACK_ACK;
     ACK_NACK_t ACK_NACK;
@@ -363,6 +369,7 @@ public:
   bool present();
   void read(double* lla, float* vel, uint8_t *fix_type, uint32_t *t_ms,
             float *hacc, float *vacc, float *sacc);
+  void read_pvt(UBLOX::NAV_PVT_t &pvt);
   void read_cb(uint8_t byte);
   inline bool new_data() { return new_data_; }
   uint32_t num_messages_received() { return num_messages_received_; }
@@ -407,15 +414,21 @@ private:
   double lla_[3] = {};
   float vel_[3] = {};
 
+  NAV_PVT_t last_pvt;
+  uint64_t last_pvt_timestamp=0;
+
   bool looking_for_nmea_ = true;
   uint8_t prev_byte_ = 0;
 
   UART* serial_ = nullptr;
 
   volatile bool new_data_ = false;
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wmissing-field-initializers"
   NAV_PVT_t nav_message_ = {};
   NAV_POSECEF_t pos_ecef_ = {};
   NAV_VELECEF_t vel_ecef_ = {};
+#pragma GCC diagnostic pop
 };
 
 const std::string fix_names[6] =
