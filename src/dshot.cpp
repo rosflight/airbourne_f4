@@ -1,13 +1,9 @@
 #include "dshot.h"
 
-// TODO: these are temporary, since this wont work if you're using a different DShot protocol
-#define DSHOT_RESET_BIT_PULSE_WIDTH_NS 625
-#define DSHOT_SET_BIT_PULSE_WIDTH_NS 1250
-#define DSHOT_BIT_PERIOD_NS 1670
-
-#define DSHOT_PERIOD_COUNT_CYCLES          70
-#define DSHOT_BIT_0_COUNT_CYCLES           26
-#define DSHOT_BIT_1_COUNT_CYCLES           53
+// The timer frequency is scaled so that these are always true
+#define DSHOT_PERIOD_CYCLES_COUNT          70
+#define DSHOT_BIT_0_CYCLES_COUNT           26
+#define DSHOT_BIT_1_CYCLES_COUNT           53
 
 DSHOT_OUT::DSHOT_OUT(){}
 
@@ -23,7 +19,9 @@ void DSHOT_OUT::init(int dshot_bitrate) {
 
     TIM_TypeDef* TIMPtr = TIM3;
 
-    // SETUP GPIO PIN FOR OUTPUT
+    ////////////////////////////
+    // SETUP GPIO FOR OUTPUT //
+    //////////////////////////
     // TODO: parameterize. rn just going to pwm output 0
     port_ = GPIOB;
     pin_  = GPIO_Pin_0;
@@ -38,24 +36,24 @@ void DSHOT_OUT::init(int dshot_bitrate) {
     gpio_init_struct.GPIO_PuPd 	= GPIO_PuPd_DOWN;
     GPIO_Init(port_, &gpio_init_struct);
 
-    // SETUP DMA, which will hold packets as they go out to esc
-
+    ////////////////////////////
+    //      SETUP DMA        //
+    //////////////////////////
     // disable while we configure
     DMA_Cmd(DMA2_Stream0, DISABLE);
     DMA_DeInit(DMA2_Stream0);
 
+    // set it up so it manages the packets going out to the ESC
     DMA_InitTypeDef  DMA_InitStructure_;
     DMA_InitStructure_.DMA_Channel = DMA_Channel_6; // TODO: not sure how much this matters yet
     DMA_InitStructure_.DMA_PeripheralBaseAddr = reinterpret_cast<uintptr_t>(&TIMPtr->DMAR); /*!< TIM DMA address for full transfer,   Address offset: 0x4C */
     DMA_InitStructure_.DMA_Memory0BaseAddr    = reinterpret_cast<uintptr_t>(&out_buffer_[0]); // base address of your dma out array (address of first element)
     DMA_InitStructure_.DMA_DIR = DMA_DIR_MemoryToPeripheral; // going from memory to esc
-    
     DMA_InitStructure_.DMA_BufferSize = DSHOT_OUT_BUFF_SIZE; // how many elements are in your array (aka how many elements in dshot's out_buff_)?
-
     DMA_InitStructure_.DMA_PeripheralInc = DMA_PeripheralInc_Disable; // dont increment the address to the peripheral
     DMA_InitStructure_.DMA_MemoryInc = DMA_MemoryInc_Enable; // should the memory address be incremented (after we send a block?)
     DMA_InitStructure_.DMA_PeripheralDataSize = DMA_PeripheralDataSize_Word; // peripheral datasize (what size of thing is peripheral expecting?) half-word == 16 bits
-    DMA_InitStructure_.DMA_MemoryDataSize = DMA_MemoryDataSize_Word; // size of memory chunks in buffer we're sending
+    DMA_InitStructure_.DMA_MemoryDataSize = DMA_MemoryDataSize_HalfWord; // size of memory chunks in buffer we're sending
     DMA_InitStructure_.DMA_Priority = DMA_Priority_VeryHigh; // timely motor control is mildly important ;)
     // fifo mode
     // fifo threshold
@@ -63,22 +61,15 @@ void DSHOT_OUT::init(int dshot_bitrate) {
     DMA_InitStructure_.DMA_PeripheralBurst = DMA_PeripheralBurst_Single;
 
 
-    //calculate timer values as we do in the pwm driver
-    //This is dependent on how fast the SystemCoreClock is. (ie will change between stm32fX models)
+    // figure out the output timer values
+    // This is dependent on how fast the SystemCoreClock is. (ie will change between stm32fX models)
     // "The prescaler can divide the counter clock frequency by any factor between 1 and 65536"
     const uint16_t prescaler_default = 1; //GOTTA GO FASTTTTT
     uint32_t freq_prescale = prescaler_default * 2;
-    uint32_t tim_prescaler = prescaler_default;
-
-    if (TIMPtr == TIM9 || TIMPtr == TIM10 || TIMPtr == TIM11)
-    {
-        //For F4's (possibly others) TIM9-11 have a max timer clk double that of all the other TIMs
-        //compensate for this by doubling its prescaler
-        tim_prescaler = tim_prescaler * 2;
-    }
 
     // this is the base DSHOT12000 frequency --> fast as possible
-    uint32_t timer_freq_hz = SystemCoreClock / freq_prescale; //84,0000
+    uint32_t timer_freq_hz = SystemCoreClock / freq_prescale; //84,000,000
+    dshot_freq_hz = timer_freq_hz;
 
     // TODO: temp, change bitrate input param to an enum
     switch (dshot_bitrate) {
@@ -93,10 +84,19 @@ void DSHOT_OUT::init(int dshot_bitrate) {
             break;
     }
 
-    cycles_per_ns_ = timer_freq_hz / 1000000000.0; //E^9
-    
-    // im not sure what the heck this is doing:
-    // constexpr const auto bit_period_ = (TIM_RATE + 1200000/2) / 1200000;
+    // Setup timer prescaler for version of DSHOT we're using
+    //      Objective: scale TIM properly (for each DSHOT speed) so that it is 
+    //      always DSHOT_PERIOD_CYCLES_COUNT per bit
+    uint32_t tim_prescaler = timer_freq_hz / dshot_freq_hz;
+
+    if (TIMPtr == TIM9 || TIMPtr == TIM10 || TIMPtr == TIM11)
+    {
+        //For F4's (possibly others) TIM9-11 have a max timer clk double that of all the other TIMs
+        //compensate for this by doubling its prescaler
+        tim_prescaler = tim_prescaler * 2;
+    }
+    // prescaling is 0 based, so subtract 1
+    tim_prescaler -= 1;
 
     // calculate how long the timer needs to run for a 0 bit and a 1 bit in DSHOT
     //   make sure we round properly before truncate with a cast. it's probably good to 
@@ -104,19 +104,35 @@ void DSHOT_OUT::init(int dshot_bitrate) {
     //   Bit length (total timing period) is 1670 nanoseconds
     //   For a bit to be 0, the pulse width is 625 nanosecond
     //   For a bit to be 1, the pulse width is 1250 nanoseconds
-    uint16_t bit_period   = static_cast<uint16_t>((cycles_per_ns_ * DSHOT_BIT_PERIOD_NS) + 0.5);
-    cycles_per_reset_bit_ = static_cast<uint32_t>((cycles_per_ns_ * DSHOT_RESET_BIT_PULSE_WIDTH_NS) + 0.5);
-    cycles_per_set_bit_   = static_cast<uint32_t>((cycles_per_ns_ * DSHOT_SET_BIT_PULSE_WIDTH_NS) + 0.5);
 
     // setup the timer:
     // we need to tell the timer to trigger the DMA once it counts up to the value it was told
-    // DELETE ME: i dont think you need todo output compare here
     TIM_TimeBaseStructInit(&tim_init_struct);
-    tim_init_struct.TIM_Period 		  = bit_period - 1; // 0 indexed, goes into TIMx_ARR register
-    tim_init_struct.TIM_Prescaler 	  = tim_prescaler - 1;
+    tim_init_struct.TIM_Period 		  = DSHOT_PERIOD_CYCLES_COUNT - 1; // 0 indexed, goes into TIMx_ARR register
+    tim_init_struct.TIM_Prescaler 	  = tim_prescaler;
     tim_init_struct.TIM_ClockDivision = TIM_CKD_DIV1; //0x0000
     tim_init_struct.TIM_CounterMode   = TIM_CounterMode_Up;
     TIM_TimeBaseInit(TIMPtr, &tim_init_struct);
+
+    // SETUP TIM OUTPUT COMPARE
+    //    objective - tim runs for DSHOT_PERIOD_CYCLES_COUNT at which point it
+    //      triggers DMA and gets the next time value and starts again
+    TIM_OCStructInit(&tim_oc_init_struct);
+    tim_oc_init_struct.TIM_OCMode 		= TIM_OCMode_PWM2;
+    tim_oc_init_struct.TIM_OutputState 	= TIM_OutputState_Enable;
+    tim_oc_init_struct.TIM_OutputNState = TIM_OutputNState_Disable;
+    tim_oc_init_struct.TIM_Pulse 		= min_cyc_ - 1;
+    tim_oc_init_struct.TIM_OCPolarity 	= TIM_OCPolarity_Low;
+    tim_oc_init_struct.TIM_OCIdleState 	= TIM_OCIdleState_Set;
+
+    // The structs presented by the StdPeriphDriver code dont expose functionality
+    //      to all the weird stuff we need todo with the timer, so we've gotta
+    //      directly setup certain registers
+
+    // modify the timer dma control register (TIMx_DCR)
+    //      I'm not positive why I'm setting DCR.DBA = 0xe here other than
+    //      that's what ST does in their example on page 644 of "STM43F405 etc reference.pdf"
+    TIM_DMAConfig(TIMPtr, 0xe, DSHOT_OUT_BUFF_SIZE);
 
     /*
     // Configure the period

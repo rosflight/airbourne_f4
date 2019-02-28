@@ -24,6 +24,8 @@ public:
 
     float getNSCyc();
 
+    uint32_t dshot_freq_hz;
+
 private:
     uint16_t prepareDshotPacket(float value);
     bool request_telemetry_;
@@ -38,7 +40,7 @@ private:
     GPIO_TypeDef* port_;
     uint16_t pin_;
 
-    uint32_t out_buffer_[DSHOT_OUT_BUFF_SIZE];
+    uint16_t out_buffer_[DSHOT_OUT_BUFF_SIZE];
 
 };
 
