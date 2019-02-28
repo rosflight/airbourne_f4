@@ -20,21 +20,14 @@ public:
     void disable();
     void setRequestTelemetry(bool request_telemetry);
 
-    uint16_t write(float value);
-
+    void write(float value);
     uint32_t dshot_freq_hz;
 
 private:
     uint16_t prepareDshotPacket(float value);
     bool request_telemetry_;
 
-    uint16_t max_throttle_val_;
-    uint16_t min_throttle_val_;
-
-    float cycles_per_ns_;
-    uint32_t cycles_per_reset_bit_;
-    uint32_t cycles_per_set_bit_;
-
+    TIM_TypeDef* TIMPtr;
     GPIO_TypeDef* port_;
     uint16_t pin_;
 

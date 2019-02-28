@@ -1,23 +1,25 @@
 #include "dshot.h"
 
+#include "printf.h" //todo: delete me
+
 // The timer frequency is scaled so that these are always true
 #define DSHOT_PERIOD_CYCLES_COUNT          70
 #define DSHOT_BIT_0_CYCLES_COUNT           26
 #define DSHOT_BIT_1_CYCLES_COUNT           53
+#define DSHOT_MIN_THROTTLE                 48 // there are some lower values (0-47) that are reserved by the protocol
+#define DSHOT_MAX_THROTTLE                 2047 // 11 bits of all 1s
 
 DSHOT_OUT::DSHOT_OUT(){}
 
 void DSHOT_OUT::init(int dshot_bitrate) {
 
     request_telemetry_ = false;
-    max_throttle_val_ = 2047; // 11 bits of all 1s
-    min_throttle_val_ = 48; // there are some lower values (0-47) that are reserved by the protocol
 
     GPIO_InitTypeDef gpio_init_struct;
     TIM_TimeBaseInitTypeDef tim_init_struct;
     TIM_OCInitTypeDef tim_oc_init_struct;
 
-    TIM_TypeDef* TIMPtr = TIM3;
+    TIMPtr = TIM3;
 
     ////////////////////////////
     // SETUP GPIO FOR OUTPUT //
@@ -28,7 +30,6 @@ void DSHOT_OUT::init(int dshot_bitrate) {
 
     // Configure GPIO as alternative function, fast speed (not high speed)
     GPIO_PinAFConfig(port_, GPIO_PinSource0, GPIO_AF_TIM3);
-
     gpio_init_struct.GPIO_Pin 	= pin_;
     gpio_init_struct.GPIO_Mode 	= GPIO_Mode_AF; // AF is "alternative function"
     gpio_init_struct.GPIO_Speed	= GPIO_Speed_50MHz; // aka "Fast mode"
@@ -39,14 +40,13 @@ void DSHOT_OUT::init(int dshot_bitrate) {
     ////////////////////////////
     //      SETUP DMA        //
     //////////////////////////
-    // disable while we configure
-    DMA_Cmd(DMA2_Stream0, DISABLE);
+    DMA_Cmd(DMA2_Stream0, DISABLE); // disable while we configure
     DMA_DeInit(DMA2_Stream0);
 
     // set it up so it manages the packets going out to the ESC
     DMA_InitTypeDef  DMA_InitStructure_;
     DMA_InitStructure_.DMA_Channel = DMA_Channel_6; // TODO: not sure how much this matters yet
-    DMA_InitStructure_.DMA_PeripheralBaseAddr = reinterpret_cast<uintptr_t>(&TIMPtr->DMAR); /*!< TIM DMA address for full transfer,   Address offset: 0x4C */
+    DMA_InitStructure_.DMA_PeripheralBaseAddr = reinterpret_cast<uintptr_t>(&TIMPtr->DMAR); /*!< TIM DMA address for full transfer,  */
     DMA_InitStructure_.DMA_Memory0BaseAddr    = reinterpret_cast<uintptr_t>(&out_buffer_[0]); // base address of your dma out array (address of first element)
     DMA_InitStructure_.DMA_DIR = DMA_DIR_MemoryToPeripheral; // going from memory to esc
     DMA_InitStructure_.DMA_BufferSize = DSHOT_OUT_BUFF_SIZE; // how many elements are in your array (aka how many elements in dshot's out_buff_)?
@@ -124,9 +124,9 @@ void DSHOT_OUT::init(int dshot_bitrate) {
     tim_oc_init_struct.TIM_OutputState 	= TIM_OutputState_Enable; 
     // i'm not sure that these next 3 options matter all that much. But it's what we set 
     //      in the PWM code so do it here ¯\_(ツ)_/¯ 
-    tim_oc_init_struct.TIM_OutputNState = TIM_OutputNState_Disable;
-    tim_oc_init_struct.TIM_OCPolarity 	= TIM_OCPolarity_Low;
-    tim_oc_init_struct.TIM_OCIdleState 	= TIM_OCIdleState_Set;
+    // tim_oc_init_struct.TIM_OutputNState = TIM_OutputNState_Disable;
+    // tim_oc_init_struct.TIM_OCPolarity 	= TIM_OCPolarity_Low;
+    // tim_oc_init_struct.TIM_OCIdleState 	= TIM_OCIdleState_Set;
     TIM_OC1Init(TIMPtr, &tim_oc_init_struct);
 
     // enable OC1 Preload. On each update event, the value is loaded into the active register
@@ -144,7 +144,7 @@ void DSHOT_OUT::init(int dshot_bitrate) {
     //      ST does an example on page 644 of "STM43F405 etc reference.pdf", but set it to 0xe for some reason
     //      17 Transfers since that is the size of our output buff: 
     //          16 for the actual packet, 1 to ensure proper spacing between packet transmission
-    TIM_DMAConfig(TIMPtr, TIM_DMABase_CCR1, TIM_DMABurstLength_17Transfers);
+    TIM_DMAConfig(TIMPtr, TIM_DMABase_CCR1, TIM_DMABurstLength_1Transfer);
 
     // set the UDE bit in DMA Interrupt Enable Register (DIER)
     // UDE is 'Update DMA request Enable' (turns on the DMA interrupt triggered by the timer)
@@ -158,29 +158,43 @@ void DSHOT_OUT::init(int dshot_bitrate) {
         TIM_CtrlPWMOutputs(TIMPtr, ENABLE);
     }
 
-    TIM_ARRPreloadConfig(TIMPtr, ENABLE); // enable auto-preload of TIMx_ARR register
+    TIM_ARRPreloadConfig(TIMPtr, ENABLE); // enable auto-preload of TIMx_ARR register (TIM1->CR1)
     TIM_Cmd(TIMPtr, ENABLE); // ready to turn it on!
 }
 
-uint16_t DSHOT_OUT::write(float value) {
-    // DELETEME: currently just returning uint16_t for debugging.. change to void
-
-    // you fill the dma with 32 bit values of pulse widths the timer should run.
-    // remember that the different bits take different amounts of time in DSHOT:
+void DSHOT_OUT::write(float value) {
     
-
     uint16_t packet = prepareDshotPacket(value);
 
-    for (uint8_t i = 0; i < 16; i++)
-    {
-      // Dshot is MSB first
-      // put timer values into our DMA out buffer. DMA will automatically 
-      // feed these to the timer
-      out_buffer_[i] = (packet & 0x8000) ? cycles_per_set_bit_ : cycles_per_reset_bit_;
-      packet <<= 1; // get ready to process the next bit
+    for (uint8_t i = 0; i < 16; i++) {
+        // here we're converting each bit of the outgoing data packet into timer values
+        // put timer values into our DMA out buffer. DMA will automatically 
+        // feed these to the timer
+        // Dshot is MSB first
+        out_buffer_[i] = (packet & 0x8000) ? DSHOT_BIT_1_CYCLES_COUNT : DSHOT_BIT_0_CYCLES_COUNT;
+        packet <<= 1; // get ready to process the next bit
     }
 
-    return packet;
+    printf("\nHere's the output buff::\n");
+    for (int i= 0; i < 17; i++) {
+        printf("%04x\n", out_buffer_[i]);
+    }
+
+    // the packet is now setup in our output buffer. now we just need to enable DMA
+    // and tell it to send it out
+
+    DMA_Cmd(DMA2_Stream0, ENABLE);
+    
+    // restart the timer's counter so it properly handles the new packet:
+    TIM_GenerateEvent(TIMPtr, TIM_EventSource_Update);
+    printf("wait...");
+    printf("...");
+    printf("...\n");
+    /*
+    steps in simple example:
+    DMA2->HIFCR = DMA2->HISR; // WHY IS THIS DONE?
+    */
+
 }
 
 void DSHOT_OUT::setRequestTelemetry(bool request_telemetry) {
@@ -197,7 +211,7 @@ uint16_t DSHOT_OUT::prepareDshotPacket(float value) {
     //    Hex: 0x0606 -> throttle 48, no telemetry request
 
     // decide on throttle value, this makes up bits 0-10
-    uint16_t packet = min_throttle_val_ + static_cast<uint16_t>((max_throttle_val_ - min_throttle_val_) * value);
+    uint16_t packet = DSHOT_MIN_THROTTLE + static_cast<uint16_t>((DSHOT_MAX_THROTTLE - DSHOT_MIN_THROTTLE) * value);
     packet = (packet << 1) | request_telemetry_; // OR in request telemetry into current lsb - eventually bit 11
 
     // calculate checksum - bits 12-15
