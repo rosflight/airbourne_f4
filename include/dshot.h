@@ -22,8 +22,6 @@ public:
 
     uint16_t write(float value);
 
-    float getNSCyc();
-
     uint32_t dshot_freq_hz;
 
 private:

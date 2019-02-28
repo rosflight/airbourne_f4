@@ -61,6 +61,9 @@ void DSHOT_OUT::init(int dshot_bitrate) {
     DMA_InitStructure_.DMA_PeripheralBurst = DMA_PeripheralBurst_Single;
 
 
+    ////////////////////////////
+    //      SETUP TIMER      //
+    //////////////////////////
     // figure out the output timer values
     // This is dependent on how fast the SystemCoreClock is. (ie will change between stm32fX models)
     // "The prescaler can divide the counter clock frequency by any factor between 1 and 65536"
@@ -98,13 +101,6 @@ void DSHOT_OUT::init(int dshot_bitrate) {
     // prescaling is 0 based, so subtract 1
     tim_prescaler -= 1;
 
-    // calculate how long the timer needs to run for a 0 bit and a 1 bit in DSHOT
-    //   make sure we round properly before truncate with a cast. it's probably good to 
-    //   make the pulse slightly longer than necessary
-    //   Bit length (total timing period) is 1670 nanoseconds
-    //   For a bit to be 0, the pulse width is 625 nanosecond
-    //   For a bit to be 1, the pulse width is 1250 nanoseconds
-
     // setup the timer:
     // we need to tell the timer to trigger the DMA once it counts up to the value it was told
     TIM_TimeBaseStructInit(&tim_init_struct);
@@ -118,59 +114,52 @@ void DSHOT_OUT::init(int dshot_bitrate) {
     //    objective - tim runs for DSHOT_PERIOD_CYCLES_COUNT at which point it
     //      triggers DMA and gets the next time value and starts again
     TIM_OCStructInit(&tim_oc_init_struct);
-    tim_oc_init_struct.TIM_OCMode 		= TIM_OCMode_PWM2;
-    tim_oc_init_struct.TIM_OutputState 	= TIM_OutputState_Enable;
+    // PWM1 OCMode specifies that the channel outputs a 1 as long as the TIM counter is 
+    //      < our reference value (which was moved by DMA into CCR1 to represent a bit length)
+    //      Otherwise, its set to a 0
+    tim_oc_init_struct.TIM_OCMode 		= TIM_OCMode_PWM1;
+    // init TIM_CCRx to 0 -> this will be modified by DMA when we actually wanna transfer crap
+    tim_oc_init_struct.TIM_Pulse 		= 0; 
+    // sets CC1E (Capture-compare 1 enable bit) -> tells it to use the signal from OC1 as an output to our specified output pin
+    tim_oc_init_struct.TIM_OutputState 	= TIM_OutputState_Enable; 
+    // i'm not sure that these next 3 options matter all that much. But it's what we set 
+    //      in the PWM code so do it here ¯\_(ツ)_/¯ 
     tim_oc_init_struct.TIM_OutputNState = TIM_OutputNState_Disable;
-    tim_oc_init_struct.TIM_Pulse 		= min_cyc_ - 1;
     tim_oc_init_struct.TIM_OCPolarity 	= TIM_OCPolarity_Low;
     tim_oc_init_struct.TIM_OCIdleState 	= TIM_OCIdleState_Set;
+    TIM_OC1Init(TIMPtr, &tim_oc_init_struct);
+
+    // enable OC1 Preload. On each update event, the value is loaded into the active register
+    //      afaik, this helps guarantee safe transitions between CCR, so that they occur precisely
+    //          on update events
+    TIM_OC1PreloadConfig(TIMPtr, TIM_OCPreload_Enable); 
 
     // The structs presented by the StdPeriphDriver code dont expose functionality
     //      to all the weird stuff we need todo with the timer, so we've gotta
     //      directly setup certain registers
 
     // modify the timer dma control register (TIMx_DCR)
-    //      I'm not positive why I'm setting DCR.DBA = 0xe here other than
-    //      that's what ST does in their example on page 644 of "STM43F405 etc reference.pdf"
-    TIM_DMAConfig(TIMPtr, 0xe, DSHOT_OUT_BUFF_SIZE);
+    //      0x34 is the base address of TIMx_CCR1 - which is where we want to start
+    //          the dma transfers. This goes into DCR.DBA - 'DMA Base Address'
+    //      ST does an example on page 644 of "STM43F405 etc reference.pdf", but set it to 0xe for some reason
+    //      17 Transfers since that is the size of our output buff: 
+    //          16 for the actual packet, 1 to ensure proper spacing between packet transmission
+    TIM_DMAConfig(TIMPtr, TIM_DMABase_CCR1, TIM_DMABurstLength_17Transfers);
 
-    /*
-    // Configure the period
-    constexpr const auto bit_period_ = (TIM_RATE + 1200000/2) / 1200000;
-    TIM1->ARR = bit_period_ - 1;
-    // Configure the Timer prescaler
-    const auto div = 1200000 / bitrate - 1;
-    TIM1->PSC = div;
-    // Configure pulse width
-    TIM1->CCR1 = 0;
-    // Enable auto-reload Preload
-    TIM1->CR1 |= TIM_CR1_ARPE;
-    //
-    // Set PWM mode
-    //
-    // Select the output compare mode 1
-    // Enable output compare 1 Preload
-    TIM1->CCMR1 = (6 << TIM_CCMR1_OC1M_Pos) |
-                  (1 << TIM_CCMR1_OC1PE_Pos);
-    // Enable the TIM1 Main Output
-    TIM1->BDTR = TIM_BDTR_MOE;
-    // Enable CC1 output
-    TIM1->CCER = TIM_CCER_CC1E;
-    //
-    // Setup Timer DMA settings
-    //
-    // Configure of the DMA Base register to CCR1 and the DMA Burst Length to 1
-    TIM1->DCR = (0 << TIM_DCR_DBL_Pos) | (13 << TIM_DCR_DBA_Pos);
-    // TIM1 DMA Update enable
-    TIM1->DIER |= TIM_DIER_UDE;
-    // Enable the TIM Counter
-    TIM1->CR1 |= TIM_CR1_CEN;
-    */
+    // set the UDE bit in DMA Interrupt Enable Register (DIER)
+    // UDE is 'Update DMA request Enable' (turns on the DMA interrupt triggered by the timer)
+    TIM_DMACmd(TIMPtr, TIM_DMA_Update, ENABLE);
 
-}
+    if (TIMPtr == TIM1 || TIMPtr == TIM8) {
+        // TIM1 and 8 are 'advanced timers' with even MORE features (somehow..)
+        // we need to tell them to enable the main output 
+        // set the MOE (Main Output Enable) bit:
+        //      "OC and OCN outputs are enabled if their respective enable bits are set"
+        TIM_CtrlPWMOutputs(TIMPtr, ENABLE);
+    }
 
-float DSHOT_OUT::getNSCyc() {
-    return cycles_per_ns_;
+    TIM_ARRPreloadConfig(TIMPtr, ENABLE); // enable auto-preload of TIMx_ARR register
+    TIM_Cmd(TIMPtr, ENABLE); // ready to turn it on!
 }
 
 uint16_t DSHOT_OUT::write(float value) {
