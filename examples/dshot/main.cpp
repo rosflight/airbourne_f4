@@ -30,38 +30,50 @@ int main()
     LED info;
     info.init(LED2_GPIO, LED2_PIN);
 
-    delay(500);
+    delay(1000);
 
     info.on();
 
     DSHOT_OUT dshot;
 
-    dshot.init();
+    // dshot.init(150);
+    // dshot.init2(150000);
 
     float test_value = 0;
     uint32_t last_print_ms = 0;
     uint16_t result, packet;
 
-    float ns_per_cyc = 0.0;
+    dshot.init3();
+    dshot.write2(test_value);
 
     while (1)
     {
-        if (millis() > last_print_ms + 50)
+        if (millis() > last_print_ms + 100)
         {
-            info.toggle(); // cause why not
-
             // cycle through all output values (0-1) and .05 steps
             test_value += 0.05;
             if (test_value > 1.01) {
                 test_value = 0.0;
             }
+            
+            // printf("INIT1!!::\n");
+            // dshot.init(1200);
 
-            result = dshot.write(test_value);
-            ns_per_cyc = dshot.getNSCyc();
+            // printf("INIT2!!::\n");
+            // dshot.init2(150000);
+
+            // printf("test write 2\n");
+            // dshot.write2(test_value);
+            info.toggle(); // cause why not
+
+            printf("INIT3!!::\n");
+            
+
+
+        //     dshot.write(test_value);
 
             last_print_ms = millis();
-            printf("For input: 0.%02d -> %04x\n", (uint32_t)(test_value*100), result);
-            printf("tim cycles per ns:: %f\n", ns_per_cyc);
+        //     printf("Command 0.%02d @ %d Hz\n", (uint32_t)(test_value*100), dshot.dshot_freq_hz);
         }
     }
 }
