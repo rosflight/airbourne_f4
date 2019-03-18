@@ -1,5 +1,6 @@
 #include "ublox.h"
-//#include "printf.h"
+
+#include <time.h>
 
 #define DEG2RAD (3.14159 / 180.0)
 //#define DBG(...) printf(__VA_ARGS__)
@@ -259,29 +260,104 @@ void UBLOX::read_cb(uint8_t byte)
 
   prev_byte_ = byte;
 }
+//convert a time struct to unix time
+//dumb leap years
+//This function will break in 2100, because it doesn't take into accoutn that 2100 is not a leap year
+uint64_t convert_to_unix(UBLOX::GPS_TIME_T time)
+{
+  uint32_t day_s = 24*60*60; //seconds per day
+  uint32_t year_s = 365*day_s; //seconds per non-leap day
+  uint32_t elapsed_years = time.year-1970;
+  uint32_t elapsed_leap_days = (elapsed_years+1)/4;
+  if (time.year % 4 == 0) //If currently in a leap year
+    if(time.month>=3) //If past feb 29
+      elapsed_leap_days++;
+  uint32_t elapsed_days;//Days past in the year
+  switch(time.month){
+  case 1:
+    elapsed_days = 0;
+    break;
+  case 2:
+    elapsed_days = 31;
+    break;
+  case 3:
+    //Ignore leap days, because it is accounted for above
+    elapsed_days = 31+28;
+    break;
+  case 4:
+    elapsed_days = 31+28+31;
+    break;
+  case 5:
+    elapsed_days = 31+28+31+30;
+    break;
+  case 6:
+    elapsed_days = 31+28+31+30+31;
+    break;
+  case 7:
+    elapsed_days = 31+28+31+30+31+30;
+    break;
+  case 8:
+    elapsed_days = 31+28+31+30+31+30+31;
+    break;
+  case 9:
+    elapsed_days = 31+28+31+30+31+30+31+31;
+    break;
+  case 10:
+    elapsed_days = 31+28+31+30+31+30+31+31+30;
+    break;
+  case 11:
+    elapsed_days = 31+28+31+30+31+30+31+31+30+31;
+    break;
+  case 12:
+    elapsed_days = 31+28+31+30+31+30+31+31+30+31+30;
+    break;
+  default://This should never be reached, because there are 12 month / year
+    elapsed_days = 0;
+  }
+  elapsed_days += time.day-1; //Minus 1 because the day is not yet complete
+  return elapsed_years * year_s + (elapsed_days+elapsed_leap_days)*day_s + (time.hour*60+time.min)*60 + time.sec;
+}
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wmissing-field-initializers" //Ignore warning about leaving struct fields blank
+rosflight_firmware::GNSSData UBLOX::read()
+{
+    rosflight_firmware::GNSSData data = {};
+    data.time = convert_to_unix(this->last_pvt.time);
+    data.nanos = this->last_pvt.time.nano;
+    data.lat = this->last_pvt.lat;
+    data.lon = this->last_pvt.lon;
+    data.height = this->last_pvt.height;
+    data.vel_n = this->last_pvt.velN;
+    data.vel_e = this->last_pvt.velE;
+    data.vel_d = this->last_pvt.velD;
+    data.h_acc = this->last_pvt.hAcc;
+    data.v_acc = this->last_pvt.vAcc;
 
-void UBLOX::read(double* lla_local, float* vel, uint8_t* fix_type_local, uint32_t* t_ms, float* hacc, float* vacc, float* sacc)
-{
-  if (new_data_)
-  {
-    convert_data();
-    new_data_ = false;
-  }
-  for (int i = 0; i < 3; i++)
-  {
-    lla_local[i] = lla_[i];
-    vel[i] = vel_[i];
-  }
-  (*fix_type_local) = nav_message_.fixType;
-  (*t_ms) = nav_message_.iTOW;
-  (*hacc) = nav_message_.hAcc*1e-3;
-  (*vacc) = nav_message_.vAcc*1e-3;
-  (*sacc) = nav_message_.sAcc*1e-3;
+    return data;
 }
-void UBLOX::read_pvt(UBLOX::NAV_PVT_t  &pvt)
+
+rosflight_firmware::GNSSPosECEF UBLOX::read_pos_ecef()
 {
-    pvt=this->nav_message_;
+  rosflight_firmware::GNSSPosECEF pos = {};
+  pos.x = this->pos_ecef_.ecefX;
+  pos.y = this->pos_ecef_.ecefY;
+  pos.z = this->pos_ecef_.ecefZ;
+  pos.tow = this->pos_ecef_.iTOW;
+  pos.p_acc = this->pos_ecef_.pAcc;
+  return pos;
 }
+
+rosflight_firmware::GNSSVelECEF UBLOX::read_vel_ecef()
+{
+  rosflight_firmware::GNSSVelECEF vel = {};
+  vel.vx = this->vel_ecef_.ecefVX;
+  vel.vy = this->vel_ecef_.ecefVY;
+  vel.vz = this->vel_ecef_.ecefVZ;
+  vel.tow = this->vel_ecef_.iTOW;
+  vel.s_acc = this->vel_ecef_.sAcc;
+  return vel;
+}
+#pragma GCC diagnostic pop //End ignore blank struct initalizers
 
 bool UBLOX::decode_message()
 {
@@ -365,6 +441,7 @@ void UBLOX::convert_data()
   vel_[0] = nav_message_.velN * 1e-3;
   vel_[1] = nav_message_.velE * 1e-3;
   vel_[2] = nav_message_.velD * 1e-3;
+  time_ = convert_to_unix(last_pvt.time);
 }
 
 void UBLOX::calculate_checksum(const uint8_t msg_cls, const uint8_t msg_id, const uint16_t len, const UBX_message_t payload, uint8_t& ck_a, uint8_t& ck_b) const
