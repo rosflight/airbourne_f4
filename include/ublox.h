@@ -7,6 +7,7 @@
 #include <string>
 #include <vector>
 
+#include "sensors.h"
 #include "uart.h"
 
 #include <iostream>
@@ -269,6 +270,17 @@ public:
     uint16_t timeRef; // Time system to which measurements are aligned
   }__attribute__((packed)) CFG_RATE_t;
 
+  typedef struct{
+    uint16_t year; // y Year (UTC)
+    uint8_t month; // month Month, range 1..12 (UTC)
+    uint8_t day; // d Day of month, range 1..31 (UTC)
+    uint8_t hour; // h Hour of day, range 0..23 (UTC)
+    uint8_t min; // min Minute of hour, range 0..59 (UTC)
+    uint8_t sec; // s Seconds of minute, range 0..60 (UTC)
+    uint8_t valid; // - Validity flags (see  graphic below )
+    uint32_t tAcc; // ns Time accuracy estimate (UTC)
+    int32_t nano; // ns Fraction of second, range -1e9 .. 1e9 (UTC)
+  }__attribute__((packed)) GPS_TIME_T;
   typedef struct  { // Position, velocity, time packet NAV PVT
     enum { //Time validity flags
       VALIDITY_FLAGS_VALIDDATE= 0x01, // Valid UTC Date (see Time Validity section for details)
@@ -292,15 +304,7 @@ public:
     };
 
     uint32_t iTOW; // ms GPS time of week of the  navigation epoch . See the  description of iTOW for details.
-    uint16_t year; // y Year (UTC)
-    uint8_t month; // month Month, range 1..12 (UTC)
-    uint8_t day; // d Day of month, range 1..31 (UTC)
-    uint8_t hour; // h Hour of day, range 0..23 (UTC)
-    uint8_t min; // min Minute of hour, range 0..59 (UTC)
-    uint8_t sec; // s Seconds of minute, range 0..60 (UTC)
-    uint8_t valid; // - Validity flags (see  graphic below )
-    uint32_t tAcc; // ns Time accuracy estimate (UTC)
-    int32_t nano; // ns Fraction of second, range -1e9 .. 1e9 (UTC)
+    GPS_TIME_T time;
     uint8_t fixType; // - GNSSfix Type:
     uint8_t flags; // - Fix status flags (see  graphic below )
     uint8_t flags2; // - Additional flags (see  graphic below )
@@ -367,16 +371,15 @@ public:
   void init(UART *uart);
 
   bool present();
-  void read(double* lla, float* vel, uint8_t *fix_type, uint32_t *t_ms,
-            float *hacc, float *vacc, float *sacc);
-  void read_pvt(UBLOX::NAV_PVT_t &pvt);
+  rosflight_firmware::GNSSData read();
+  rosflight_firmware::GNSSPosECEF read_pos_ecef();
+  rosflight_firmware::GNSSVelECEF read_vel_ecef();
+  void read_ecef(int32_t* pos_ecef, int32_t* vel_ecef, uint32_t& p_acc_ecef, uint32_t& s_acc_ecef);
   void read_cb(uint8_t byte);
   inline bool new_data() { return new_data_; }
   uint32_t num_messages_received() { return num_messages_received_; }
 
-  void lla(double* lla) const;
   void ned(float* vel) const;
-  uint8_t fix_type() const;
   void posECEF(double* pos) const;
   void velECEF(double* vel) const;
 
@@ -416,6 +419,7 @@ private:
 
   NAV_PVT_t last_pvt;
   uint64_t last_pvt_timestamp=0;
+  uint64_t time_ = 0;
 
   bool looking_for_nmea_ = true;
   uint8_t prev_byte_ = 0;
