@@ -323,7 +323,7 @@ void UBLOX::convert_data()
   double scaling = 1e-7 * 3.14159/180.0;
   lla_[0] = (double)(nav_message_.lat) * scaling;
   lla_[1] = (double)(nav_message_.lon) * scaling;
-  lla_[2] = nav_message_.height * 1-3;
+  lla_[2] = nav_message_.height * 1e-3;
   
   vel_[0] = nav_message_.velN * 1e-3;
   vel_[1] = nav_message_.velE * 1e-3;
