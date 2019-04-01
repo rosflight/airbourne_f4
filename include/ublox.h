@@ -374,6 +374,7 @@ public:
   rosflight_firmware::GNSSData read();
   rosflight_firmware::GNSSPosECEF read_pos_ecef();
   rosflight_firmware::GNSSVelECEF read_vel_ecef();
+  rosflight_firmware::GNSSRaw read_raw();
   void read_ecef(int32_t* pos_ecef, int32_t* vel_ecef, uint32_t& p_acc_ecef, uint32_t& s_acc_ecef);
   void read_cb(uint8_t byte);
   inline bool new_data() { return new_data_; }
@@ -417,7 +418,6 @@ private:
   double lla_[3] = {};
   float vel_[3] = {};
 
-  NAV_PVT_t last_pvt;
   uint64_t last_pvt_timestamp=0;
   uint64_t time_ = 0;
 

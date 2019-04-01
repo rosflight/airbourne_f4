@@ -50,6 +50,9 @@ void UBLOX::init(UART* uart)
   enable_message(CLASS_NAV, NAV_PVT, 1);
   enable_message(CLASS_NAV, NAV_POSECEF, 1);
   enable_message(CLASS_NAV, NAV_VELECEF, 1);
+
+  //Zeroing the data
+  this->nav_message_ = {};
 }
 
 //Attempt to detect the baudrate by trying a rate, waiting 1 s, and
@@ -166,6 +169,7 @@ void UBLOX::enable_message(uint8_t msg_cls, uint8_t msg_id, uint8_t rate)
 
 void UBLOX::read_cb(uint8_t byte)
 {
+  uint64_t time_recieved = micros();
   // Look for a valid NMEA packet (do this at the beginning in case
   // UBX was disabled for some reason) and during autobaud
   // detection
@@ -199,6 +203,7 @@ void UBLOX::read_cb(uint8_t byte)
     message_class_ = byte;
     parse_state_ = GOT_CLASS;
     break;
+
   case GOT_CLASS:
     message_type_ = byte;
     parse_state_ = GOT_MSG_ID;
@@ -248,6 +253,8 @@ void UBLOX::read_cb(uint8_t byte)
     if (decode_message())
     {
       parse_state_ = START;
+      if(message_class_ == CLASS_NAV && message_type_ == NAV_PVT)
+        last_pvt_timestamp = time_recieved;
     }
     else
     {
@@ -322,16 +329,19 @@ uint64_t convert_to_unix(UBLOX::GPS_TIME_T time)
 rosflight_firmware::GNSSData UBLOX::read()
 {
     rosflight_firmware::GNSSData data = {};
-    data.time = convert_to_unix(this->last_pvt.time);
-    data.nanos = this->last_pvt.time.nano;
-    data.lat = this->last_pvt.lat;
-    data.lon = this->last_pvt.lon;
-    data.height = this->last_pvt.height;
-    data.vel_n = this->last_pvt.velN;
-    data.vel_e = this->last_pvt.velE;
-    data.vel_d = this->last_pvt.velD;
-    data.h_acc = this->last_pvt.hAcc;
-    data.v_acc = this->last_pvt.vAcc;
+    data.time = convert_to_unix(this->nav_message_.time);
+    data.nanos = this->nav_message_.time.nano;
+    data.lat = this->nav_message_.lat;
+    data.lon = this->nav_message_.lon;
+    data.height = this->nav_message_.height;
+    data.vel_n = this->nav_message_.velN;
+    data.vel_e = this->nav_message_.velE;
+    data.vel_d = this->nav_message_.velD;
+    data.h_acc = this->nav_message_.hAcc;
+    data.v_acc = this->nav_message_.vAcc;
+    data.rosflight_timestamp = this->last_pvt_timestamp;
+
+    this->new_data_=false;
 
     return data;
 }
@@ -356,6 +366,38 @@ rosflight_firmware::GNSSVelECEF UBLOX::read_vel_ecef()
   vel.tow = this->vel_ecef_.iTOW;
   vel.s_acc = this->vel_ecef_.sAcc;
   return vel;
+}
+
+rosflight_firmware::GNSSRaw UBLOX::read_raw()
+{
+  rosflight_firmware::GNSSRaw data = {};
+  data.time_of_week = nav_message_.iTOW;
+  data.year = nav_message_.time.year;
+  data.month = nav_message_.time.month;
+  data.day = nav_message_.time.day;
+  data.hour = nav_message_.time.hour;
+  data.min = nav_message_.time.min;
+  data.sec = nav_message_.time.sec;
+  data.valid = nav_message_.time.valid;
+  data.t_acc = nav_message_.time.tAcc;
+  data.nano = nav_message_.time.nano;
+  data.fix_type = nav_message_.time.nano;
+  data.num_sat = nav_message_.numSV;
+  data.lon = nav_message_.lon;
+  data.lat = nav_message_.lat;
+  data.height = nav_message_.height;
+  data.height_msl = nav_message_.hMSL;
+  data.h_acc = nav_message_.hAcc;
+  data.v_acc = nav_message_.vAcc;
+  data.vel_n = nav_message_.velN;
+  data.vel_e = nav_message_.velE;
+  data.vel_d = nav_message_.velD;
+  data.g_speed = nav_message_.gSpeed;
+  data.head_mot = nav_message_.headMot;
+  data.s_acc = nav_message_.sAcc;
+  data.head_acc = nav_message_.headAcc;
+  data.p_dop = nav_message_.pDOP;
+  return data;
 }
 #pragma GCC diagnostic pop //End ignore blank struct initalizers
 
@@ -390,6 +432,7 @@ bool UBLOX::decode_message()
       break;
     }
     break;
+
 
   case CLASS_CFG:
     DBG("CFG_");
@@ -441,7 +484,7 @@ void UBLOX::convert_data()
   vel_[0] = nav_message_.velN * 1e-3;
   vel_[1] = nav_message_.velE * 1e-3;
   vel_[2] = nav_message_.velD * 1e-3;
-  time_ = convert_to_unix(last_pvt.time);
+  time_ = convert_to_unix(nav_message_.time);
 }
 
 void UBLOX::calculate_checksum(const uint8_t msg_cls, const uint8_t msg_id, const uint16_t len, const UBX_message_t payload, uint8_t& ck_a, uint8_t& ck_b) const
