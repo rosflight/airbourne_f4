@@ -279,7 +279,7 @@ public:
     uint8_t valid; // - Validity flags (see  graphic below )
     uint32_t tAcc; // ns Time accuracy estimate (UTC)
     int32_t nano; // ns Fraction of second, range -1e9 .. 1e9 (UTC)
-  }__attribute__((packed)) GPS_TIME_T;
+  }__attribute__((packed)) GNSS_TIME_T;
   typedef struct  { // Position, velocity, time packet NAV PVT
     enum { //Time validity flags
       VALIDITY_FLAGS_VALIDDATE= 0x01, // Valid UTC Date (see Time Validity section for details)
@@ -303,7 +303,7 @@ public:
     };
 
     uint32_t iTOW; // ms GPS time of week of the  navigation epoch . See the  description of iTOW for details.
-    GPS_TIME_T time;
+    GNSS_TIME_T time;
     uint8_t fixType; // - GNSSfix Type:
     uint8_t flags; // - Fix status flags (see  graphic below )
     uint8_t flags2; // - Additional flags (see  graphic below )
