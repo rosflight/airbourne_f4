@@ -9,20 +9,20 @@
 #define M_PI 3.14159
 #endif
 
-UBLOX* gps_Ptr;
+UBLOX* gnss_Ptr;
 
 //A C style callback
 void cb(uint8_t byte)
 {
-    gps_Ptr->read_cb(byte);
+    gnss_Ptr->read_cb(byte);
 }
 
 UBLOX::UBLOX(){}
 
-//Look for a GPS, and if found, change its settings
+//Look for a GNSS receiver, and if found, change its settings
 void UBLOX::init(UART* uart)
 {
-  gps_Ptr = this;
+  gnss_Ptr = this;
   // Reset message parser
   buffer_head_ = 0;
   parse_state_ = START;
@@ -43,7 +43,7 @@ void UBLOX::init(UART* uart)
   if (!detect_baudrate())
     return;
 
-  // Otherwise, Configure the GPS
+  // Otherwise, Configure the GNSS receiver
   set_baudrate(115200);
   set_dynamic_mode();
   set_nav_rate(100);
@@ -108,9 +108,9 @@ bool UBLOX::send_message(uint8_t msg_class, uint8_t msg_id, UBX_message_t& messa
   return true;
 }
 
-//Set the baudrate and other settings on the GPS receiver
+//Set the baudrate and other settings on the GNSS receiver
 //This requires the flight controller to have detected the correct, current baud rate
-//This also changes the flight controller's baud rate to match the GPS reciever
+//This also changes the flight controller's baud rate to match the GNSS reciever
 void UBLOX::set_baudrate(const uint32_t baudrate)
 {
   DBG("Setting baudrate to %d\n", baudrate);
@@ -128,7 +128,7 @@ void UBLOX::set_baudrate(const uint32_t baudrate)
   current_baudrate_ = baudrate;
 }
 
-//Checks if there is a GPS reciever present, which is determined by checking if
+//Checks if there is a GNSS reciever present, which is determined by checking if
 //it has ever recieved a valid message
 bool UBLOX::present()
 {
@@ -270,7 +270,7 @@ void UBLOX::read_cb(uint8_t byte)
 //convert a time struct to unix time
 //dumb leap years
 //This function will break in 2100, because it doesn't take into accoutn that 2100 is not a leap year
-uint64_t convert_to_unix(UBLOX::GPS_TIME_T time)
+uint64_t convert_to_unix(UBLOX::GNSS_TIME_T time)
 {
   uint32_t day_s = 24*60*60; //seconds per day
   uint32_t year_s = 365*day_s; //seconds per non-leap day
