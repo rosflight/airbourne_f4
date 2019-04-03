@@ -324,11 +324,23 @@ uint64_t convert_to_unix(UBLOX::GPS_TIME_T time)
   elapsed_days += time.day-1; //Minus 1 because the day is not yet complete
   return elapsed_years * year_s + (elapsed_days+elapsed_leap_days)*day_s + (time.hour*60+time.min)*60 + time.sec;
 }
+/* Tells if new data is available
+ * Only returns true if new data has been recieved, and if all three sources match time of week.
+ * This is because if the times of week do not match, new data is still being recieved,
+ * and attempting to read could result in data from different times.
+ */
+bool UBLOX::new_data()
+{
+  return this->new_data_
+      && (this->nav_message_.iTOW == this->pos_ecef_.iTOW)
+      && (this->nav_message_.iTOW == this->vel_ecef_.iTOW);
+}
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wmissing-field-initializers" //Ignore warning about leaving struct fields blank
-rosflight_firmware::GNSSData UBLOX::read()
+UBLOX::GNSSPVT UBLOX::read()
 {
-    rosflight_firmware::GNSSData data = {};
+    GNSSPVT data = {};
+    data.time_of_week = this->nav_message_.iTOW;
     data.time = convert_to_unix(this->nav_message_.time);
     data.nanos = this->nav_message_.time.nano;
     data.lat = this->nav_message_.lat;
@@ -346,58 +358,31 @@ rosflight_firmware::GNSSData UBLOX::read()
     return data;
 }
 
-rosflight_firmware::GNSSPosECEF UBLOX::read_pos_ecef()
+UBLOX::GNSSPosECEF UBLOX::read_pos_ecef()
 {
-  rosflight_firmware::GNSSPosECEF pos = {};
+  GNSSPosECEF pos = {};
   pos.x = this->pos_ecef_.ecefX;
   pos.y = this->pos_ecef_.ecefY;
   pos.z = this->pos_ecef_.ecefZ;
-  pos.tow = this->pos_ecef_.iTOW;
+  pos.time_of_week = this->pos_ecef_.iTOW;
   pos.p_acc = this->pos_ecef_.pAcc;
   return pos;
 }
 
-rosflight_firmware::GNSSVelECEF UBLOX::read_vel_ecef()
+UBLOX::GNSSVelECEF UBLOX::read_vel_ecef()
 {
-  rosflight_firmware::GNSSVelECEF vel = {};
+  UBLOX::GNSSVelECEF vel = {};
   vel.vx = this->vel_ecef_.ecefVX;
   vel.vy = this->vel_ecef_.ecefVY;
   vel.vz = this->vel_ecef_.ecefVZ;
-  vel.tow = this->vel_ecef_.iTOW;
+  vel.time_of_week = this->vel_ecef_.iTOW;
   vel.s_acc = this->vel_ecef_.sAcc;
   return vel;
 }
 
-rosflight_firmware::GNSSRaw UBLOX::read_raw()
+const UBLOX::NAV_PVT_t& UBLOX::read_raw()
 {
-  rosflight_firmware::GNSSRaw data = {};
-  data.time_of_week = nav_message_.iTOW;
-  data.year = nav_message_.time.year;
-  data.month = nav_message_.time.month;
-  data.day = nav_message_.time.day;
-  data.hour = nav_message_.time.hour;
-  data.min = nav_message_.time.min;
-  data.sec = nav_message_.time.sec;
-  data.valid = nav_message_.time.valid;
-  data.t_acc = nav_message_.time.tAcc;
-  data.nano = nav_message_.time.nano;
-  data.fix_type = nav_message_.time.nano;
-  data.num_sat = nav_message_.numSV;
-  data.lon = nav_message_.lon;
-  data.lat = nav_message_.lat;
-  data.height = nav_message_.height;
-  data.height_msl = nav_message_.hMSL;
-  data.h_acc = nav_message_.hAcc;
-  data.v_acc = nav_message_.vAcc;
-  data.vel_n = nav_message_.velN;
-  data.vel_e = nav_message_.velE;
-  data.vel_d = nav_message_.velD;
-  data.g_speed = nav_message_.gSpeed;
-  data.head_mot = nav_message_.headMot;
-  data.s_acc = nav_message_.sAcc;
-  data.head_acc = nav_message_.headAcc;
-  data.p_dop = nav_message_.pDOP;
-  return data;
+  return this->nav_message_;
 }
 #pragma GCC diagnostic pop //End ignore blank struct initalizers
 

@@ -7,7 +7,6 @@
 #include <string>
 #include <vector>
 
-#include "sensors.h"
 #include "uart.h"
 
 #include <iostream>
@@ -368,21 +367,55 @@ public:
     NAV_VELECEF_t NAV_VELECEF;
   } UBX_message_t;
 
+  struct GNSSPVT{
+    uint32_t time_of_week;
+    uint64_t time;
+    uint64_t nanos;
+    int32_t lat;
+    int32_t lon;
+    int32_t height;
+    int32_t vel_n;
+    int32_t vel_e;
+    int32_t vel_d;
+    uint32_t h_acc;
+    uint32_t v_acc;
+    uint64_t rosflight_timestamp;
+  };
+
+ //The following structs are used as return values
+  struct GNSSPosECEF{
+    uint32_t time_of_week;//time of week. Only to be used as a stamp
+    int32_t x;//cm
+    int32_t y;//cm
+    int32_t z;//cm
+    uint32_t p_acc;//cm
+  };
+
+  struct GNSSVelECEF{
+      uint32_t time_of_week;//time of week. Only to be used as a stamp
+      int32_t vx;//cm/s
+      int32_t vy;//cm/s
+      int32_t vz;//cm/s
+      uint32_t s_acc;//cm/s
+  };
+
   void init(UART *uart);
 
   bool present();
-  rosflight_firmware::GNSSData read();
-  rosflight_firmware::GNSSPosECEF read_pos_ecef();
-  rosflight_firmware::GNSSVelECEF read_vel_ecef();
-  rosflight_firmware::GNSSRaw read_raw();
+  bool new_data(); //Returns true if new data has been recieved, AND the time of week stamps on all of the data matches
+  GNSSPVT read();
+  GNSSPosECEF read_pos_ecef();
+  GNSSVelECEF read_vel_ecef();
+  const NAV_PVT_t& read_raw();
   void read_ecef(int32_t* pos_ecef, int32_t* vel_ecef, uint32_t& p_acc_ecef, uint32_t& s_acc_ecef);
   void read_cb(uint8_t byte);
-  inline bool new_data() { return new_data_; }
   uint32_t num_messages_received() { return num_messages_received_; }
 
   void ned(float* vel) const;
   void posECEF(double* pos) const;
   void velECEF(double* vel) const;
+
+  inline uint64_t get_last_pvt_timestamp() { return last_pvt_timestamp; }
 
 
 private:
