@@ -42,13 +42,24 @@ int main()
     float test_value = 0;
     uint32_t last_print_ms = 0;
     uint16_t result, packet;
+    printf("startup");
+    int i = 0;
+    while (i < 10) {
+        if (millis() > last_print_ms + 50)
+        {
+            printf("..");
+            last_print_ms = millis();
+            i++;
+        }
+    }
 
-    dshot.init3();
-    dshot.write2(test_value);
+    printf("\n");
+    dshot.kflyInit();
+    bool toggle = false;
 
     while (1)
     {
-        if (millis() > last_print_ms + 100)
+        if (millis() > last_print_ms + 750)
         {
             // cycle through all output values (0-1) and .05 steps
             test_value += 0.05;
@@ -66,11 +77,13 @@ int main()
             // dshot.write2(test_value);
             info.toggle(); // cause why not
 
-            printf("INIT3!!::\n");
-            
+            // if (toggle) {
+                dshot.kflyWrite(0.0);
+            // } else {
+                // dshot.write2(0.0);
+            // }
 
-
-        //     dshot.write(test_value);
+            toggle = !toggle;
 
             last_print_ms = millis();
         //     printf("Command 0.%02d @ %d Hz\n", (uint32_t)(test_value*100), dshot.dshot_freq_hz);

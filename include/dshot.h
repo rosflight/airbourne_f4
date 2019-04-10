@@ -18,6 +18,7 @@ public:
     void init(int dshot_bitrate);
     void init2(int dshot_bitrate);
     void init3();
+    void kflyInit();
 
     void enable();
     void disable();
@@ -26,6 +27,7 @@ public:
     void write(float value);
     void write2(float value);
     void write3(float value);
+    void kflyWrite(float value);
     uint32_t dshot_freq_hz;
 
 private:
@@ -35,6 +37,8 @@ private:
     volatile uint32_t* CCR_;
 
     TIM_TypeDef* TIMPtr;
+    DMA_Stream_TypeDef* DMAPtr;
+    DMA_TypeDef* DMABasePtr;
     GPIO_TypeDef* port_;
     uint16_t pin_;
 
