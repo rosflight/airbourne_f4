@@ -1,7 +1,5 @@
 #include "dshot.h"
 
-#include "printf.h" //todo: delete me
-
 // The timer frequency is scaled so that these are always true
 #define DSHOT_PERIOD_CYCLES_COUNT          70
 #define DSHOT_BIT_0_CYCLES_COUNT           26
@@ -11,64 +9,68 @@
 
 DSHOT_OUT::DSHOT_OUT(){}
 
-void DSHOT_OUT::init(int dshot_bitrate) {
+void DSHOT_OUT::init(dshot_speed_t dshot_speed) {
 
-    DMAPtr = DMA1_Stream2;
-    TIMPtr = TIM3;
-    DMABasePtr = DMA1;
+    DMAPtr      = DMA1_Stream2;
+    TIMPtr      = TIM3;
+    DMABasePtr  = DMA1;
+    port_       = GPIOB;
+    pin_        = GPIO_Pin_0;
 
-    // TODO:: is this needed??
+
+    // Configure the hardware interrupt for our DMA stream.
+    // We'll use this to turn DMA off once our transfer is complete
+    // we put this under a pretty high priority since properly driving motors is important
     NVIC_InitTypeDef NVIC_InitStruct;
     NVIC_InitStruct.NVIC_IRQChannel = DMA1_Stream2_IRQn;
     NVIC_InitStruct.NVIC_IRQChannelCmd = ENABLE;
     NVIC_InitStruct.NVIC_IRQChannelPreemptionPriority = 0x02;
     NVIC_InitStruct.NVIC_IRQChannelSubPriority = 0x02;
     NVIC_Init(&NVIC_InitStruct);
-    /// GPIO INIT: (this is based off crect.. cant find in kfly
-    GPIO_DeInit(GPIOB);
 
+    /// GPIO init. The GPIO we use depends on the output pin and TIM. Check the 
+    ///     schematic of your board to make sure you're connecting the two right 
     GPIO_InitTypeDef gpio_init_struct;
-    GPIO_PinAFConfig(GPIOB, GPIO_PinSource0, GPIO_AF_TIM3);
+    GPIO_PinAFConfig(port_, GPIO_PinSource0, GPIO_AF_TIM3);
 
-    gpio_init_struct.GPIO_Pin 	= GPIO_Pin_0;
-    gpio_init_struct.GPIO_Mode 	= GPIO_Mode_AF;
-    gpio_init_struct.GPIO_Speed	= GPIO_Speed_100MHz;
-    gpio_init_struct.GPIO_OType = GPIO_OType_PP;
+    gpio_init_struct.GPIO_Pin 	= pin_;
+    gpio_init_struct.GPIO_Mode 	= GPIO_Mode_AF;      // Alternative-Function mode
+    gpio_init_struct.GPIO_Speed	= GPIO_Speed_100MHz; // DSHOT is stupid fast
+    gpio_init_struct.GPIO_OType = GPIO_OType_PP;     // Push-Pull with a default of reset
     gpio_init_struct.GPIO_PuPd 	= GPIO_PuPd_DOWN;
-    GPIO_Init(GPIOB, &gpio_init_struct);
-    // end gpio init
+    GPIO_Init(port_, &gpio_init_struct);
+    // --END GPIO init--
 
-    //// Allocate DMA Stream
-        // enable DMA1 rcc clock
-        RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_DMA1, ENABLE);
+    //// DMA init: Again, the DMA used depends on the TIM. Check STM32F4 reference manual.
+    ////        The DMA section has a table showing that TIMx_UP match with what DMA streams/channels
+    // the RCC DMA clock should have already been enabled by system.c -- if not, enable it here
 
-        // disable stream: DMA1_Stream2
-            // Clear CR bits: TCIE, HTIE, TEIE, DMEIE, EN
-            DMAPtr->CR &= ~(DMA_IT_TC | DMA_IT_HT | DMA_IT_TE | DMA_IT_DME | 0x1); 
-            while ((DMAPtr->CR & 0x1) != 0); // wait until its truly disabled
-            // clear all interrupt flags:
-            DMA1->LIFCR = (0x3D) << 16;
-
-        //set all of CR to 0:
-        DMAPtr->CR  = 0x00000000U;
-        DMAPtr->FCR = 0x00000021U; //todo: WHY?
+    // de-init disables the stream and resets a lot of DMA's important register 
+    // that we'll be changing below
+    DMA_DeInit(DMAPtr);
+        
     // now configure DMA:
-    uint32_t dmaMode = DMA_Priority_VeryHigh | DMA_DIR_MemoryToPeripheral | 
-        DMA_PeripheralDataSize_HalfWord | DMA_MemoryDataSize_HalfWord | DMA_MemoryInc_Enable | // pburst = mburst = single = 0
-        DMA_IT_TC; // enable transfer complete interrupt
+    DMA_InitTypeDef DMA_InitStruct;
+    DMA_StructInit(&DMA_InitStruct); // initialize the struct the default values (basically all zeros)
 
-    DMAPtr->M0AR = (uint32_t) out_buffer_;
-    DMAPtr->PAR  = (uint32_t) &TIMPtr->DMAR;
-    DMAPtr->NDTR = (uint32_t) 0;
-    DMAPtr->CR   = dmaMode | DMA_Channel_5;
+    DMA_InitStruct.DMA_Channel            = DMA_Channel_5; // channel is depended on TIMx_UP connection to your DMA stream
+    DMA_InitStruct.DMA_PeripheralBaseAddr = (uint32_t) &TIMPtr->DMAR; // the TIM DMAR is a register where DMA values are pre-loaded before being placed in their proper register
+    DMA_InitStruct.DMA_Memory0BaseAddr    = (uint32_t) out_buffer_; // point the base address for DMA transfers to our output buffer address
+    DMA_InitStruct.DMA_DIR                = DMA_DIR_MemoryToPeripheral; // we're moving stuff from our out_buffer_ -> the timer's CCR register(s)
+    DMA_InitStruct.DMA_BufferSize         = DSHOT_OUT_BUFF_SIZE; // we perform as many transfers as the size of our output buffer
+    DMA_InitStruct.DMA_MemoryInc          = DMA_MemoryInc_Enable; // we want to increment the memory address DMA is transfering as the transfer takes place
+    DMA_InitStruct.DMA_PeripheralDataSize = DMA_PeripheralDataSize_HalfWord; // peripheral should be expecting 16 bit half-words
+    DMA_InitStruct.DMA_MemoryDataSize     = DMA_MemoryDataSize_HalfWord; // we're transfering 16 bit half-words from memory (out_buffer_ is uint16)
+    DMA_InitStruct.DMA_Priority           = DMA_Priority_VeryHigh; // getting commands to motors is important
+    DMA_InitStruct.DMA_FIFOThreshold      = DMA_FIFOThreshold_HalfFull; // this is just a default setting.. dont ask me why
+    DMA_Init(DMAPtr, &DMA_InitStruct); // apply all them settings!
+    DMA_ITConfig(DMAPtr, DMA_IT_TC, ENABLE); // enable the transfer_complete interrupt
 
-    out_buffer_[16] = 0;
-    // END DMA INIT
+    out_buffer_[DSHOT_OUT_BUFF_SIZE - 1] = 0; // the 17th value in our output buffer is always a 0 so the timer doesn't transfer continuous 0bits or 1bits, but holds a 0 after a DMA transfer is complete
+    // --END DMA init--
 
     // TIM INIT:
-    RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM3, ENABLE);
-    RCC_APB1PeriphResetCmd(RCC_APB1Periph_TIM3, ENABLE); // enable and then disable the reset as is done in kfly
-    RCC_APB1PeriphResetCmd(RCC_APB1Periph_TIM3, DISABLE);
+    TIM_DeInit(TIMPtr); // resets the clock used by the Timer. The timer clock should have already been enabled in system.c
 
     TIMPtr->CR1  = 0;
     TIMPtr->CR2  = 0;
@@ -79,7 +81,7 @@ void DSHOT_OUT::init(int dshot_bitrate) {
     TIMPtr->CCR4 = 0;
     TIMPtr->CCER = 0;
 
-    TIMPtr->ARR = DSHOT_PERIOD_CYCLES_COUNT - 1;
+    TIMPtr->ARR = DSHOT_PERIOD_CYCLES_COUNT - 1; // 0 based. How high the timer should count for one period
     TIMPtr->PSC = 1792; //  (84,000,000 / (84,000,000 / 8)) - 1  you could also scale up PSC for slower output and easier debugging - 1792
 
     TIMPtr->CCMR1 = TIM_OCMode_PWM1 | (TIM_OCMode_PWM1 << 8) | TIM_CCMR1_OC1PE | TIM_CCMR1_OC2PE;
@@ -96,7 +98,6 @@ void DSHOT_OUT::init(int dshot_bitrate) {
 void DSHOT_OUT::write(float value) {
 
     if ((DMAPtr->CR & DMA_SxCR_EN) == 0) {
-        printf("lesss go..\n");
 
         uint16_t packet = prepareDshotPacket(value);
 

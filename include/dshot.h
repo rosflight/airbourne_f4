@@ -12,10 +12,20 @@
 
 class DSHOT_OUT {
 public:
+
+    // Speed options for DSHOT. Not all ESCs can handle the faster speeds, so 
+    // check what speed you need
+    typedef enum : uint8_t {
+        DSHOT_1200 = 1, // the enum values are used to determine timer prescaler
+        DSHOT_600  = 2,
+        DSHOT_300  = 4,
+        DSHOT_150  = 8
+    } dshot_speed_t;
+
     DSHOT_OUT();
 
     // TODO: temp, change bitrate to an enum
-    void init(int dshot_bitrate);
+    void init(dshot_speed_t dshot_speed);
     void enable();
     void disable();
     void setRequestTelemetry(bool request_telemetry);

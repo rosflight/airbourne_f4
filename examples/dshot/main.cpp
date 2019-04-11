@@ -40,7 +40,7 @@ int main()
     uint32_t last_print_ms = 0;
     uint16_t result, packet;
 
-    dshot.init(0);
+    dshot.init(DSHOT_OUT::DSHOT_150);
 
     while (1)
     {
@@ -51,8 +51,9 @@ int main()
             if (test_value > 1.01) {
                 test_value = 0.0;
             }
-            
+
             info.toggle(); // cause why not
+            
 
             dshot.write(test_value);
 
