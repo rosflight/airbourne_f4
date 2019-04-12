@@ -31,7 +31,7 @@
 
 #include "mb1242.h"
 
-I2CSonar* sonarPtr;
+I2CSonar *sonarPtr;
 
 void _I2C_Sonar_start_read_cb(uint8_t result)
 {

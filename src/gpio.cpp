@@ -31,7 +31,7 @@
 
 #include "gpio.h"
 
-void GPIO::init(GPIO_TypeDef* BasePort, uint16_t pin, gpio_mode_t mode)
+void GPIO::init(GPIO_TypeDef *BasePort, uint16_t pin, gpio_mode_t mode)
 {
   pin_ = pin;
   port_ = BasePort;

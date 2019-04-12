@@ -31,7 +31,7 @@
 
 #include "ms4525.h"
 
-MS4525* as_ptr;
+MS4525 *as_ptr;
 
 static void cb(uint8_t result)
 {
@@ -81,7 +81,7 @@ void MS4525::read_cb(uint8_t result)
   last_update_ms_ = millis();
 }
 
-void MS4525::read(float* differential_pressure, float* temp)
+void MS4525::read(float *differential_pressure, float *temp)
 {
   if (new_data_)
   {

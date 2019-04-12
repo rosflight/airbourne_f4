@@ -44,7 +44,7 @@ private:
   uint16_t rc_raw_[8];
   uint32_t last_pulse_ms_;
 
-  TIM_TypeDef* TIM_;
+  TIM_TypeDef *TIM_;
   uint16_t TIM_IT_;
   uint16_t TIM_Channel_;
 

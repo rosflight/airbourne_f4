@@ -36,7 +36,7 @@
 #include "uart.h"
 #include "vcp.h"
 
-VCP* uartPtr = NULL;
+VCP *uartPtr = NULL;
 
 static void _putc(void* p, char c)
 {
