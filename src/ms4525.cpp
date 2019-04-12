@@ -31,14 +31,14 @@
 
 #include "ms4525.h"
 
-MS4525* as_ptr;
+MS4525 *as_ptr;
 
 static void cb(uint8_t result)
 {
   as_ptr->read_cb(result);
 }
 
-MS4525::MS4525(){}
+MS4525::MS4525() {}
 
 bool MS4525::init(I2C *_i2c)
 {
@@ -50,7 +50,7 @@ bool MS4525::init(I2C *_i2c)
     sensor_present_ = true;
   else
     sensor_present_ = false;
-  next_update_ms_ = 0;    
+  next_update_ms_ = 0;
   return sensor_present_;
 }
 
@@ -81,15 +81,15 @@ void MS4525::read_cb(uint8_t result)
   last_update_ms_ = millis();
 }
 
-void MS4525::read(float* differential_pressure, float* temp)
+void MS4525::read(float *differential_pressure, float *temp)
 {
   if (new_data_)
   {
     uint8_t status = (buf_[0] & 0xC0) >> 6;
-    if(status == 0x00) // good data packet
+    if (status == 0x00) // good data packet
     {
       int16_t raw_diff_pressure = 0x3FFF & ((buf_[0] << 8) + buf_[1]);
-      int16_t raw_temp = ( 0xFFE0 & ((buf_[2] << 8) + buf_[3])) >> 5;
+      int16_t raw_temp = (0xFFE0 & ((buf_[2] << 8) + buf_[3])) >> 5;
       // Convert to Pa and K
       diff_press_ = -((static_cast<float>(raw_diff_pressure) - 1638.3f) / 6553.2f - 1.0f) * 6894.757f;
       temp_ = ((200.0f * raw_temp) / 2047.0) - 50 ; // K

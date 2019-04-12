@@ -33,13 +33,13 @@
 #include "rc_sbus.h"
 #include <functional>
 
-RC_SBUS* rc_ptr;
+RC_SBUS *rc_ptr;
 void rx_callback(uint8_t byte)
 {
-    rc_ptr->read_cb(byte);
+  rc_ptr->read_cb(byte);
 }
 
-void RC_SBUS::init(GPIO* inv_pin, UART *uart)
+void RC_SBUS::init(GPIO *inv_pin, UART *uart)
 {
   rc_ptr = this;
   uart_ = uart;

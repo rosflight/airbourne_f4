@@ -35,15 +35,16 @@
 #include "vcp.h"
 #include "printf.h"
 
-VCP* uartPtr = NULL;
+VCP *uartPtr = NULL;
 
 static void _putc(void *p, char c)
 {
-    (void)p; // avoid compiler warning about unused variable
-    uartPtr->put_byte(c);
+  (void)p; // avoid compiler warning about unused variable
+  uartPtr->put_byte(c);
 }
 
-int main() {
+int main()
+{
 
   systemInit();
 
@@ -64,10 +65,10 @@ int main() {
 
   const int size = 9;
   uint32_t delays[] = {1000, 100, 31, 2000000, 8000, 29238, 1900, 394177, 1923984};
-  uint32_t time[size]; 
+  uint32_t time[size];
   uint32_t supposed[size];
-  
-  while(1)
+
+  while (1)
   {
     warn.toggle();
     info.toggle();
@@ -77,17 +78,17 @@ int main() {
     sum += delays[0];
     supposed[0] = sum;
     time[0] = micros() - start;
-    
+
     delayMicroseconds(delays[1]);
     sum += delays[1];
     supposed[1] = sum;
     time[1] = micros() - start;
-    
+
     delayMicroseconds(delays[2]);
     sum += delays[2];
     supposed[2] = sum;
     time[2] = micros() - start;
-    
+
     delayMicroseconds(delays[3]);
     sum += delays[3];
     supposed[3] = sum;
@@ -99,7 +100,7 @@ int main() {
 //      supposed[i] = sum;
 //      time[i] = micros() - start;
 //    }
-    
+
     for (int i = 0; i < 4; i++)
     {
       printf("now_us: %lu, delays_us: %lu\n", supposed[i], time[i]);

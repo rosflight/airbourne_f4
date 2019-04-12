@@ -157,20 +157,21 @@
 #define MPU_RA_FIFO_R_W 			0x74
 #define MPU_RA_WHO_AM_I				0x75
 
-class MPU6000 {
+class MPU6000
+{
 public:
-  void init(SPI* spi_drv);
+  void init(SPI *spi_drv);
 
   void read(float *accel_data, float *gyro_data, float *temp_data, uint64_t *time_us);
   void data_transfer_callback();
   void exti_cb();
-  bool new_data(); 
+  bool new_data();
 
 private:
   void write(uint8_t reg, uint8_t data);
   bool new_data_ = false;
   uint64_t imu_timestamp_ = 0;
-  SPI* spi;
+  SPI *spi;
   GPIO exti_;
   GPIO cs_;
   float accel_scale_;

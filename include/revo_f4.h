@@ -63,15 +63,21 @@
 #define UART3 2
 const uart_hardware_struct_t uart_config[NUM_UART] =
 {
-  {USART1, GPIOA, GPIO_Pin_10, GPIO_Pin_9, GPIO_PinSource10, GPIO_PinSource9,
-   GPIO_AF_USART1, USART1_IRQn, DMA2_Stream5_IRQn, DMA2_Stream7_IRQn, DMA2_Stream5, //main port?
-   DMA2_Stream7, DMA_Channel_4, DMA_IT_TCIF2, DMA_IT_TCIF7},
-  {USART2, GPIOA, GPIO_Pin_10, GPIO_Pin_9, GPIO_PinSource10, GPIO_PinSource9,
-   GPIO_AF_USART2, USART2_IRQn, DMA1_Stream5_IRQn, DMA1_Stream6_IRQn, DMA1_Stream5, //Flex-IO port?
-   DMA1_Stream6, DMA_Channel_5, DMA_IT_TCIF5, DMA_IT_TCIF6},
-  {USART3, GPIOB, GPIO_Pin_11, GPIO_Pin_10, GPIO_PinSource11, GPIO_PinSource10,
-   GPIO_AF_USART3, USART3_IRQn, DMA1_Stream1_IRQn, DMA1_Stream3_IRQn, DMA1_Stream1, //Flexi port?
-   DMA1_Stream3, DMA_Channel_4, DMA_IT_TCIF1, DMA_IT_TCIF3},
+  {
+    USART1, GPIOA, GPIO_Pin_10, GPIO_Pin_9, GPIO_PinSource10, GPIO_PinSource9,
+    GPIO_AF_USART1, USART1_IRQn, DMA2_Stream5_IRQn, DMA2_Stream7_IRQn, DMA2_Stream5, //main port?
+    DMA2_Stream7, DMA_Channel_4, DMA_IT_TCIF2, DMA_IT_TCIF7
+  },
+  {
+    USART2, GPIOA, GPIO_Pin_10, GPIO_Pin_9, GPIO_PinSource10, GPIO_PinSource9,
+    GPIO_AF_USART2, USART2_IRQn, DMA1_Stream5_IRQn, DMA1_Stream6_IRQn, DMA1_Stream5, //Flex-IO port?
+    DMA1_Stream6, DMA_Channel_5, DMA_IT_TCIF5, DMA_IT_TCIF6
+  },
+  {
+    USART3, GPIOB, GPIO_Pin_11, GPIO_Pin_10, GPIO_PinSource11, GPIO_PinSource10,
+    GPIO_AF_USART3, USART3_IRQn, DMA1_Stream1_IRQn, DMA1_Stream3_IRQn, DMA1_Stream1, //Flexi port?
+    DMA1_Stream3, DMA_Channel_4, DMA_IT_TCIF1, DMA_IT_TCIF3
+  },
 };
 
 #define SBUS_UART 0
@@ -100,12 +106,18 @@ const uart_hardware_struct_t uart_config[NUM_UART] =
 //} spi_hardware_struct_t;
 const spi_hardware_struct_t spi_config[NUM_SPI] =
 {
-  { SPI1, GPIOA, GPIO_PinSource5, GPIO_Pin_5, GPIO_PinSource6, GPIO_Pin_6, GPIO_PinSource7, GPIO_Pin_7, 
-    GPIO_AF_SPI1, DMA2_Stream3_IRQn, DMA2_Stream3, DMA2_Stream2, DMA_Channel_3, DMA_FLAG_TCIF3, DMA_FLAG_TCIF2 },
-  {	SPI2, GPIOB, GPIO_PinSource13, GPIO_Pin_13, GPIO_PinSource15, GPIO_Pin_15, GPIO_PinSource14, GPIO_Pin_14,
-    GPIO_AF_SPI2, DMA1_Stream4_IRQn, DMA1_Stream4, DMA1_Stream3, DMA_Channel_0, DMA_FLAG_TCIF4, DMA_FLAG_TCIF3 },
-  { SPI3, GPIOC, GPIO_PinSource10, GPIO_Pin_10, GPIO_PinSource12, GPIO_Pin_12,GPIO_PinSource11, GPIO_Pin_11, 
-    GPIO_AF_SPI3, DMA1_Stream5_IRQn, DMA1_Stream5, DMA1_Stream2, DMA_Channel_0, DMA_FLAG_TCIF5, DMA_FLAG_TCIF2 }
+  {
+    SPI1, GPIOA, GPIO_PinSource5, GPIO_Pin_5, GPIO_PinSource6, GPIO_Pin_6, GPIO_PinSource7, GPIO_Pin_7,
+    GPIO_AF_SPI1, DMA2_Stream3_IRQn, DMA2_Stream3, DMA2_Stream2, DMA_Channel_3, DMA_FLAG_TCIF3, DMA_FLAG_TCIF2
+  },
+  {
+    SPI2, GPIOB, GPIO_PinSource13, GPIO_Pin_13, GPIO_PinSource15, GPIO_Pin_15, GPIO_PinSource14, GPIO_Pin_14,
+    GPIO_AF_SPI2, DMA1_Stream4_IRQn, DMA1_Stream4, DMA1_Stream3, DMA_Channel_0, DMA_FLAG_TCIF4, DMA_FLAG_TCIF3
+  },
+  {
+    SPI3, GPIOC, GPIO_PinSource10, GPIO_Pin_10, GPIO_PinSource12, GPIO_Pin_12,GPIO_PinSource11, GPIO_Pin_11,
+    GPIO_AF_SPI3, DMA1_Stream5_IRQn, DMA1_Stream5, DMA1_Stream2, DMA_Channel_0, DMA_FLAG_TCIF5, DMA_FLAG_TCIF2
+  }
 };
 #define MPU6000_SPI 0
 #define MPU6000_CS_GPIO GPIOA
@@ -117,11 +129,16 @@ const spi_hardware_struct_t spi_config[NUM_SPI] =
 
 /////////////////////// I2C CONFIG ///////////////////////
 #define NUM_I2C 2
-const i2c_hardware_struct_t i2c_config[NUM_I2C] = {
-  { I2C1, 400000, I2C1_EV_IRQn, I2C1_ER_IRQn, GPIOB, GPIO_AF_I2C1, GPIO_PinSource8, GPIO_Pin_8, 
-  	GPIO_PinSource9, GPIO_Pin_9, DMA1_Stream0, DMA_Channel_1, DMA1_Stream0_IRQn, DMA_FLAG_TCIF0 },
-  { I2C2, 100000, I2C2_EV_IRQn, I2C2_ER_IRQn, GPIOB, GPIO_AF_I2C2, GPIO_PinSource10, GPIO_Pin_10, 
-  	GPIO_PinSource11, GPIO_Pin_11, DMA1_Stream2, DMA_Channel_7, DMA1_Stream2_IRQn, DMA_FLAG_TCIF2 }
+const i2c_hardware_struct_t i2c_config[NUM_I2C] =
+{
+  {
+    I2C1, 400000, I2C1_EV_IRQn, I2C1_ER_IRQn, GPIOB, GPIO_AF_I2C1, GPIO_PinSource8, GPIO_Pin_8,
+    GPIO_PinSource9, GPIO_Pin_9, DMA1_Stream0, DMA_Channel_1, DMA1_Stream0_IRQn, DMA_FLAG_TCIF0
+  },
+  {
+    I2C2, 100000, I2C2_EV_IRQn, I2C2_ER_IRQn, GPIOB, GPIO_AF_I2C2, GPIO_PinSource10, GPIO_Pin_10,
+    GPIO_PinSource11, GPIO_Pin_11, DMA1_Stream2, DMA_Channel_7, DMA1_Stream2_IRQn, DMA_FLAG_TCIF2
+  }
 };
 #define MAG_I2C 0
 #define BARO_I2C 0

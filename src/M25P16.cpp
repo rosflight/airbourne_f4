@@ -34,7 +34,7 @@
 
 M25P16::M25P16() {}
 
-void M25P16::init(SPI* _spi)
+void M25P16::init(SPI *_spi)
 {
   // Set up the SPI peripheral
   spi_ = _spi;
@@ -97,7 +97,8 @@ bool M25P16::write_config(const uint8_t *data, const uint32_t len)
     status = get_status();
     if ((status & STATUS_WIP_BIT) == 0x00)
       WIP = false;
-  } while(WIP);
+  }
+  while (WIP);
 
   // Program the data
   for (uint32_t i = 0; i < num_pages_for_config_; i++)
@@ -131,7 +132,8 @@ bool M25P16::write_config(const uint8_t *data, const uint32_t len)
       status = get_status();
       if ((status & STATUS_WIP_BIT) == 0x00)
         WIP = false;
-    } while(WIP);
+    }
+    while (WIP);
   }
 
   // Disable the write

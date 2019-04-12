@@ -31,9 +31,9 @@
 
 #include "pwm.h"
 
-PWM_OUT::PWM_OUT(){}
+PWM_OUT::PWM_OUT() {}
 
-void PWM_OUT::init(const pwm_hardware_struct_t* pwm_init, uint16_t frequency, uint32_t max_us, uint32_t min_us)
+void PWM_OUT::init(const pwm_hardware_struct_t *pwm_init, uint16_t frequency, uint32_t max_us, uint32_t min_us)
 {
   GPIO_InitTypeDef gpio_init_struct;
   TIM_TimeBaseInitTypeDef tim_init_struct;
@@ -51,7 +51,7 @@ void PWM_OUT::init(const pwm_hardware_struct_t* pwm_init, uint16_t frequency, ui
   gpio_init_struct.GPIO_PuPd 	= GPIO_PuPd_DOWN;
   GPIO_Init(port_, &gpio_init_struct);
 
-  TIM_TypeDef* TIMPtr = pwm_init->TIM;
+  TIM_TypeDef *TIMPtr = pwm_init->TIM;
 
   //calculate timer values
   //This is dependent on how fast the SystemCoreClock is. (ie will change between stm32fX models)
@@ -117,7 +117,8 @@ void PWM_OUT::init(const pwm_hardware_struct_t* pwm_init, uint16_t frequency, ui
   TIM_Cmd(TIMPtr, ENABLE);
 }
 
-void PWM_OUT::enable() {
+void PWM_OUT::enable()
+{
   GPIO_InitTypeDef gpio_init_struct;
   gpio_init_struct.GPIO_Mode = GPIO_Mode_AF;
   gpio_init_struct.GPIO_Pin = pin_;
@@ -125,7 +126,8 @@ void PWM_OUT::enable() {
   GPIO_Init(port_, &gpio_init_struct);
 }
 
-void PWM_OUT::disable() {
+void PWM_OUT::disable()
+{
   //This could conflict with the GPIO_PinAFConfig above
   GPIO_InitTypeDef gpio_init_struct;
   gpio_init_struct.GPIO_Mode = GPIO_Mode_OUT;
@@ -135,10 +137,12 @@ void PWM_OUT::disable() {
   GPIO_ResetBits(port_, pin_);
 }
 
-void PWM_OUT::write(float value) {
+void PWM_OUT::write(float value)
+{
   *CCR_ = min_cyc_ + static_cast<uint16_t>((max_cyc_ - min_cyc_) * value);
 }
 
-void PWM_OUT::writeUs(uint16_t value) {
+void PWM_OUT::writeUs(uint16_t value)
+{
   *CCR_ = value * cycles_per_us_;
 }

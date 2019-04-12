@@ -57,28 +57,28 @@
 class I2CSonar
 {
 private:
-    uint32_t last_update_ms_; // The last time that async_update was called
-    uint32_t last_callback_ms_; // The last time the sensor responded
-    float value_; // the latest reading from the sensor
-    bool new_data_; // Whether or not new data is ready to be returned
-    I2C *i2c_; // The i2c object used for communication
-    bool ready_to_ping_; // Whether the sensor is ready to make another measurement
-    uint8_t buffer_[2]; // for recieving data from the sensor
-    bool sensor_present_; // Flag of whether we have received data from the sensor
-    
-    
-public:
-    I2CSonar();
-    void init(I2C *_i2c);
-    bool present();
-    float read(); // Returns the most recent reading, converted to meters, or 0 if there is none
-    void update(); // Tries to either start a measurement, or read it from the sensor
-    // update will do nothing if it has done something in the last MB1242_UPDATE_WAIT_MILLIS ms
-    // Calling it more frequently won't break anything
+  uint32_t last_update_ms_; // The last time that async_update was called
+  uint32_t last_callback_ms_; // The last time the sensor responded
+  float value_; // the latest reading from the sensor
+  bool new_data_; // Whether or not new data is ready to be returned
+  I2C *i2c_; // The i2c object used for communication
+  bool ready_to_ping_; // Whether the sensor is ready to make another measurement
+  uint8_t buffer_[2]; // for recieving data from the sensor
+  bool sensor_present_; // Flag of whether we have received data from the sensor
 
-    // Callbacks. For internal use only, but public so the I2C peripheral can call them
-    void cb_start_read(uint8_t result); // callback after the measure command has been sent to the sensor
-    void cb_finished_read(uint8_t result); // callback after reading from the sensor has finished
+
+public:
+  I2CSonar();
+  void init(I2C *_i2c);
+  bool present();
+  float read(); // Returns the most recent reading, converted to meters, or 0 if there is none
+  void update(); // Tries to either start a measurement, or read it from the sensor
+  // update will do nothing if it has done something in the last MB1242_UPDATE_WAIT_MILLIS ms
+  // Calling it more frequently won't break anything
+
+  // Callbacks. For internal use only, but public so the I2C peripheral can call them
+  void cb_start_read(uint8_t result); // callback after the measure command has been sent to the sensor
+  void cb_finished_read(uint8_t result); // callback after reading from the sensor has finished
 };
 
 

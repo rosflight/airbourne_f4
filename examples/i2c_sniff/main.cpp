@@ -35,7 +35,7 @@
 #include "vcp.h"
 #include "printf.h"
 
-VCP* uartPtr = NULL;
+VCP *uartPtr = NULL;
 
 static void _putc(void *p, char c)
 {
@@ -43,7 +43,8 @@ static void _putc(void *p, char c)
   uartPtr->put_byte(c);
 }
 
-int main() {
+int main()
+{
 
   systemInit();
 
@@ -65,7 +66,7 @@ int main() {
   }
   warn.off();
 
-  while(1)
+  while (1)
   {
     info.toggle();
     for (int i = 0; i < NUM_I2C; i++)
@@ -75,7 +76,7 @@ int main() {
       {
         uint8_t data = 0;
         int8_t result  = i2c[i].write(j, 0xFF, data);
-        while(result < 0)
+        while (result < 0)
         {
           result  = i2c[i].write(j, 0xFF, data);
         }

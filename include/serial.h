@@ -56,15 +56,15 @@ public:
     UART = 0,
     VCP = 1
   };
-  Serial(){}
-  virtual void write(const uint8_t*ch, uint8_t len) = 0;
+  Serial() {}
+  virtual void write(const uint8_t *ch, uint8_t len) = 0;
   virtual uint32_t rx_bytes_waiting() = 0;
   virtual uint32_t tx_bytes_free() = 0;
   virtual uint8_t read_byte() = 0;
   virtual bool tx_buffer_empty() = 0;
   virtual void put_byte(uint8_t ch) = 0;
   virtual bool flush() = 0;
-  virtual void register_rx_callback(void (*cb)(uint8_t data) ) = 0;
+  virtual void register_rx_callback(void (*cb)(uint8_t data)) = 0;
   virtual void unregister_rx_callback() = 0;
 
 protected:

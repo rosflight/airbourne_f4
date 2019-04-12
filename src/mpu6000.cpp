@@ -33,7 +33,7 @@
 
 uint8_t raw[15] = {MPU_RA_ACCEL_XOUT_H | 0x80, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
-MPU6000* IMU_Ptr;
+MPU6000 *IMU_Ptr;
 
 void data_transfer_cb(void)
 {
@@ -49,7 +49,7 @@ void MPU6000::write(uint8_t reg, uint8_t data)
   delayMicroseconds(1);
 }
 
-void MPU6000::init(SPI* spi_drv)
+void MPU6000::init(SPI *spi_drv)
 {
   IMU_Ptr = this;
   spi = spi_drv;
@@ -73,8 +73,8 @@ void MPU6000::init(SPI* spi_drv)
 
 
   for (int i = 0; i < 100; i++)
-  // Read the IMU
-  raw[0] = MPU_RA_TEMP_OUT_H | 0x80;
+    // Read the IMU
+    raw[0] = MPU_RA_TEMP_OUT_H | 0x80;
   spi->transfer(raw, 3, raw, &cs_);
   delay(20);
 //  while (spi->is_busy()) {}
@@ -118,7 +118,7 @@ void MPU6000::data_transfer_callback()
   gyro_[2]  = static_cast<float>(static_cast<int16_t>((raw[13] << 8) | raw[14])) * gyro_scale_;
 }
 
-void MPU6000::read(float* accel_data, float* gyro_data, float* temp_data, uint64_t* time_us)
+void MPU6000::read(float *accel_data, float *gyro_data, float *temp_data, uint64_t *time_us)
 {
   accel_data[0] = acc_[0];
   accel_data[1] = acc_[1];
@@ -137,24 +137,24 @@ void MPU6000::exti_cb()
   spi->transfer(raw, 15, raw, &cs_, &data_transfer_cb);
 }
 
-bool MPU6000::new_data() 
+bool MPU6000::new_data()
+{
+  if (new_data_)
   {
-    if (new_data_)
-    {
-      new_data_ = false;
-      return true;
-    }
-    else
-      return false;
+    new_data_ = false;
+    return true;
   }
+  else
+    return false;
+}
 
 extern "C"
 {
 
-void EXTI4_IRQHandler(void)
-{
-  EXTI_ClearITPendingBit(EXTI_Line4);
-  IMU_Ptr->exti_cb();
-}
+  void EXTI4_IRQHandler(void)
+  {
+    EXTI_ClearITPendingBit(EXTI_Line4);
+    IMU_Ptr->exti_cb();
+  }
 
 }

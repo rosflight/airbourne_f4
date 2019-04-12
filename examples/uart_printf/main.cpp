@@ -34,7 +34,7 @@
 #include "uart.h"
 #include "revo_f4.h"
 
-UART* uartPtr = NULL;
+UART *uartPtr = NULL;
 
 void rx_callback(uint8_t byte)
 {
@@ -52,7 +52,7 @@ int main()
   uart.register_rx_callback(rx_callback);  // Uncomment to test callback version
 
   int i = 0;
-  while(1)
+  while (1)
   {
     uint8_t hello_string[9] = "testing\n";
     //uart.write(hello_string, 8); // Uncomment to test Tx

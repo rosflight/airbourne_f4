@@ -38,12 +38,12 @@
 #include "printf.h"
 #include "led.h"
 
-Serial* serPtr = NULL;
+Serial *serPtr = NULL;
 
 static void _putc(void *p, char c)
 {
-    (void)p; // avoid compiler warning about unused variable
-    serPtr->put_byte(c);
+  (void)p; // avoid compiler warning about unused variable
+  serPtr->put_byte(c);
 }
 
 int main()
@@ -69,14 +69,14 @@ int main()
   float vel[3] = {};
   uint8_t fix_type = 0;
   uint32_t t_ms;
-  while(1)
+  while (1)
   {
     if (gps.new_data())
     {
       gps.read(lla, vel, &fix_type, &t_ms);
-      printf ("fix: %s\tt: %d\tlla: %6.6f, %6.6f, %4.2f\tvel: %3.3f, %3.3f, %3.3f\n",
-              fix_names[fix_type].c_str(), t_ms, lla[0], lla[1], lla[2],
-              (double)vel[0], (double)vel[1], (double)vel[2]);
+      printf("fix: %s\tt: %d\tlla: %6.6f, %6.6f, %4.2f\tvel: %3.3f, %3.3f, %3.3f\n",
+             fix_names[fix_type].c_str(), t_ms, lla[0], lla[1], lla[2],
+             (double)vel[0], (double)vel[1], (double)vel[2]);
       led1.toggle();
     }
   }

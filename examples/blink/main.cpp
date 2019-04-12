@@ -42,7 +42,7 @@ int main()
   info.init(LED2_GPIO, LED2_PIN);
 
   warn.off();
-  while(1)
+  while (1)
   {
     delay(200);
     warn.toggle();

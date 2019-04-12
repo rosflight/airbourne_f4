@@ -38,26 +38,28 @@
 #include "backup_sram.h"
 #include "vcp.h"
 
-void restart(){
-    NVIC_SystemReset();
+void restart()
+{
+  NVIC_SystemReset();
 }
-int main() {
-	systemInit();
-    backup_sram_init();
-    VCP vcp;
-    vcp.init();
-    backup_sram_init();
-    BackupData read_data = backup_sram_read();
-    uint32_t reset_count = 0;
-    if(check_backup_checksum(read_data))
-        reset_count = read_data.reset_count;
-    BackupData write_data={};
-    write_data.reset_count=++reset_count;
-    write_data.error_code=0xDEADBEEF;
-    write_data.checksum=generate_backup_checksum(write_data);
-    delay(300);
-    backup_sram_write(write_data);
-    restart();
+int main()
+{
+  systemInit();
+  backup_sram_init();
+  VCP vcp;
+  vcp.init();
+  backup_sram_init();
+  BackupData read_data = backup_sram_read();
+  uint32_t reset_count = 0;
+  if (check_backup_checksum(read_data))
+    reset_count = read_data.reset_count;
+  BackupData write_data= {};
+  write_data.reset_count=++reset_count;
+  write_data.error_code=0xDEADBEEF;
+  write_data.checksum=generate_backup_checksum(write_data);
+  delay(300);
+  backup_sram_write(write_data);
+  restart();
 }
 
 

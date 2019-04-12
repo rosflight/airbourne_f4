@@ -36,15 +36,16 @@
 #include "vcp.h"
 #include "printf.h"
 
-VCP* uartPtr = NULL;
+VCP *uartPtr = NULL;
 
 static void _putc(void *p, char c)
 {
-    (void)p; // avoid compiler warning about unused variable
-    uartPtr->put_byte(c);
+  (void)p; // avoid compiler warning about unused variable
+  uartPtr->put_byte(c);
 }
 
-int main() {
+int main()
+{
 
   systemInit();
 
@@ -69,7 +70,7 @@ int main() {
   mag.init(&i2c1);
 
   float mag_data[3] = {0., 0., 0.};
-  while(1) 
+  while (1)
   {
     mag.update();
     if (mag.present())
@@ -82,10 +83,10 @@ int main() {
              (int32_t)(mag_data[1]),
              (int32_t)(mag_data[2]));
     }
-    else 
+    else
     {
       warn.on();
-      printf("error\n");     
+      printf("error\n");
     }
     delay(10);
   }

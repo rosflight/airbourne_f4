@@ -39,7 +39,7 @@
 #include "vcp.h"
 #include "printf.h"
 
-VCP* uartPtr = NULL;
+VCP *uartPtr = NULL;
 
 static void _putc(void *p, char c)
 {
@@ -48,25 +48,26 @@ static void _putc(void *p, char c)
 }
 
 
-int main() {
-  
+int main()
+{
+
   systemInit();
-  
+
   VCP vcp;
   vcp.init();
   uartPtr = &vcp;
-  
+
 //  init_printf(NULL, _putc);
-  
+
   I2C i2c1;
   i2c1.init(&i2c_config[EXTERNAL_I2C]);
   I2CSonar sonar;
   sonar.init(&i2c1);
-  
-  
+
+
   volatile float dist;
   uint32_t next_print_ms = millis();
-  while(true)
+  while (true)
   {
     sonar.update();
     if (millis() > next_print_ms)
@@ -83,5 +84,5 @@ int main() {
       next_print_ms += 20;
     }
   }
-  
+
 }

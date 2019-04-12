@@ -36,7 +36,7 @@
 #include "vcp.h"
 #include "printf.h"
 
-VCP* uartPtr = NULL;
+VCP *uartPtr = NULL;
 
 static void _putc(void *p, char c)
 {
@@ -44,7 +44,8 @@ static void _putc(void *p, char c)
   uartPtr->put_byte(c);
 }
 
-int main() {
+int main()
+{
 
   systemInit();
 
@@ -68,7 +69,7 @@ int main() {
   baro.init(&i2c1);
 
   float pressure, temperature;
-  while(1)
+  while (1)
   {
     baro.update();
     if (baro.present())
@@ -80,7 +81,7 @@ int main() {
              (int32_t)(pressure),
              (int32_t)(temperature),
              (int32_t)(temperature*100)%100);
-      
+
       delay(10);
     }
     else

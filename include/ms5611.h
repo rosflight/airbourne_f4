@@ -63,7 +63,7 @@ private:
     READ_PRESS = 3,
   } state_t;
   state_t state_;
-  
+
   typedef enum
   {
     CB_TEMP_READ1,
@@ -87,7 +87,7 @@ private:
   bool start_pres_meas();
   void convert();
 
-  I2C* i2c_;
+  I2C *i2c_;
   uint8_t pres_buf_[3];
   uint8_t temp_buf_[3];
   int32_t pres_raw_;
@@ -101,11 +101,11 @@ private:
   bool waiting_for_cb_;
   bool new_data_;
   bool baro_present_;
-  
+
   callback_type_t callback_type_;
 
 public:
-  bool init(I2C* _i2c);
+  bool init(I2C *_i2c);
   void update();
   void read(float *press, float *temp);
   bool present();
