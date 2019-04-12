@@ -38,7 +38,7 @@
 #include "vcp.h"
 #include "printf.h"
 
-VCP* uartPtr = NULL;
+VCP *uartPtr = NULL;
 
 static void _putc(void *p, char c)
 {
@@ -46,51 +46,52 @@ static void _putc(void *p, char c)
   uartPtr->put_byte(c);
 }
 
-int main() {
-  
+int main()
+{
+
   systemInit();
-  
+
   VCP vcp;
   vcp.init();
   uartPtr = &vcp;
   init_printf(NULL, _putc);
-  
+
   LED warn;
   warn.init(LED1_GPIO, LED1_PIN);
   LED info;
   info.init(LED2_GPIO, LED2_PIN);
-  
+
   delay(500);
-  
+
   info.on();
-  
+
   // Initialize the I2C peripherals1
   I2C i2c1;
   I2C i2c2;
   i2c1.init(&i2c_config[BARO_I2C]);
 //  i2c2.init(&i2c_config[EXTERNAL_I2C]);
-  
+
   // Initialize the sensors
   MS5611 baro;
   HMC5883L mag;
 //  MS4525 airspeed;
-  
-  
+
+
   // Initialize the barometer
   float pressure(0.0), baro_temp(0.0);
   baro.init(&i2c1);
-  
+
   // Initialize the Magnetometer
   float mag_data[3] = {0., 0., 0.};
   mag.init(&i2c1);
-  
+
   // Initialize the airspeed Sensor
   float diff_press(0.0), as_temp(0.0);
 //  airspeed.init(&i2c2);
-  
+
   uint32_t count;
   uint32_t last_print = 0;
-  while(1)
+  while (1)
   {
     baro.update();
     mag.update();
@@ -104,9 +105,9 @@ int main() {
       pressure = 0.0;
       baro_temp = 0.0;
     }
-    
+
     double seconds = millis()/1000.0;
-    
+
     if (mag.present())
     {
       mag.read(mag_data);
@@ -124,12 +125,12 @@ int main() {
 //      diff_press = 0.0;
 //      as_temp = 0.0;
 //    }
-    
+
     if (pressure == 0.0 || baro_temp == 0.0 || mag_data[0] == 0.0)
       warn.on();
     else
       warn.off();
-           
+
     if (millis() > last_print + 20)
     {
       if (count++ % 10 == 0)
@@ -138,9 +139,9 @@ int main() {
       printf("t: %.2f\t", seconds);
       printf("baro: %d Pa, %.2f K\t", (int32_t)pressure, (double)baro_temp);
       printf("mag: %d, %d, %d\t",(int32_t)(mag_data[0]),(int32_t)(mag_data[1]),(int32_t)(mag_data[2]));
-  //    printf("as: %.2f Pa, %.2fC\t", (double)diff_press, (double)as_temp);
-      printf ("err1: %d\t err2:%d\n", i2c1.num_errors(), i2c2.num_errors());    
+      //    printf("as: %.2f Pa, %.2fC\t", (double)diff_press, (double)as_temp);
+      printf("err1: %d\t err2:%d\n", i2c1.num_errors(), i2c2.num_errors());
     }
   }
 }
-    
+

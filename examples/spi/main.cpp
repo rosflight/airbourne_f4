@@ -37,15 +37,16 @@
 #include "vcp.h"
 #include "printf.h"
 
-VCP* uartPtr = NULL;
+VCP *uartPtr = NULL;
 
 static void _putc(void *p, char c)
 {
-    (void)p; // avoid compiler warning about unused variable
-    uartPtr->put_byte(c);
+  (void)p; // avoid compiler warning about unused variable
+  uartPtr->put_byte(c);
 }
 
-int main() {
+int main()
+{
 
   systemInit();
 
@@ -69,7 +70,7 @@ int main() {
   float acc[3];
   float gyro[3];
   uint64_t time_us;
-  while(1)
+  while (1)
   {
     info.toggle();
     imu.read(acc, gyro, &temp, &time_us);
@@ -82,13 +83,13 @@ int main() {
     {
       warn.off();
       printf("%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\n",
-             (int32_t) (acc[0]*1000.0),
-             (int32_t) (acc[1]*1000.0),
-             (int32_t) (acc[2]*1000.0),
-             (int32_t) (gyro[0]*1000.0),
-             (int32_t) (gyro[1]*1000.0),
-             (int32_t) (gyro[2]*1000.0),
-             (int32_t) (temp*1000.0),
+             (int32_t)(acc[0]*1000.0),
+             (int32_t)(acc[1]*1000.0),
+             (int32_t)(acc[2]*1000.0),
+             (int32_t)(gyro[0]*1000.0),
+             (int32_t)(gyro[1]*1000.0),
+             (int32_t)(gyro[2]*1000.0),
+             (int32_t)(temp*1000.0),
              time_us);
     }
     delay(10);

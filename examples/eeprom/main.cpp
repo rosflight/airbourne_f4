@@ -39,15 +39,16 @@
 #include "printf.h"
 #include "eeprom.h"
 
-VCP* vcpPtr = NULL;
+VCP *vcpPtr = NULL;
 
 static void _putc(void *p, char c)
 {
-    (void)p; // avoid compiler warning about unused variable
-    vcpPtr->put_byte(c);
+  (void)p; // avoid compiler warning about unused variable
+  vcpPtr->put_byte(c);
 }
 
-int main() {
+int main()
+{
 
   systemInit();
 
@@ -55,7 +56,8 @@ int main() {
   vcp.init();
   vcpPtr = &vcp;
 
-  struct ExampleStruct{
+  struct ExampleStruct
+  {
     int version;
     std::string name;
     float someOtherValue;
@@ -66,7 +68,7 @@ int main() {
   data.version=1;
   data.someOtherValue=3.14154f;
   eeprom_write((&data),sizeof(data));
-  
+
   //to read, uncomment this
   eeprom_read(&data,sizeof(data));
 

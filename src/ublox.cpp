@@ -9,18 +9,18 @@
 #define M_PI 3.14159
 #endif
 
-UBLOX* gnss_Ptr;
+UBLOX *gnss_Ptr;
 
 //A C style callback
 void cb(uint8_t byte)
 {
-    gnss_Ptr->read_cb(byte);
+  gnss_Ptr->read_cb(byte);
 }
 
-UBLOX::UBLOX(){}
+UBLOX::UBLOX() {}
 
 //Look for a GNSS receiver, and if found, change its settings
-void UBLOX::init(UART* uart)
+void UBLOX::init(UART *uart)
 {
   gnss_Ptr = this;
   // Reset message parser
@@ -88,7 +88,7 @@ bool UBLOX::detect_baudrate()
   return got_message_;
 }
 
-bool UBLOX::send_message(uint8_t msg_class, uint8_t msg_id, UBX_message_t& message, uint16_t len)
+bool UBLOX::send_message(uint8_t msg_class, uint8_t msg_id, UBX_message_t &message, uint16_t len)
 {
   // First, calculate the checksum
   uint8_t ck_a, ck_b;
@@ -253,7 +253,7 @@ void UBLOX::read_cb(uint8_t byte)
     if (decode_message())
     {
       parse_state_ = START;
-      if(message_class_ == CLASS_NAV && message_type_ == NAV_PVT)
+      if (message_class_ == CLASS_NAV && message_type_ == NAV_PVT)
         last_pvt_timestamp = time_recieved;
     }
     else
@@ -277,10 +277,11 @@ uint64_t convert_to_unix(UBLOX::GNSS_TIME_T time)
   uint32_t elapsed_years = time.year-1970;
   uint32_t elapsed_leap_days = (elapsed_years+1)/4;
   if (time.year % 4 == 0) //If currently in a leap year
-    if(time.month>=3) //If past feb 29
+    if (time.month>=3) //If past feb 29
       elapsed_leap_days++;
   uint32_t elapsed_days;//Days past in the year
-  switch(time.month){
+  switch (time.month)
+  {
   case 1:
     elapsed_days = 0;
     break;
@@ -332,30 +333,30 @@ uint64_t convert_to_unix(UBLOX::GNSS_TIME_T time)
 bool UBLOX::new_data()
 {
   return this->new_data_
-      && (this->nav_message_.iTOW == this->pos_ecef_.iTOW)
-      && (this->nav_message_.iTOW == this->vel_ecef_.iTOW);
+         && (this->nav_message_.iTOW == this->pos_ecef_.iTOW)
+         && (this->nav_message_.iTOW == this->vel_ecef_.iTOW);
 }
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wmissing-field-initializers" //Ignore warning about leaving struct fields blank
 UBLOX::GNSSPVT UBLOX::read()
 {
-    GNSSPVT data = {};
-    data.time_of_week = this->nav_message_.iTOW;
-    data.time = convert_to_unix(this->nav_message_.time);
-    data.nanos = this->nav_message_.time.nano;
-    data.lat = this->nav_message_.lat;
-    data.lon = this->nav_message_.lon;
-    data.height = this->nav_message_.height;
-    data.vel_n = this->nav_message_.velN;
-    data.vel_e = this->nav_message_.velE;
-    data.vel_d = this->nav_message_.velD;
-    data.h_acc = this->nav_message_.hAcc;
-    data.v_acc = this->nav_message_.vAcc;
-    data.rosflight_timestamp = this->last_pvt_timestamp;
+  GNSSPVT data = {};
+  data.time_of_week = this->nav_message_.iTOW;
+  data.time = convert_to_unix(this->nav_message_.time);
+  data.nanos = this->nav_message_.time.nano;
+  data.lat = this->nav_message_.lat;
+  data.lon = this->nav_message_.lon;
+  data.height = this->nav_message_.height;
+  data.vel_n = this->nav_message_.velN;
+  data.vel_e = this->nav_message_.velE;
+  data.vel_d = this->nav_message_.velD;
+  data.h_acc = this->nav_message_.hAcc;
+  data.v_acc = this->nav_message_.vAcc;
+  data.rosflight_timestamp = this->last_pvt_timestamp;
 
-    this->new_data_=false;
+  this->new_data_=false;
 
-    return data;
+  return data;
 }
 
 UBLOX::GNSSPosECEF UBLOX::read_pos_ecef()
@@ -380,7 +381,7 @@ UBLOX::GNSSVelECEF UBLOX::read_vel_ecef()
   return vel;
 }
 
-const UBLOX::NAV_PVT_t& UBLOX::read_raw()
+const UBLOX::NAV_PVT_t &UBLOX::read_raw()
 {
   return this->nav_message_;
 }
@@ -472,7 +473,8 @@ void UBLOX::convert_data()
   time_ = convert_to_unix(nav_message_.time);
 }
 
-void UBLOX::calculate_checksum(const uint8_t msg_cls, const uint8_t msg_id, const uint16_t len, const UBX_message_t payload, uint8_t& ck_a, uint8_t& ck_b) const
+void UBLOX::calculate_checksum(const uint8_t msg_cls, const uint8_t msg_id, const uint16_t len,
+                               const UBX_message_t payload, uint8_t &ck_a, uint8_t &ck_b) const
 {
   ck_a = ck_b = 0;
 

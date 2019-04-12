@@ -41,7 +41,7 @@ public:
   bool reset_ = false;
 
 private:
-  
+
   void perform_maintenance();
 
   void send_disconnect_signal();
@@ -55,4 +55,4 @@ private:
   GPIO vbus_sens_;
 };
 
-#endif 
+#endif

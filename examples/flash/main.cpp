@@ -43,8 +43,8 @@ VCP vcp;
 
 static void _putc(void *p, char c)
 {
-    (void)p; // avoid compiler warning about unused variable
-    vcp.put_byte(c);
+  (void)p; // avoid compiler warning about unused variable
+  vcp.put_byte(c);
 }
 
 typedef struct
@@ -92,7 +92,7 @@ int main()
 
   // calculate crc
   uint8_t crc = 0;
-  for (uint8_t* p = (uint8_t*)&config_file; p < (uint8_t*)&config_file + sizeof(config_file); p++)
+  for (uint8_t *p = (uint8_t *)&config_file; p < (uint8_t *)&config_file + sizeof(config_file); p++)
   {
     crc ^= *p;
   }
@@ -103,17 +103,17 @@ int main()
   bool success = false;
 
   // write the config to flash
-  flash.write_config((uint8_t*)&config_file, sizeof(config_t));
+  flash.write_config((uint8_t *)&config_file, sizeof(config_t));
 
   // Read config from flash
   flash.read_config(config_buffer, sizeof(config_t));
 
   // See if it is valid
-  config_t* config_ptr = (config_t*) config_buffer;
+  config_t *config_ptr = (config_t *) config_buffer;
 
   // Calculate crc of new data
   crc = 0;
-  for (uint8_t* p = (uint8_t*) config_ptr; p < (uint8_t*)config_ptr + sizeof(config_file); p++)
+  for (uint8_t *p = (uint8_t *) config_ptr; p < (uint8_t *)config_ptr + sizeof(config_file); p++)
   {
     crc ^= *p;
   }
@@ -132,7 +132,7 @@ int main()
     success = false;
   }
 
-  while(1)
+  while (1)
   {
     uint32_t size = sizeof(config_file);
     info.toggle();

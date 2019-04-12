@@ -37,12 +37,12 @@
 
 #include "revo_f4.h"
 
-VCP* uartPtr = NULL;
+VCP *uartPtr = NULL;
 
 static void _putc(void *p, char c)
 {
-    (void)p; // avoid compiler warning about unused variable
-    uartPtr->put_byte(c);
+  (void)p; // avoid compiler warning about unused variable
+  uartPtr->put_byte(c);
 }
 
 int main()
@@ -64,9 +64,9 @@ int main()
 
 
   float rc_raw[16];
-  while(1)
+  while (1)
   {
-    for(int i = 0; i < 8; i++)
+    for (int i = 0; i < 8; i++)
     {
       rc_raw[i] = rc.read(i);
       printf("%d, ", (uint32_t)(rc_raw[i]*1000));

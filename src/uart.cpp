@@ -31,14 +31,14 @@
 
 #include "uart.h"
 
-UART* UART1Ptr = NULL;
-UART* UART3Ptr = NULL;
+UART *UART1Ptr = NULL;
+UART *UART3Ptr = NULL;
 
 UART::UART()
 {}
 
 
-void UART::init(const uart_hardware_struct_t* conf, uint32_t baudrate, uart_mode_t mode)
+void UART::init(const uart_hardware_struct_t *conf, uint32_t baudrate, uart_mode_t mode)
 {
   receive_CB_ = nullptr;
   c_ = conf;//Save the configuration
@@ -55,7 +55,7 @@ void UART::init(const uart_hardware_struct_t* conf, uint32_t baudrate, uart_mode
   {
     UART1Ptr = this;
   }
-  if(c_->dev == USART3)
+  if (c_->dev == USART3)
   {
     UART3Ptr = this;
   }
@@ -195,7 +195,7 @@ void UART::startDMA()
 {
   // Set the start of the transmission to the oldest data
   c_->Tx_DMA_Stream->M0AR = reinterpret_cast<uint32_t>(&tx_buffer_[tx_buffer_tail_]);
-  if(tx_buffer_head_ > tx_buffer_tail_)
+  if (tx_buffer_head_ > tx_buffer_tail_)
   {
     // Set the length of the transmission to the data on the buffer
     // if contiguous, this is easy
@@ -218,11 +218,11 @@ uint8_t UART::read_byte()
   uint8_t byte = 0;
   // pull the next byte off the array
   // (the head counts down, because CNTR counts down)
-  if(rx_buffer_head_ != rx_buffer_tail_)
+  if (rx_buffer_head_ != rx_buffer_tail_)
   {
     // read a new byte and decrement the tail
     byte = rx_buffer_[RX_BUFFER_SIZE - rx_buffer_tail_];
-    if(--rx_buffer_tail_ == 0)
+    if (--rx_buffer_tail_ == 0)
     {
       // wrap to the top if at the bottom
       rx_buffer_tail_ = RX_BUFFER_SIZE;
@@ -297,14 +297,14 @@ void UART::DMA_Rx_IRQ_callback()
   // Just call the callback until we have no more data
   // Update the head position from the DMA
   rx_buffer_head_ =  DMA_GetCurrDataCounter(c_->Rx_DMA_Stream);
-  if(receive_CB_ != nullptr)
+  if (receive_CB_ != nullptr)
   {
-    while(rx_buffer_head_ != rx_buffer_tail_)
+    while (rx_buffer_head_ != rx_buffer_tail_)
     {
       // read a new byte and decrement the tail
       uint8_t byte = rx_buffer_[RX_BUFFER_SIZE - rx_buffer_tail_];
       receive_CB_(byte);
-      if(--rx_buffer_tail_ == 0)
+      if (--rx_buffer_tail_ == 0)
       {
         // wrap to the top if at the bottom
         rx_buffer_tail_ = RX_BUFFER_SIZE;
@@ -316,13 +316,13 @@ void UART::DMA_Rx_IRQ_callback()
 void UART::DMA_Tx_IRQ_callback()
 {
   // If there is more data to be sent
-  if(tx_buffer_head_ != tx_buffer_tail_)
+  if (tx_buffer_head_ != tx_buffer_tail_)
   {
     startDMA();
   }
 }
 
-void UART::register_rx_callback(void (*cb)(uint8_t data) )
+void UART::register_rx_callback(void (*cb)(uint8_t data))
 {
   receive_CB_ = cb;
 }
@@ -335,51 +335,51 @@ void UART::unregister_rx_callback()
 extern "C"
 {
 
-void USART1_IRQHandler (void)
-{
-  UART1Ptr->DMA_Rx_IRQ_callback();
-}
-void USART3_IRQHandler (void)
-{
-  UART3Ptr->DMA_Rx_IRQ_callback();
-}
-
-void DMA2_Stream5_IRQHandler(void)
-{
-  if (DMA_GetITStatus(DMA2_Stream5, DMA_IT_TCIF5))
+  void USART1_IRQHandler(void)
   {
-    DMA_ClearITPendingBit(DMA2_Stream5, DMA_IT_TCIF5);
     UART1Ptr->DMA_Rx_IRQ_callback();
   }
-}
-
-void DMA2_Stream7_IRQHandler(void)
-{
-  if (DMA_GetITStatus(DMA2_Stream7, DMA_IT_TCIF7))
+  void USART3_IRQHandler(void)
   {
-    DMA_ClearITPendingBit(DMA2_Stream7, DMA_IT_TCIF7);
-    DMA_Cmd(DMA2_Stream7, DISABLE);
-    UART1Ptr->DMA_Tx_IRQ_callback();
-  }
-}
-
-void DMA1_Stream1_IRQHandler(void)
-{
-  if (DMA_GetITStatus(DMA1_Stream1, DMA_IT_TCIF1))
-  {
-    DMA_ClearITPendingBit(DMA1_Stream1, DMA_IT_TCIF1);
     UART3Ptr->DMA_Rx_IRQ_callback();
   }
-}
 
-void DMA1_Stream3_IRQHandler(void)
-{
-  if (DMA_GetITStatus(DMA1_Stream3, DMA_IT_TCIF3))
+  void DMA2_Stream5_IRQHandler(void)
   {
-    DMA_ClearITPendingBit(DMA1_Stream3, DMA_IT_TCIF3);
-    DMA_Cmd(DMA1_Stream3, DISABLE);
-    UART3Ptr->DMA_Tx_IRQ_callback();
+    if (DMA_GetITStatus(DMA2_Stream5, DMA_IT_TCIF5))
+    {
+      DMA_ClearITPendingBit(DMA2_Stream5, DMA_IT_TCIF5);
+      UART1Ptr->DMA_Rx_IRQ_callback();
+    }
   }
-}
+
+  void DMA2_Stream7_IRQHandler(void)
+  {
+    if (DMA_GetITStatus(DMA2_Stream7, DMA_IT_TCIF7))
+    {
+      DMA_ClearITPendingBit(DMA2_Stream7, DMA_IT_TCIF7);
+      DMA_Cmd(DMA2_Stream7, DISABLE);
+      UART1Ptr->DMA_Tx_IRQ_callback();
+    }
+  }
+
+  void DMA1_Stream1_IRQHandler(void)
+  {
+    if (DMA_GetITStatus(DMA1_Stream1, DMA_IT_TCIF1))
+    {
+      DMA_ClearITPendingBit(DMA1_Stream1, DMA_IT_TCIF1);
+      UART3Ptr->DMA_Rx_IRQ_callback();
+    }
+  }
+
+  void DMA1_Stream3_IRQHandler(void)
+  {
+    if (DMA_GetITStatus(DMA1_Stream3, DMA_IT_TCIF3))
+    {
+      DMA_ClearITPendingBit(DMA1_Stream3, DMA_IT_TCIF3);
+      DMA_Cmd(DMA1_Stream3, DISABLE);
+      UART3Ptr->DMA_Tx_IRQ_callback();
+    }
+  }
 
 }

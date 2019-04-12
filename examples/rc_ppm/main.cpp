@@ -36,7 +36,7 @@
 #include "rc_ppm.h"
 #include "led.h"
 
-VCP* uartPtr = NULL;
+VCP *uartPtr = NULL;
 
 static void _putc(void *p, char c)
 {
@@ -44,7 +44,8 @@ static void _putc(void *p, char c)
   uartPtr->put_byte(c);
 }
 
-int main() {
+int main()
+{
 
   systemInit();
 
@@ -62,7 +63,7 @@ int main() {
 
   rc.init(&pwm_config[10]);
 
-  while(1)
+  while (1)
   {
     if (rc.lost())
     {

@@ -32,7 +32,7 @@
 
 #include "hmc5883l.h"
 
-static HMC5883L* mag_ptr;
+static HMC5883L *mag_ptr;
 static void read_cb(uint8_t result);
 
 bool HMC5883L::init(I2C *i2c_drv)
@@ -40,9 +40,9 @@ bool HMC5883L::init(I2C *i2c_drv)
   mag_ptr = this;
   mag_present_ = false;
   i2c_ = i2c_drv;
-  
+
   // Wait for the chip to power up
-  
+
   last_update_ms_ = millis();
   next_update_ms_ = millis();
 
@@ -57,7 +57,8 @@ bool HMC5883L::init(I2C *i2c_drv)
   {
     bool result = true;
     // Configure HMC5833L
-    result &= i2c_->write(HMC58X3_ADDR, HMC58X3_CRA, HMC58X3_CRA_DO_75 | HMC58X3_CRA_NO_AVG | HMC58X3_CRA_MEAS_MODE_NORMAL ); // 75 Hz Measurement, no bias, no averaging
+    result &= i2c_->write(HMC58X3_ADDR, HMC58X3_CRA,
+                          HMC58X3_CRA_DO_75 | HMC58X3_CRA_NO_AVG | HMC58X3_CRA_MEAS_MODE_NORMAL); // 75 Hz Measurement, no bias, no averaging
     result &= i2c_->write(HMC58X3_ADDR, HMC58X3_CRB, HMC58X3_CRB_GN_390); // 390 LSB/Gauss
     result &= i2c_->write(HMC58X3_ADDR, HMC58X3_MODE, HMC58X3_MODE_CONTINUOUS); // Continuous Measurement Mode
     mag_present_ = true;
@@ -74,7 +75,7 @@ bool HMC5883L::present()
 
 void HMC5883L::update()
 {
-  if ( millis() > next_update_ms_)
+  if (millis() > next_update_ms_)
   {
     if (i2c_->read(HMC58X3_ADDR, HMC58X3_DATA, 6, i2c_buf_, &read_cb) == I2C::RESULT_SUCCESS)
       next_update_ms_ += 10;

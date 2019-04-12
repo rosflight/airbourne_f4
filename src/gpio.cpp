@@ -31,7 +31,7 @@
 
 #include "gpio.h"
 
-void GPIO::init(GPIO_TypeDef* BasePort, uint16_t pin, gpio_mode_t mode)
+void GPIO::init(GPIO_TypeDef *BasePort, uint16_t pin, gpio_mode_t mode)
 {
   pin_ = pin;
   port_ = BasePort;
@@ -40,9 +40,9 @@ void GPIO::init(GPIO_TypeDef* BasePort, uint16_t pin, gpio_mode_t mode)
 
 void GPIO::write(gpio_write_t state)
 {
-  if(mode_ == OUTPUT)
+  if (mode_ == OUTPUT)
   {
-    if(state == LOW)
+    if (state == LOW)
       GPIO_ResetBits(port_, pin_);
     else
       GPIO_SetBits(port_, pin_);
@@ -51,9 +51,9 @@ void GPIO::write(gpio_write_t state)
 
 void GPIO::toggle()
 {
-  if(mode_ == OUTPUT)
+  if (mode_ == OUTPUT)
   {
-    if(GPIO_ReadOutputDataBit(port_, pin_))
+    if (GPIO_ReadOutputDataBit(port_, pin_))
       GPIO_ResetBits(port_, pin_);
     else
       GPIO_SetBits(port_, pin_);
@@ -63,16 +63,16 @@ void GPIO::toggle()
 bool GPIO::read()
 {
   // If it's an input pin, use the read input data
-  if(mode_ == INPUT)
+  if (mode_ == INPUT)
   {
-    if(port_->IDR & pin_)
+    if (port_->IDR & pin_)
       return HIGH;
     else
       return LOW;
   }
   else
   {
-    if(port_->ODR & pin_)
+    if (port_->ODR & pin_)
       return HIGH;
     else
       return LOW;
@@ -85,7 +85,7 @@ void GPIO::set_mode(gpio_mode_t mode)
   GPIO_StructInit(&GPIO_InitStruct);
   GPIO_InitStruct.GPIO_Pin = pin_;
 
-  switch(mode)
+  switch (mode)
   {
   case OUTPUT:
     GPIO_InitStruct.GPIO_Mode = GPIO_Mode_OUT;

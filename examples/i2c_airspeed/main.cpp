@@ -37,15 +37,16 @@
 #include "printf.h"
 #include "revo_f4.h"
 
-VCP* uartPtr = NULL;
+VCP *uartPtr = NULL;
 
 static void _putc(void *p, char c)
 {
-    (void)p; // avoid compiler warning about unused variable
-    uartPtr->put_byte(c);
+  (void)p; // avoid compiler warning about unused variable
+  uartPtr->put_byte(c);
 }
 
-int main() {
+int main()
+{
 
   systemInit();
 
@@ -76,7 +77,8 @@ int main() {
 
   float diff_press(0), temp(0);
   uint32_t last_print_ms = 0;
-  while(1) {
+  while (1)
+  {
     info.on();
     airspeed.update();
     if (airspeed.present())
@@ -86,15 +88,15 @@ int main() {
     }
     else
     {
-      warn.on();      
+      warn.on();
     }
-    
+
     if (millis() > last_print_ms + 50)
     {
-      last_print_ms = millis();        
+      last_print_ms = millis();
       printf("%d.%dPa, %d.%dC\n",
-               (int32_t)(diff_press), (int32_t)(diff_press*1000)%1000,
-               (int32_t)(temp), (int32_t)(temp*1000)%1000);
+             (int32_t)(diff_press), (int32_t)(diff_press*1000)%1000,
+             (int32_t)(temp), (int32_t)(temp*1000)%1000);
     }
   }
 }

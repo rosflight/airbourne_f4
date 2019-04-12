@@ -33,7 +33,7 @@
 #include "system.h"
 #include "vcp.h"
 
-VCP* uartPtr = NULL;
+VCP *uartPtr = NULL;
 
 void rx_callback(uint8_t byte)
 {
@@ -50,7 +50,7 @@ int main()
   uartPtr = &vcp;
   vcp.register_rx_callback(&rx_callback);
 
-  while(1)
+  while (1)
   {
     uint8_t hello_string[] = "waddup\n";
     vcp.write(hello_string, 7);

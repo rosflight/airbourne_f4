@@ -37,7 +37,7 @@ class MS4525
 public:
   MS4525();
 
-  bool init(I2C* _i2c);
+  bool init(I2C *_i2c);
   bool present();
   void update();
   void read(float *differential_pressure, float *temp);
@@ -47,7 +47,7 @@ public:
 private:
   static const uint8_t ADDR = 0x28;
 
-  I2C* i2c_;
+  I2C *i2c_;
   uint8_t buf_[4];
   float diff_press_;
   float temp_;

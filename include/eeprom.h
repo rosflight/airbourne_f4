@@ -41,9 +41,9 @@
 #include <stdint.h>
 
 void eeprom_init();
-bool eeprom_read(void * dest, uint8_t len);
-bool eeprom_write(const void * src, uint8_t len);
+bool eeprom_read(void *dest, uint8_t len);
+bool eeprom_write(const void *src, uint8_t len);
 bool flash_erase();
-bool flash_write( const void* flash_loc, void const* data, uint8_t len);
+bool flash_write(const void *flash_loc, void const *data, uint8_t len);
 
 #endif
