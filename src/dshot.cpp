@@ -42,16 +42,16 @@ void DSHOT_OUT::init(dshot_speed_t dshot_speed) {
     // --END GPIO init--
 
     //// DMA init: Again, the DMA used depends on the TIM. Check STM32F4 reference manual.
-    ////        The DMA section has a table showing that TIMx_UP match with what DMA streams/channels
+    ////        The DMA section has a table showing what TIMx_UP match with what DMA streams/channels
     // the RCC DMA clock should have already been enabled by system.c -- if not, enable it here
 
-    // de-init disables the stream and resets a lot of DMA's important register 
+    // de-init disables the stream and resets a lot of DMA's important register values
     // that we'll be changing below
     DMA_DeInit(DMAPtr);
         
     // now configure DMA:
     DMA_InitTypeDef DMA_InitStruct;
-    DMA_StructInit(&DMA_InitStruct); // initialize the struct the default values (basically all zeros)
+    DMA_StructInit(&DMA_InitStruct); // initialize the struct to the default values (basically all zeros)
 
     DMA_InitStruct.DMA_Channel            = DMA_Channel_5; // channel is depended on TIMx_UP connection to your DMA stream
     DMA_InitStruct.DMA_PeripheralBaseAddr = (uint32_t) &TIMPtr->DMAR; // the TIM DMAR is a register where DMA values are pre-loaded before being placed in their proper register
@@ -81,8 +81,29 @@ void DSHOT_OUT::init(dshot_speed_t dshot_speed) {
     TIMPtr->CCR4 = 0;
     TIMPtr->CCER = 0;
 
-    TIMPtr->ARR = DSHOT_PERIOD_CYCLES_COUNT - 1; // 0 based. How high the timer should count for one period
-    TIMPtr->PSC = 1792; //  (84,000,000 / (84,000,000 / 8)) - 1  you could also scale up PSC for slower output and easier debugging - 1792
+    // NOTE: All the prescaler values for each DSHOT rate were precomputed for
+    //      the F4 specifically. if you were going to use a different chip, you'd
+    //      probably want to recompute them all to make sure you're within spec
+    // HOW I calculated it:
+    //      SystemCoreClock = 84000000 = about 11ns / cycle == clock period
+    //      DSHOT600 = 1.67us / bit (this is the bit period)
+    //              all the other protocols scale from this (ie: DSHOT1200 = DSHOT600/2, DSHOT300 = DSHOT600*2, etc)
+    //      DSHOT_PERIOD_CYCLES_COUNT = 70
+    //      Prescaler = bit period / clock period / dshot period cycles
+    //      EX: DSHOT150 = 6680ns /  11ns         / 70 = 8 (truncating decimals)
+    int prescaler = dshot_speed;
+    if (TIMPtr == TIM9 || TIMPtr == TIM10 || TIMPtr == TIM11)
+    {
+        //For the F4 TIM9-11 have a max timer clk double that of all the other TIMs
+        //compensate for this by doubling its prescaler
+        prescaler = prescaler * 2;
+    }
+
+    TIM_TimeBaseInitTypeDef tim_init_struct;
+    TIM_TimeBaseStructInit(&tim_init_struct);
+    tim_init_struct.TIM_Period 		  = DSHOT_PERIOD_CYCLES_COUNT - 1; // how high to count before we restart counting. number is 0 based. (ie: 69 == count to 70)
+    tim_init_struct.TIM_Prescaler 	  = prescaler - 1; // how many clock cycles should go by before we increment the TIM counter. Again, o-based
+    TIM_TimeBaseInit(TIMPtr, &tim_init_struct);
 
     TIMPtr->CCMR1 = TIM_OCMode_PWM1 | (TIM_OCMode_PWM1 << 8) | TIM_CCMR1_OC1PE | TIM_CCMR1_OC2PE;
     TIMPtr->CCMR2 = TIM_OCMode_PWM1 | (TIM_OCMode_PWM1 << 8) | TIM_CCMR2_OC3PE | TIM_CCMR2_OC4PE;
@@ -92,7 +113,6 @@ void DSHOT_OUT::init(dshot_speed_t dshot_speed) {
     TIMPtr->DIER = TIM_DIER_UDE;
 
     TIMPtr->CR1 = TIM_CR1_ARPE | TIM_CR1_URS | TIM_CR1_CEN;
-
 }
 
 void DSHOT_OUT::write(float value) {
