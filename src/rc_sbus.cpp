@@ -69,10 +69,9 @@ void RC_SBUS::decode_buffer()
   frame_start_ms_ = millis();
 
   // process actual sbus data, use union to decode
-  // (Map to AETR to keep with ROSflight convention)
-  raw_[0]  = sbus_union_.frame.chan1;
-  raw_[1]  = sbus_union_.frame.chan2;
-  raw_[2]  = sbus_union_.frame.chan0;
+  raw_[0]  = sbus_union_.frame.chan0;
+  raw_[1]  = sbus_union_.frame.chan1;
+  raw_[2]  = sbus_union_.frame.chan2;
   raw_[3]  = sbus_union_.frame.chan3;
   raw_[4]  = sbus_union_.frame.chan4;
   raw_[5]  = sbus_union_.frame.chan5;
