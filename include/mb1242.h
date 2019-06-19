@@ -63,10 +63,10 @@ private:
     bool new_data_; // Whether or not new data is ready to be returned
     I2C *i2c_; // The i2c object used for communication
     bool ready_to_ping_; // Whether the sensor is ready to make another measurement
-    uint8_t buffer_[2]; // for recieving data from the sensor
+    uint8_t buffer_[2]; // for receiving data from the sensor
     bool sensor_present_; // Flag of whether we have received data from the sensor
-    
-    
+
+
 public:
     I2CSonar();
     void init(I2C *_i2c);
