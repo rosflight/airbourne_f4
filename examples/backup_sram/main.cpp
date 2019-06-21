@@ -38,26 +38,70 @@
 #include "backup_sram.h"
 #include "vcp.h"
 
-void restart(){
+struct BackupData
+{
+    uint32_t reset_count;
+    uint32_t some_data;
+    uint32_t checksum;
+
+    uint32_t compute_checksum()
+    {
+        uint32_t crc = 0;
+        for (size_t offset = 0; offset <= sizeof(BackupData) - sizeof(checksum) - sizeof(crc); offset++)
+        {
+            crc ^= *reinterpret_cast<uint32_t*>(reinterpret_cast<uint8_t*>(this) + offset);
+        }
+        return crc;
+    }
+};
+
+void restart()
+{
     NVIC_SystemReset();
 }
-int main() {
+
+int main()
+{
 	systemInit();
-    backup_sram_init();
+    // backup_sram_init();
     VCP vcp;
     vcp.init();
     backup_sram_init();
-    BackupData read_data = backup_sram_read();
+
+    // BackupData read_data = backup_sram_read();
+    // uint32_t reset_count = 0;
+    // if(check_backup_checksum(read_data))
+    //     reset_count = read_data.reset_count;
+    // BackupData write_data={};
+    // write_data.reset_count=++reset_count;
+    // write_data.error_code=0xDEADBEEF;
+    // write_data.checksum=generate_backup_checksum(write_data);
+    // delay(300);
+    // backup_sram_write(write_data);
+    // restart();
+
+    // check for and process backup data if it exists
+    BackupData read_data;
+    // backup_sram_read(reinterpret_cast<void*>(&read_data), sizeof(read_data));
+    backup_sram_read(&read_data, sizeof(read_data));
+
     uint32_t reset_count = 0;
-    if(check_backup_checksum(read_data))
+    if (read_data.checksum == read_data.compute_checksum())
         reset_count = read_data.reset_count;
-    BackupData write_data={};
-    write_data.reset_count=++reset_count;
-    write_data.error_code=0xDEADBEEF;
-    write_data.checksum=generate_backup_checksum(write_data);
+
+    // clear the backup data so it doesn't get read on normal startup
+    backup_sram_clear(sizeof(BackupData));
+
+    // Pretend we get a hardfault some time in the future; write backup data and reset.
+    // Normally this would be done in the hardfault interrupt handler.
     delay(300);
-    backup_sram_write(write_data);
+
+    BackupData write_data;
+    write_data.reset_count = ++reset_count; // increment reset counter
+    write_data.some_data = 0xDEADBEEF;
+    write_data.checksum = write_data.compute_checksum();
+    // backup_sram_write(reinterpret_cast<const void*>(&write_data), sizeof(write_data));
+    backup_sram_write(&write_data, sizeof(write_data));
+
     restart();
 }
-
-
