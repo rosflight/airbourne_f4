@@ -51,7 +51,8 @@ public:
   };
   
   int8_t read(uint8_t addr, uint8_t reg, uint8_t num_bytes, uint8_t* data, void(*callback)(uint8_t) = nullptr, bool blocking = false);
-  int8_t write(uint8_t addr, uint8_t reg, uint8_t data, void(*callback)(uint8_t), bool blocking = false);
+  int8_t write(uint8_t addr, uint8_t reg, uint8_t* data, size_t len,
+               void(*callback)(uint8_t), bool blocking = false, bool disable_stop=false);
 
   // Single-byte read/write for configuring devices
   int8_t write(uint8_t addr, uint8_t reg, uint8_t data);
@@ -95,6 +96,8 @@ private:
     WRITING
   } current_status_t;
 
+  static constexpr size_t BUFFER_LEN = 25;
+
   void unstick();
   void hardware_failure();
   bool check_busy();
@@ -110,12 +113,14 @@ private:
   volatile current_status_t current_status_;
   volatile uint8_t return_code_;
   bool subaddress_sent_ = false;
-  bool done_ = false;
+  size_t idx_ = 0;
 
+  bool disable_stop_;
   volatile uint8_t addr_;
   volatile uint8_t reg_;
   volatile uint8_t len_;
-  volatile uint8_t data_;
+  uint8_t data_[BUFFER_LEN];
+  uint32_t last_event = 0;
 
   DMA_InitTypeDef  DMA_InitStructure_;
   const i2c_hardware_struct_t *c_;

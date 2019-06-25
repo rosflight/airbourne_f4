@@ -41,6 +41,24 @@ void TFMini::init(I2C *_i2c)
 {
     i2c_ = _i2c;
 
-    uint8_t reset_cmd[1] = {RESET};
-    i2c_->write(ADDR, 0xFF, RESET, NULL, true);
+    i2c_->write(ADDR, 0xFF, RESET);
+
+    delay(1);
+    i2c_->write(ADDR, 0xFF, RESET);
+    delay(1);
+    uint8_t cmd[3] = {SET_DETECTION_PATTERN >> 8,  SET_DETECTION_PATTERN & 0xFF, 0x01};
+    i2c_->write(ADDR, 0xFF, cmd, 3, nullptr, true, true);
+    uint8_t cmd2[1] = {DET_PATTERN_FIXED};
+    i2c_->write(ADDR, 0xFF, cmd2, 1, nullptr, true);
+
+//    delay(1);
+//    i2c_->write(ADDR, 0xFF, RESET);
+
+//    uint8_t set_range_short_cmd[3] = {SET_RANGE_MODE >> 8, SET_RANGE_MODE & 0xFF, RANGE_MODE_SHORT};
+
+//    i2c_->write(ADDR, 0xFF, fix_det_pattern_cmd, 3, nullptr, true);
+
+//    i2c_->write(ADDR, 0xFF, set_range_short_cmd, 3, nullptr, true);
+    int debug = 1;
+
 }

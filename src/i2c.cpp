@@ -46,10 +46,10 @@
 #ifndef NDEBUG
 class Debug_History
 {
+public:
   uint32_t history_[60];
   uint32_t head_ = 0;
 
-public:
   void add_event(uint32_t event)
   {
     history_[head_] = event;
@@ -58,13 +58,16 @@ public:
   void clear()
   {
     memset(history_, 0, sizeof(history_));
+    head_ = 0;
   }
 };
 Debug_History event_history_;
 Debug_History interrupt_history_;
 #define log_line event_history_.add_event(__LINE__)
+#define clear_log event_history_.clear()
 #else
 #define log_line
+#define clear_log
 #endif
 
 //global i2c ptrs used by the event interrupts
@@ -163,7 +166,6 @@ int8_t I2C::read(uint8_t addr, uint8_t reg, uint8_t num_bytes, uint8_t* data, vo
   reg_ = reg;
   subaddress_sent_ = (reg_ == 0xFF);
   len_ = num_bytes;
-  done_ = false;
   return_code_ = RESULT_SUCCESS;
 
   DMA_DeInit(c_->DMA_Stream);
@@ -192,7 +194,6 @@ int8_t I2C::read(uint8_t addr, uint8_t reg, uint8_t num_bytes, uint8_t* data, vo
     while(check_busy());
   }
   log_line;
-  last_event_us_ = micros();
 
   return return_code_;
 }
@@ -200,12 +201,16 @@ int8_t I2C::read(uint8_t addr, uint8_t reg, uint8_t num_bytes, uint8_t* data, vo
 // blocking, single register write (for configuring devices)
 int8_t I2C::write(uint8_t addr, uint8_t reg, uint8_t data)
 {
-  return write(addr, reg, data, nullptr, true);
+  return write(addr, reg, &data, 1, nullptr, true);
 }
 
 // asynchronous write
-int8_t I2C::write(uint8_t addr, uint8_t reg, uint8_t data, void(*callback)(uint8_t), bool blocking)
+int8_t I2C::write(uint8_t addr, uint8_t reg, uint8_t* data, size_t len, void(*callback)(uint8_t), bool blocking)
 {
+  clear_log;
+  if (len > BUFFER_LEN)
+    return RESULT_ERROR;
+
   if (check_busy())
     return RESULT_BUSY;
 
@@ -215,13 +220,12 @@ int8_t I2C::write(uint8_t addr, uint8_t reg, uint8_t data, void(*callback)(uint8
   cb_ = callback;
   reg_ = reg;
   subaddress_sent_ = (reg_ == 0xFF);
-  len_ = 1;
-  done_ = false;
-  data_ = data;
+  memcpy(data_, data, len);
+  len_ = len;
+  idx_ = 0;
   return_code_ = RESULT_SUCCESS;
 
   I2C_Cmd(c_->dev, ENABLE);
-
 
   while_check (I2C_GetFlagStatus(c_->dev, I2C_FLAG_BUSY), return_code_);
 
@@ -254,7 +258,7 @@ void I2C::handle_hardware_failure() {
   return_code_ = RESULT_ERROR;
   log_line;
   I2C_GenerateSTOP(c_->dev, ENABLE);
-//  unstick(); //unstick and reinitialize the hardware
+  //  unstick(); //unstick and reinitialize the hardware
 }
 
 void I2C::unstick()
@@ -315,22 +319,24 @@ void I2C::handle_error()
   log_line;
   I2C_Cmd(c_->dev, DISABLE);
   return_code_ = RESULT_ERROR;
-//  while_check (I2C_GetFlagStatus(c_->dev, I2C_FLAG_BUSY), return_code_);
+  //  while_check (I2C_GetFlagStatus(c_->dev, I2C_FLAG_BUSY), return_code_);
 
   // Turn off the interrupts
   I2C_ITConfig(c_->dev, I2C_IT_EVT | I2C_IT_ERR, DISABLE);
 
   if (c_->dev->SR1 & AF)
   {
-      // Send the Stop
-      I2C_GenerateSTOP(c_->dev, ENABLE);
+    // Send the Stop
+    log_line;
+    I2C_GenerateSTOP(c_->dev, ENABLE);
 
-      //reset errors
-      c_->dev->SR1 &= ~AF;
+    //reset errors
+    c_->dev->SR1 &= ~AF;
   }
   if (c_->dev->SR1 & BERR)
   {
-      c_->dev->SR1 &= ~BERR;
+    log_line;
+    c_->dev->SR1 &= ~BERR;
   }
 
   current_status_ = IDLE;
@@ -341,7 +347,8 @@ void I2C::handle_error()
 // This is the I2C_IT_EV handler
 void I2C::handle_event()
 {
-  uint32_t last_event = I2C_GetLastEvent(c_->dev);
+  log_line;
+  last_event = I2C_GetLastEvent(c_->dev);
   interrupt_history_.add_event(c_->dev->SR2 << 16 | c_->dev->SR1);
   // We just sent a byte
   if ((last_event & I2C_EVENT_MASTER_BYTE_TRANSMITTED) == I2C_EVENT_MASTER_BYTE_TRANSMITTED)
@@ -356,13 +363,22 @@ void I2C::handle_event()
       I2C_DMALastTransferCmd(c_->dev, ENABLE);
       I2C_GenerateSTART(c_->dev, ENABLE);
     }
-    // We are in write mode and are done, need to clean up
+    // We are in write mode
     else
     {
-      log_line;
-      I2C_GenerateSTOP(c_->dev, ENABLE);
-      I2C_ITConfig(c_->dev, I2C_IT_EVT | I2C_IT_ERR, DISABLE);
-      transfer_complete_cb();
+      // We still have bytes to write
+      if (idx_ < len_)
+      {
+        log_line;
+        I2C_SendData(c_->dev, data_[idx_++]);
+      }
+      else
+      {
+        log_line;
+        I2C_GenerateSTOP(c_->dev, ENABLE);
+        I2C_ITConfig(c_->dev, I2C_IT_EVT | I2C_IT_ERR, DISABLE);
+        transfer_complete_cb();
+      }
     }
   }
 
@@ -379,16 +395,19 @@ void I2C::handle_event()
       if (current_status_ == WRITING)
       {
         log_line;
-        I2C_SendData(c_->dev, data_);
-        done_ = true;
+        I2C_SendData(c_->dev, data_[idx_++]);
       }
     }
     // We need to send our data (no subaddress)
     else
     {
       log_line;
-      I2C_SendData(c_->dev, data_);
-      done_ = true;
+      I2C_SendData(c_->dev, data_[idx_++]);
+      if (idx_ < len_)
+      {
+        log_line;
+        I2C_SendData(c_->dev, data_[idx_++]);
+      }
     }
   }
 
@@ -397,7 +416,6 @@ void I2C::handle_event()
   {
     last_event_us_ = micros();
     log_line;
-    //    I2C_ITConfig(c_->dev, I2C_IT_EVT, DISABLE);
     DMA_SetCurrDataCounter(c_->DMA_Stream, len_);
     I2C_DMACmd(c_->dev, ENABLE);
     DMA_ITConfig(c_->DMA_Stream, DMA_IT_TC, ENABLE);
@@ -444,44 +462,14 @@ bool I2C::check_busy()
   else
   {
     // If we haven't seen anything in a long while, then restart the device
-    if (micros() > last_event_us_ + 2000)
+    if (micros() > last_event_us_ + 10000)
     {
-//      error_count_++;
-//      // Send a stop condition
-//      I2C_GenerateSTOP(c_->dev, ENABLE);
-//      return_code_ = RESULT_SUCCESS;
-//      while_check (c_->dev->SR2 & BUSY, return_code_)
-
+      log_line;
       // Force reset of the bus
       // This is really slow, but it seems to be the only
       // way to regain a connection if bad things happen
       unstick();
       last_event_us_ = micros();
-//      if (return_code_ == RESULT_ERROR)
-//      {
-//        I2C_Cmd(c_->dev, DISABLE);
-//        scl_.set_mode(GPIO::OUTPUT);
-//        sda_.set_mode(GPIO::OUTPUT);
-
-//        // Write Pins low
-//        scl_.write(GPIO::LOW);
-//        sda_.write(GPIO::LOW);
-//        delayMicroseconds(1);
-
-//        // Send a stop
-//        scl_.write(GPIO::HIGH);
-//        delayMicroseconds(1);
-//        sda_.write(GPIO::HIGH);
-//        delayMicroseconds(1);
-
-//        // turn things back on
-//        scl_.set_mode(GPIO::PERIPH_IN_OUT);
-//        sda_.set_mode(GPIO::PERIPH_IN_OUT);
-//        I2C_Cmd(c_->dev, ENABLE);
-
-//        current_status_ = IDLE;
-//      }
-      log_line;
       return false;
     }
     else
