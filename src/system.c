@@ -57,7 +57,7 @@ void systemInit(void)
     NVIC_PriorityGroupConfig(NVIC_PriorityGroup_2); //2 bit preemption, 2 bit sub priority
 
     // Configure Systick
-    SysTick_Config(SystemCoreClock / 32000 + 28);
+    SysTick_Config(SystemCoreClock / 32000);
     NVIC_SetPriority(SysTick_IRQn, 0);
 
     //TODO: Should these be abstracted with the board-specific (ie revo_f4.h) file?

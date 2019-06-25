@@ -42,19 +42,21 @@ bool HMC5883L::init(I2C *i2c_drv)
   i2c_ = i2c_drv;
   
   // Wait for the chip to power up
+  while (millis() < 10);
   
   last_update_ms_ = millis();
   next_update_ms_ = millis();
 
   // Detect Magnetometer
   uint8_t byte = 0;
-  if (i2c_->read(HMC58X3_ADDR, 0xFF, &byte) != I2C::RESULT_SUCCESS)
+  if (i2c_->write(HMC58X3_ADDR, 0xFF, byte) != I2C::RESULT_SUCCESS)
   {
     mag_present_ = false;
     return false;
   }
   else
   {
+    delay(1);
     bool result = true;
     // Configure HMC5833L
     result &= i2c_->write(HMC58X3_ADDR, HMC58X3_CRA, HMC58X3_CRA_DO_75 | HMC58X3_CRA_NO_AVG | HMC58X3_CRA_MEAS_MODE_NORMAL ); // 75 Hz Measurement, no bias, no averaging

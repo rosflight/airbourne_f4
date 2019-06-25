@@ -75,24 +75,24 @@ I2C* I2C3_Ptr;
 void I2C::init(const i2c_hardware_struct_t *c)
 {
   c_ = c;
-  
+
   if (c->dev == I2C1)
     I2C1_Ptr = this;
-  
+
   if (c->dev == I2C2)
     I2C2_Ptr = this;
-  
+
   if (c->dev == I2C3)
     I2C3_Ptr = this;
-  
+
   GPIO_PinAFConfig(c->GPIO, c->SCL_PinSource, c->GPIO_AF);
   GPIO_PinAFConfig(c->GPIO, c->SDA_PinSource, c->GPIO_AF);
   scl_.init(c->GPIO, c->SCL_Pin, GPIO::PERIPH_IN_OUT);
   sda_.init(c->GPIO, c->SDA_Pin, GPIO::PERIPH_IN_OUT);
-  
+
   //initialize the i2c itself
   I2C_DeInit(c->dev);
-  
+
   I2C_InitTypeDef I2C_InitStructure;
   I2C_StructInit(&I2C_InitStructure);
   I2C_InitStructure.I2C_ClockSpeed = c->I2C_ClockSpeed;
@@ -102,7 +102,7 @@ void I2C::init(const i2c_hardware_struct_t *c)
   I2C_InitStructure.I2C_Ack = I2C_Ack_Disable;
   I2C_InitStructure.I2C_AcknowledgedAddress = I2C_AcknowledgedAddress_7bit;
   I2C_Init(c->dev, &I2C_InitStructure);
-  
+
   // Interrupts
   NVIC_InitTypeDef NVIC_InitStructure;
   NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0x01;
@@ -110,15 +110,15 @@ void I2C::init(const i2c_hardware_struct_t *c)
   NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
   NVIC_InitStructure.NVIC_IRQChannel = c->I2C_EV_IRQn;
   NVIC_Init(&NVIC_InitStructure);
-  
+
   // I2C Event Interrupt
   NVIC_InitStructure.NVIC_IRQChannel = c->I2C_ER_IRQn;
   NVIC_Init(&NVIC_InitStructure);
-  
+
   // DMA Event Interrupt
   NVIC_InitStructure.NVIC_IRQChannel = c->DMA_IRQn;
   NVIC_Init(&NVIC_InitStructure);
-  
+
   DMA_Cmd(c->DMA_Stream, DISABLE);
   DMA_DeInit(c->DMA_Stream);
   DMA_InitStructure_.DMA_FIFOMode = DMA_FIFOMode_Enable;
@@ -130,16 +130,16 @@ void I2C::init(const i2c_hardware_struct_t *c)
   DMA_InitStructure_.DMA_MemoryInc = DMA_MemoryInc_Enable;
   DMA_InitStructure_.DMA_Mode = DMA_Mode_Normal;
   DMA_InitStructure_.DMA_Channel = c->DMA_Channel;
-  
+
   DMA_InitStructure_.DMA_PeripheralBaseAddr = reinterpret_cast<uint32_t>(&(c->dev->DR));
   DMA_InitStructure_.DMA_PeripheralBurst = DMA_PeripheralBurst_Single;
   DMA_InitStructure_.DMA_MemoryDataSize = DMA_MemoryDataSize_Byte;
   DMA_InitStructure_.DMA_Priority = DMA_Priority_High;
   DMA_InitStructure_.DMA_DIR = DMA_DIR_PeripheralToMemory;
-  
+
   last_event_us_ = micros();
   I2C_Cmd(c->dev, ENABLE);
-  
+
   unstick(); //unsti1ck will properly initialize pins
   log_line;
 }
@@ -155,7 +155,7 @@ int8_t I2C::read(uint8_t addr, uint8_t reg, uint8_t num_bytes, uint8_t* data, vo
   if (check_busy())
     return RESULT_BUSY;
   log_line;
-  
+
   // configure the job
   current_status_ = READING;
   addr_ = addr << 1;
@@ -165,16 +165,16 @@ int8_t I2C::read(uint8_t addr, uint8_t reg, uint8_t num_bytes, uint8_t* data, vo
   len_ = num_bytes;
   done_ = false;
   return_code_ = RESULT_SUCCESS;
-  
+
   DMA_DeInit(c_->DMA_Stream);
   DMA_InitStructure_.DMA_BufferSize = static_cast<uint16_t>(len_);
   DMA_InitStructure_.DMA_Memory0BaseAddr = reinterpret_cast<uint32_t>(data);
   DMA_Init(c_->DMA_Stream, &DMA_InitStructure_);
-  
+
   I2C_Cmd(c_->dev, ENABLE);
-  
+
   while_check (I2C_GetFlagStatus(c_->dev, I2C_FLAG_BUSY), return_code_);
-  
+
   // If we don't need to send the subaddress, then go ahead and spool up the DMA NACK
   if (subaddress_sent_)
   {
@@ -182,9 +182,9 @@ int8_t I2C::read(uint8_t addr, uint8_t reg, uint8_t num_bytes, uint8_t* data, vo
     I2C_DMALastTransferCmd(c_->dev, ENABLE);
   }
   I2C_GenerateSTART(c_->dev, ENABLE);
-  
+
   I2C_ITConfig(c_->dev, I2C_IT_EVT | I2C_IT_ERR, ENABLE);
-  
+
   last_event_us_ = micros();
   if (blocking)
   {
@@ -193,7 +193,7 @@ int8_t I2C::read(uint8_t addr, uint8_t reg, uint8_t num_bytes, uint8_t* data, vo
   }
   log_line;
   last_event_us_ = micros();
-  
+
   return return_code_;
 }
 
@@ -208,7 +208,7 @@ int8_t I2C::write(uint8_t addr, uint8_t reg, uint8_t data, void(*callback)(uint8
 {
   if (check_busy())
     return RESULT_BUSY;
-  
+
   log_line;
   current_status_ = WRITING;
   addr_ = addr << 1;
@@ -219,16 +219,16 @@ int8_t I2C::write(uint8_t addr, uint8_t reg, uint8_t data, void(*callback)(uint8
   done_ = false;
   data_ = data;
   return_code_ = RESULT_SUCCESS;
-  
+
   I2C_Cmd(c_->dev, ENABLE);
-  
-  
+
+
   while_check (I2C_GetFlagStatus(c_->dev, I2C_FLAG_BUSY), return_code_);
-  
+
   I2C_GenerateSTART(c_->dev, ENABLE);
-  
+
   I2C_ITConfig(c_->dev, I2C_IT_EVT | I2C_IT_ERR, ENABLE);
-  
+
   last_event_us_ = micros();
   if (blocking)
   {
@@ -315,7 +315,7 @@ void I2C::handle_error()
   I2C_Cmd(c_->dev, DISABLE);
   return_code_ = RESULT_ERROR;
 //  while_check (I2C_GetFlagStatus(c_->dev, I2C_FLAG_BUSY), return_code_);
-  
+
   // Turn off the interrupts
   I2C_ITConfig(c_->dev, I2C_IT_EVT | I2C_IT_ERR, DISABLE);
 
@@ -364,7 +364,7 @@ void I2C::handle_event()
       transfer_complete_cb();
     }
   }
-  
+
   // We just sent the address in write mode
   else if ((last_event & I2C_EVENT_MASTER_TRANSMITTER_MODE_SELECTED) == I2C_EVENT_MASTER_TRANSMITTER_MODE_SELECTED)
   {
@@ -390,7 +390,7 @@ void I2C::handle_event()
       done_ = true;
     }
   }
-  
+
   // We are in receiving mode, preparing to receive the big DMA dump
   else if ((last_event & I2C_EVENT_MASTER_RECEIVER_MODE_SELECTED) == I2C_EVENT_MASTER_RECEIVER_MODE_SELECTED)
   {
@@ -402,7 +402,7 @@ void I2C::handle_event()
     DMA_ITConfig(c_->DMA_Stream, DMA_IT_TC, ENABLE);
     DMA_Cmd(c_->DMA_Stream, ENABLE);
   }
-  
+
   // Start just sent
   else if ((last_event & I2C_EVENT_MASTER_MODE_SELECT) == I2C_EVENT_MASTER_MODE_SELECT)
   {
@@ -422,7 +422,7 @@ void I2C::handle_event()
       I2C_Send7bitAddress(c_->dev, addr_, I2C_Direction_Transmitter);
     }
   }
-  
+
   // Sometimes we just get this over and over and over again
   else if (last_event == SB)
   {
@@ -450,7 +450,7 @@ bool I2C::check_busy()
       I2C_GenerateSTOP(c_->dev, ENABLE);
       return_code_ = RESULT_SUCCESS;
       while_check (c_->dev->SR2 & BUSY, return_code_)
-          
+
       // Force reset of the bus
       // This is really slow, but it seems to be the only
       // way to regain a connection if bad things happen
@@ -459,27 +459,27 @@ bool I2C::check_busy()
         I2C_Cmd(c_->dev, DISABLE);
         scl_.set_mode(GPIO::OUTPUT);
         sda_.set_mode(GPIO::OUTPUT);
-        
+
         // Write Pins low
         scl_.write(GPIO::LOW);
         sda_.write(GPIO::LOW);
         delayMicroseconds(1);
-        
+
         // Send a stop
         scl_.write(GPIO::HIGH);
         delayMicroseconds(1);
         sda_.write(GPIO::HIGH);
         delayMicroseconds(1);
-        
+
         // turn things back on
         scl_.set_mode(GPIO::PERIPH_IN_OUT);
         sda_.set_mode(GPIO::PERIPH_IN_OUT);
         I2C_Cmd(c_->dev, ENABLE);
-        
-        current_status_ = IDLE;  
+
+        current_status_ = IDLE;
       }
       log_line;
-      return false;    
+      return false;
     }
     else
     {
@@ -495,21 +495,21 @@ extern "C"
 // C-based IRQ functions (defined in the startup script)
 void DMA1_Stream2_IRQHandler(void)
 {
-  
+
   if (DMA_GetFlagStatus(DMA1_Stream2, DMA_FLAG_TCIF2))
   {
     /* Clear transmission complete flag */
     DMA_ClearFlag(DMA1_Stream2, DMA_FLAG_TCIF2);
-    
+
     I2C_DMACmd(I2C2, DISABLE);
     /* Send I2C1 STOP Condition */
     I2C_GenerateSTOP(I2C2, ENABLE);
     /* Disable DMA channel*/
     DMA_Cmd(DMA1_Stream2, DISABLE);
-    
+
     /* Turn off I2C interrupts since we are done with the transfer */
     I2C_ITConfig(I2C2, I2C_IT_EVT | I2C_IT_ERR, DISABLE);
-    
+
     I2C2_Ptr->transfer_complete_cb(); // TODO make this configurable
   }
 }
@@ -520,7 +520,7 @@ void DMA1_Stream0_IRQHandler(void)
   {
     /* Clear transmission complete flag */
     DMA_ClearFlag(DMA1_Stream0, DMA_FLAG_TCIF0);
-    
+
     I2C_DMACmd(I2C1, DISABLE);
     /* Send I2C1 STOP Condition */
     I2C_GenerateSTOP(I2C1, ENABLE);
@@ -528,7 +528,7 @@ void DMA1_Stream0_IRQHandler(void)
     DMA_Cmd(DMA1_Stream0, DISABLE);
     /* Turn off I2C interrupts, because we are done with the transfer */
     I2C_ITConfig(I2C1, I2C_IT_EVT | I2C_IT_ERR, DISABLE);
-    
+
     I2C1_Ptr->transfer_complete_cb(); // TODO make this configurable
   }
 }
