@@ -52,6 +52,8 @@ I2CSonar::I2CSonar()
 
 void I2CSonar::init(I2C *_i2c)
 {
+  while (millis() < 10);
+
   i2c_ = _i2c;
   new_data_ = false;
   value_ = 0;
