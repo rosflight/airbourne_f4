@@ -13,3 +13,5 @@
 *.autosave
 *.swp
 *.map
+*.cflags
+*.cxxflags
