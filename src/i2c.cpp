@@ -253,7 +253,8 @@ void I2C::handle_hardware_failure() {
   error_count_++;
   return_code_ = RESULT_ERROR;
   log_line;
-  unstick(); //unstick and reinitialize the hardware
+  I2C_GenerateSTOP(c_->dev, ENABLE);
+//  unstick(); //unstick and reinitialize the hardware
 }
 
 void I2C::unstick()
@@ -445,39 +446,41 @@ bool I2C::check_busy()
     // If we haven't seen anything in a long while, then restart the device
     if (micros() > last_event_us_ + 2000)
     {
-      error_count_++;
-      // Send a stop condition
-      I2C_GenerateSTOP(c_->dev, ENABLE);
-      return_code_ = RESULT_SUCCESS;
-      while_check (c_->dev->SR2 & BUSY, return_code_)
+//      error_count_++;
+//      // Send a stop condition
+//      I2C_GenerateSTOP(c_->dev, ENABLE);
+//      return_code_ = RESULT_SUCCESS;
+//      while_check (c_->dev->SR2 & BUSY, return_code_)
 
       // Force reset of the bus
       // This is really slow, but it seems to be the only
       // way to regain a connection if bad things happen
-      if (return_code_ == RESULT_ERROR)
-      {
-        I2C_Cmd(c_->dev, DISABLE);
-        scl_.set_mode(GPIO::OUTPUT);
-        sda_.set_mode(GPIO::OUTPUT);
+      unstick();
+      last_event_us_ = micros();
+//      if (return_code_ == RESULT_ERROR)
+//      {
+//        I2C_Cmd(c_->dev, DISABLE);
+//        scl_.set_mode(GPIO::OUTPUT);
+//        sda_.set_mode(GPIO::OUTPUT);
 
-        // Write Pins low
-        scl_.write(GPIO::LOW);
-        sda_.write(GPIO::LOW);
-        delayMicroseconds(1);
+//        // Write Pins low
+//        scl_.write(GPIO::LOW);
+//        sda_.write(GPIO::LOW);
+//        delayMicroseconds(1);
 
-        // Send a stop
-        scl_.write(GPIO::HIGH);
-        delayMicroseconds(1);
-        sda_.write(GPIO::HIGH);
-        delayMicroseconds(1);
+//        // Send a stop
+//        scl_.write(GPIO::HIGH);
+//        delayMicroseconds(1);
+//        sda_.write(GPIO::HIGH);
+//        delayMicroseconds(1);
 
-        // turn things back on
-        scl_.set_mode(GPIO::PERIPH_IN_OUT);
-        sda_.set_mode(GPIO::PERIPH_IN_OUT);
-        I2C_Cmd(c_->dev, ENABLE);
+//        // turn things back on
+//        scl_.set_mode(GPIO::PERIPH_IN_OUT);
+//        sda_.set_mode(GPIO::PERIPH_IN_OUT);
+//        I2C_Cmd(c_->dev, ENABLE);
 
-        current_status_ = IDLE;
-      }
+//        current_status_ = IDLE;
+//      }
       log_line;
       return false;
     }
