@@ -292,46 +292,6 @@ int8_t I2C::read(uint8_t addr, uint8_t reg, uint8_t *data)
   return return_code_;
 }
 
-int8_t I2C::write2(uint8_t addr, uint8_t reg, uint8_t *data, size_t len)
-{
-    if (check_busy())
-      return RESULT_BUSY;
-
-    log_line;
-    current_status_ = WRITING;
-    addr_ = addr << 1;
-    cb_ = NULL;
-    reg_ = reg;
-    subaddress_sent_ = (reg_ == 0xFF);
-    len_ = len;
-    done_ = false;
-    data_ = data[1];
-    return_code_ = RESULT_SUCCESS;
-
-    DMA_DeInit(c_->DMA_Stream);
-    DMA_InitStructure_.DMA_BufferSize = static_cast<uint16_t>(len);
-    DMA_InitStructure_.DMA_Memory0BaseAddr = reinterpret_cast<uint32_t>(data);
-    DMA_Init(c_->DMA_Stream, &DMA_InitStructure_);
-
-    I2C_Cmd(c_->dev, ENABLE);
-
-    size_t timeout = 1000;
-    for (timeout = 1000; I2C_GetFlagStatus(c_->dev, I2C_FLAG_BUSY), timeout; --timeout);
-    if (timeout == 0)
-    {
-        handle_hardware_failure();
-        return RESULT_ERROR;
-    }
-
-    I2C_GenerateSTART(c_->dev, ENABLE);
-    I2C_ITConfig(c_->dev, I2C_IT_EVT | I2C_IT_ERR, ENABLE);
-    while (check_busy())
-    {
-
-    }
-    return RESULT_SUCCESS;
-}
-
 // asynchronous write
 int8_t I2C::write(uint8_t addr, uint8_t reg, uint8_t data, void(*callback)(uint8_t), bool blocking)
 {
@@ -371,51 +331,7 @@ int8_t I2C::write(uint8_t addr, uint8_t reg, uint8_t data, void(*callback)(uint8
 // blocking, single register write (for configuring devices)
 int8_t I2C::write(uint8_t addr, uint8_t reg, uint8_t data)
 {
-  if (check_busy())
-    return RESULT_BUSY;
-  
-  log_line;
-  return_code_ = RESULT_SUCCESS;
-  while_check (I2C_GetFlagStatus(c_->dev, I2C_FLAG_BUSY), return_code_);
-  
-  // Turn off interrupts for blocking write
-  I2C_ITConfig(c_->dev, I2C_IT_EVT | I2C_IT_ERR, DISABLE);
-  I2C_Cmd(c_->dev, ENABLE);
-  
-  // start the transfer
-  I2C_GenerateSTART(c_->dev, ENABLE);
-  while_check (!I2C_CheckEvent(c_->dev, I2C_EVENT_MASTER_MODE_SELECT), return_code_);
-  I2C_Send7bitAddress(c_->dev, addr << 1, I2C_Direction_Transmitter);
-  uint32_t timeout = 500;
-  while (!I2C_CheckEvent(c_->dev, I2C_EVENT_MASTER_TRANSMITTER_MODE_SELECTED) && !(I2C_GetLastEvent(c_->dev) & AF) && timeout--);
-  
-  // No acknowledgement or timeout
-  if (I2C_GetLastEvent(c_->dev) & AF || timeout == 0) 
-  {
-    log_line;
-    I2C_GenerateSTOP(c_->dev, ENABLE);
-    I2C_Cmd(c_->dev, DISABLE);
-    return RESULT_ERROR;
-  }
-  
-  // Send the register
-  if (reg != 0xFF)
-  {
-    log_line;
-    I2C_SendData(c_->dev, reg);
-    while_check (!I2C_CheckEvent(c_->dev, I2C_EVENT_MASTER_BYTE_TRANSMITTED), return_code_);
-  }
-  
-  // Write the byte with a NACK
-  I2C_AcknowledgeConfig(c_->dev, DISABLE);
-  I2C_SendData(c_->dev, data);
-  while_check (!I2C_CheckEvent(c_->dev, I2C_EVENT_MASTER_BYTE_TRANSMITTED), return_code_);
-  I2C_GenerateSTOP(c_->dev, ENABLE  );
-  I2C_Cmd(c_->dev, DISABLE);
-  log_line;
-  last_event_us_ = micros();
-  return return_code_;
-  
+  return write(addr, reg, data, nullptr, true);
 }
 
 // if for some reason, a step in an I2C read or write fails, call this
@@ -423,7 +339,7 @@ void I2C::handle_hardware_failure() {
   error_count_++;
   return_code_ = RESULT_ERROR;
   log_line;
-//  unstick(); //unstick and reinitialize the hardware
+  unstick(); //unstick and reinitialize the hardware
 }
 
 
@@ -433,16 +349,24 @@ void I2C::handle_error()
   log_line;
   I2C_Cmd(c_->dev, DISABLE);
   return_code_ = RESULT_ERROR;
-  while_check (I2C_GetFlagStatus(c_->dev, I2C_FLAG_BUSY), return_code_);
+//  while_check (I2C_GetFlagStatus(c_->dev, I2C_FLAG_BUSY), return_code_);
   
   // Turn off the interrupts
   I2C_ITConfig(c_->dev, I2C_IT_EVT | I2C_IT_ERR, DISABLE);
 
-  // Send the Stop
-  I2C_GenerateSTOP(c_->dev, ENABLE);
-  
-  //reset errors
-  I2C_ClearFlag(c_->dev, I2C_SR1_OVR | I2C_SR1_AF | I2C_SR1_ARLO | I2C_SR1_BERR);
+  if (c_->dev->SR1 & AF)
+  {
+      // Send the Stop
+      I2C_GenerateSTOP(c_->dev, ENABLE);
+
+      //reset errors
+      c_->dev->SR1 &= ~AF;
+  }
+  if (c_->dev->SR1 & BERR)
+  {
+      c_->dev->SR1 &= ~BERR;
+  }
+
   current_status_ = IDLE;
   log_line;
   transfer_complete_cb();

@@ -138,14 +138,9 @@ public:
   int8_t read(uint8_t addr, uint8_t reg, uint8_t num_bytes, uint8_t* data, void(*callback)(uint8_t) = nullptr, bool blocking = false);
   int8_t write(uint8_t addr, uint8_t reg, uint8_t data, void(*callback)(uint8_t), bool blocking = false);
 
-  
-  int8_t write(uint8_t addr, uint8_t num_bytes, uint8_t* data);
-
+  // Single-byte read/write for configuring devices
   int8_t write(uint8_t addr, uint8_t reg, uint8_t data);
   int8_t read(uint8_t addr, uint8_t reg, uint8_t *data);
-
-  // Revamped API
-  int8_t write2(uint8_t addr, uint8_t reg, uint8_t* data, size_t len);
   
   inline uint16_t num_errors() { return error_count_; }
   
