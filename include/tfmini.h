@@ -36,7 +36,7 @@
 
 class TFMini
 {
-
+public:
     enum : uint8_t
     {
         ADDR = 0x10,
@@ -93,5 +93,7 @@ class TFMini
 
     void init(I2C* _i2c);
     void reset();
+
+    I2C* i2c_;
 
 };

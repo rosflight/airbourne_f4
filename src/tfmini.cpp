@@ -31,3 +31,16 @@
 
 
 #include "tfmini.h"
+
+TFMini::TFMini()
+{
+
+}
+
+void TFMini::init(I2C *_i2c)
+{
+    i2c_ = _i2c;
+
+    uint8_t reset_cmd[1] = {RESET};
+    i2c_->write(ADDR, 0xFF, RESET, NULL, true);
+}

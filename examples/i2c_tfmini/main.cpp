@@ -64,5 +64,12 @@ int main() {
   I2C i2c1;
   i2c1.init(&i2c_config[EXTERNAL_I2C]);
 
+  TFMini laser;
 
+  while (1)
+  {
+    laser.init(&i2c1);
+    delay(50);
+    info.toggle();
+  }
 }

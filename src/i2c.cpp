@@ -168,13 +168,11 @@ void I2C::unstick()
   I2C_Cmd(c_->dev, ENABLE);
   
   current_status_ = IDLE;  
-  write(0, 0, 0);
+//  write(0, 0, 0);
   
   last_event_us_ = micros();
   log_line;
-  
 }
-
 
 int8_t I2C::read(uint8_t addr, uint8_t reg, uint8_t num_bytes, uint8_t* data, void(*callback)(uint8_t), bool blocking)
 {
@@ -294,6 +292,46 @@ int8_t I2C::read(uint8_t addr, uint8_t reg, uint8_t *data)
   return return_code_;
 }
 
+int8_t I2C::write2(uint8_t addr, uint8_t reg, uint8_t *data, size_t len)
+{
+    if (check_busy())
+      return RESULT_BUSY;
+
+    log_line;
+    current_status_ = WRITING;
+    addr_ = addr << 1;
+    cb_ = NULL;
+    reg_ = reg;
+    subaddress_sent_ = (reg_ == 0xFF);
+    len_ = len;
+    done_ = false;
+    data_ = data[1];
+    return_code_ = RESULT_SUCCESS;
+
+    DMA_DeInit(c_->DMA_Stream);
+    DMA_InitStructure_.DMA_BufferSize = static_cast<uint16_t>(len);
+    DMA_InitStructure_.DMA_Memory0BaseAddr = reinterpret_cast<uint32_t>(data);
+    DMA_Init(c_->DMA_Stream, &DMA_InitStructure_);
+
+    I2C_Cmd(c_->dev, ENABLE);
+
+    size_t timeout = 1000;
+    for (timeout = 1000; I2C_GetFlagStatus(c_->dev, I2C_FLAG_BUSY), timeout; --timeout);
+    if (timeout == 0)
+    {
+        handle_hardware_failure();
+        return RESULT_ERROR;
+    }
+
+    I2C_GenerateSTART(c_->dev, ENABLE);
+    I2C_ITConfig(c_->dev, I2C_IT_EVT | I2C_IT_ERR, ENABLE);
+    while (check_busy())
+    {
+
+    }
+    return RESULT_SUCCESS;
+}
+
 // asynchronous write
 int8_t I2C::write(uint8_t addr, uint8_t reg, uint8_t data, void(*callback)(uint8_t), bool blocking)
 {
@@ -399,6 +437,9 @@ void I2C::handle_error()
   
   // Turn off the interrupts
   I2C_ITConfig(c_->dev, I2C_IT_EVT | I2C_IT_ERR, DISABLE);
+
+  // Send the Stop
+  I2C_GenerateSTOP(c_->dev, ENABLE);
   
   //reset errors
   I2C_ClearFlag(c_->dev, I2C_SR1_OVR | I2C_SR1_AF | I2C_SR1_ARLO | I2C_SR1_BERR);
