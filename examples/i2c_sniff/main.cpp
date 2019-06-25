@@ -58,32 +58,28 @@ int main() {
   info.init(LED2_GPIO, LED2_PIN);
 
   warn.on();
-//  I2C i2c[NUM_I2C];
-//  for (int i = 0; i < NUM_I2C; i++)
-//  {
-//    i2c[i].init(&i2c_config[i]);
-//  }
-  I2C i2c;
-  i2c.init(&i2c_config[EXTERNAL_I2C]);
-  warn.off();
+  I2C i2c[NUM_I2C];
+  for (int i = 0; i < NUM_I2C; i++)
+  {
+    i2c[i].init(&i2c_config[i]);
+  }
 
   while(1)
   {
     info.toggle();
-//    for (int i = 0; i < NUM_I2C; i++)
-//    {
-      int i = 1;
+    for (int i = 0; i < NUM_I2C; i++)
+    {
       warn.toggle();
       for (int j = 1; j < 128; j++)
       {
         uint8_t data = 0;
-        int8_t result  = i2c.write(j, 0xFF, data);
+        int8_t result  = i2c[i].write(j, 0xFF, data);
         if (result > 0)
         {
           printf("I2C%d: found device at 0x%X\n", i+1, j);
         }
         delay(5);
-//      }
+      }
     }
     printf("--------------------------\n");
     delay(1000);
