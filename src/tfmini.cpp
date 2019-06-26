@@ -46,9 +46,12 @@ bool TFMini::init(I2C *_i2c)
 {
     i2c_ = _i2c;
     TFMini_Ptr = this;
-    while (millis() < 10); // wait for bootup
     next_update_ms_ = 0;
     last_update_ms_ = millis();
+    distance_ = 0.0;
+    strength_ = 0.0;
+
+    while (millis() < 10); // wait for bootup
 
     present_ = (i2c_->checkPresent(ADDR) == I2C::RESULT_SUCCESS);
     if (!present_)
@@ -56,7 +59,6 @@ bool TFMini::init(I2C *_i2c)
 
     reset();
     setParameter(SET_DETECTION_PATTERN, DET_PATTERN_AUTO);
-//    setParameter(SET_RANGE_MODE, RANGE_MODE_MIDDLE);
 
     return true;
 }
@@ -81,10 +83,13 @@ void TFMini::setParameter(uint16_t cmd, uint8_t val)
   i2c_->addJob(I2C::TaskType::STOP);
 }
 
-void TFMini::read_cb()
+void TFMini::read_cb(int8_t status)
 {
-  last_update_ms_ = millis();
-  new_data_ = true;
+  if (status == I2C::RESULT_SUCCESS)
+  {
+    last_update_ms_ = millis();
+    new_data_ = true;
+  }
 }
 
 bool TFMini::present()
@@ -100,7 +105,7 @@ bool TFMini::present()
   }
 }
 
-void TFMini::read()
+void TFMini::do_read()
 {
   uint8_t data[3] = {0x01, 0x02, 0x07};
   i2c_->clearLog();
@@ -111,26 +116,37 @@ void TFMini::read()
   i2c_->addJob(I2C::TaskType::START);
   i2c_->addJob(I2C::TaskType::READ_MODE, ADDR);
   i2c_->addJob(I2C::TaskType::READ, 0, packet_.buf, 7);
-  i2c_->addJob(I2C::TaskType::STOP);
-  while (i2c_->checkBusy())
-  {
+  i2c_->addJob(I2C::TaskType::STOP, 0, 0, 0, &cb);
+}
 
-  }
+void TFMini::convert()
+{
+  distance_ = packet_.data.dist/100.0;
+  strength_ = packet_.data.strength;
 }
 
 bool TFMini::update()
 {
+  if (!present_)
+    check_present();
+
   if (millis() > next_update_ms_)
   {
-    read();
+    do_read();
   }
 
+  if (new_data_)
+    convert();
+}
+
+void TFMini::check_present()
+{
+  i2c_->checkPresent(ADDR, &cb);
 }
 
 
 
 void cb(int8_t status)
 {
-  (void)status;
-  TFMini_Ptr->read_cb();
+  TFMini_Ptr->read_cb(status);
 }

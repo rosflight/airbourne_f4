@@ -140,6 +140,8 @@ public:
 
   void clearLog();
   int8_t checkPresent(uint8_t addr);
+  int8_t checkPresent(uint8_t addr, void(*cb)(int8_t));
+
   int8_t write(uint8_t addr, uint8_t data);
   int8_t write(uint8_t addr, uint8_t reg, uint8_t data);
   int8_t write(uint8_t addr, uint8_t data, void(*cb)(int8_t));

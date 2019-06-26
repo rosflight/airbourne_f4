@@ -93,9 +93,20 @@ public:
   bool init(i2c2::I2C* _i2c);
   bool present();
   bool update();
+  inline float distance() { return distance_; } // returns distance in meters
+  inline uint16_t strength() { return strength_; }
 
   // public so we can trampoline from IRQ
-  void read_cb();
+  void read_cb(int8_t status);
+
+private:
+  void reset();
+  void do_read();
+  void convert();
+  void check_present();
+
+  float distance_;
+  uint16_t strength_;
 
   union
   {
@@ -109,11 +120,6 @@ public:
       uint8_t mode;
     } data;
   } packet_;
-
-private:
-  void reset();
-  void read();
-
 
 
   uint32_t last_update_ms_;

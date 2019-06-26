@@ -72,6 +72,8 @@ int main() {
     delay(50);
     info.toggle();
     laser.update();
-    printf("dist: %d, strength: %d\n", laser.packet_.data.dist, laser.packet_.data.strength);
+    printf("dist: %d.%d, strength: %d\n",
+           (int)laser.distance(), (int)(laser.distance()*1000)%1000,
+           laser.strength());
   }
 }

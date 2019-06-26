@@ -420,6 +420,21 @@ int8_t I2C::write(uint8_t addr, uint8_t data, void(*cb)(int8_t))
   return return_code_;
 }
 
+int8_t I2C::checkPresent(uint8_t addr, void (*cb)(int8_t))
+{
+  clear_log;
+  log_line;
+  if (waitForJob() == RESULT_ERROR)
+    return RESULT_ERROR;
+
+  addJob(TaskType::START);
+  addJob(TaskType::WRITE_MODE, addr);
+  addJob(TaskType::WRITE, 0, copyToWriteBuf(0x00), 1);
+  addJob(TaskType::STOP, 0, 0, 0, cb);
+  return_code_ = RESULT_SUCCESS;
+  return return_code_;
+}
+
 int8_t I2C::checkPresent(uint8_t addr)
 {
   clear_log;
