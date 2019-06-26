@@ -133,7 +133,7 @@ CXXSOURCES = $(PRINTF_SRC) \
              led.cpp \
              main.cpp \
              vcp.cpp \
-             i2c.cpp \
+             i2c2.cpp \
              ms5611.cpp
 
 INCLUDE_DIRS =  $(SRC_DIR) \
@@ -170,7 +170,7 @@ TARGET_BIN=$(BIN_DIR)/$(TARGET).bin
 ifeq ($(DEBUG), GDB)
 $(info ************  BUILDING DEBUG SYMBOLS ************)
 DEBUG_FLAGS = -ggdb3
-OPTIMIZE = -Og
+OPTIMIZE = -O0
 else
 $(info ************  BUILDING RELEASE ************)
 DEBUG_FLAGS = -g0

@@ -456,6 +456,7 @@ bool I2C::check_busy()
       // This is really slow, but it seems to be the only
       // way to regain a connection if bad things happen
       unstick();
+      {
       last_event_us_ = micros();
 //      if (return_code_ == RESULT_ERROR)
 //      {

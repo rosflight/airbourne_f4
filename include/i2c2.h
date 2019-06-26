@@ -42,16 +42,6 @@ namespace i2c2
 
 class I2C
 {
-  typedef enum : uint8_t
-  {
-    START,
-    WRITE_MODE,
-    READ_MODE,
-    WRITE,
-    READ,
-    STOP,
-  } task_type_t;
-
   enum : int8_t
   {
     RESULT_ERROR = 0,
@@ -86,12 +76,19 @@ class I2C
     DUALF = 0x40 << 16,
   };
 
-
-  I2C();
+  enum class TaskType : uint8_t
+  {
+    START,
+    WRITE_MODE,
+    READ_MODE,
+    WRITE,
+    READ,
+    STOP,
+  };
 
   struct Task
   {
-    task_type_t task;
+    TaskType task;
     uint8_t addr;
     uint8_t* data;
     size_t len;
@@ -107,16 +104,24 @@ class I2C
   static constexpr size_t WRITE_BUFFER_SIZE = 50;
   uint8_t write_buffer_[WRITE_BUFFER_SIZE];
   size_t wb_head_ = 0;
+  volatile size_t write_idx_;
 
   uint32_t expected_event_;
   volatile bool busy_;
-  volatile size_t idx_;
   size_t num_errors_;
   int8_t return_code_;
+  uint64_t last_event_us_;
+
+  // hardware
+  DMA_InitTypeDef  DMA_InitStructure_;
+  const i2c_hardware_struct_t* c_;
+  GPIO scl_;
+  GPIO sda_;
 
 public:
+  I2C();
   void init(const i2c_hardware_struct_t *c);
-  void addJob(task_type_t type, uint8_t addr=0, uint8_t* data=nullptr, size_t len=0, void(*cb)(uint8_t)=nullptr);
+  void addJob(TaskType type, uint8_t addr=0, uint8_t* data=nullptr, size_t len=0, void(*cb)(uint8_t)=nullptr);
   inline bool checkBusy() { return busy_; }
 
   Task& currentTask();
@@ -124,21 +129,22 @@ public:
   Task& prevTask();
   void advanceTask();
 
-  void write(uint8_t addr, uint8_t reg, uint8_t data);
-  void read(uint8_t addr, uint8_t reg, uint8_t data);
-  void read(uint8_t addr, uint8_t reg, uint8_t* data, size_t len, bool blocking=false, void(*cb)(uint8_t));
+  int8_t checkPresent(uint8_t addr);
+  int8_t write(uint8_t addr, uint8_t reg, uint8_t data);
+  int8_t read(uint8_t addr, uint8_t reg, uint8_t* data);
+  int8_t read(uint8_t addr, uint8_t reg, uint8_t* data, size_t len, bool blocking=false, void(*cb)(uint8_t)=nullptr);
 
   uint8_t* copyToWriteBuf(uint8_t byte);
+  uint8_t* getWriteBufferData(uint8_t* begin, size_t write_idx);
 
 
   void handleError();
   void handleEvent();
 
 private:
-  bool handleJob();
+  bool handleJobs();
 
-  DMA_InitTypeDef  DMA_InitStructure_;
-  const i2c_hardware_struct_t* c_;
+
 };
 
 }

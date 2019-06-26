@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Copyright (c) 2017, James Jackson
  *
  * All rights reserved.
@@ -32,20 +32,15 @@
 
 #include "i2c2.h"
 
+
+//global i2c ptrs used by the event interrupts
+i2c2::I2C* I2C1_Ptr;
+i2c2::I2C* I2C2_Ptr;
+i2c2::I2C* I2C3_Ptr;
+
+
 namespace i2c2
 {
-
-#define while_check(cond, result) \
-{\
-  int32_t timeout_var = 200; \
-  while ((cond) && timeout_var) \
-  timeout_var--; \
-  if (!timeout_var) \
-{ \
-  handle_hardware_failure();\
-  result = RESULT_ERROR; \
-}\
-}
 
 #ifndef NDEBUG
 class DebugHistory
@@ -62,19 +57,18 @@ public:
   void clear()
   {
     memset(history_, 0, sizeof(history_));
+    head_ = 0;
   }
 };
 DebugHistory event_history_;
 DebugHistory interrupt_history_;
 #define log_line event_history_.add_event(__LINE__)
+#define clear_log event_history_.clear()
 #else
 #define log_line
+#define clear_log
 #endif
 
-//global i2c ptrs used by the event interrupts
-I2C* I2C1_Ptr;
-I2C* I2C2_Ptr;
-I2C* I2C3_Ptr;
 
 I2C::I2C()
 {
@@ -149,17 +143,22 @@ void I2C::init(const i2c_hardware_struct_t *c)
   last_event_us_ = micros();
   I2C_Cmd(c->dev, ENABLE);
   log_line;
+
+  busy_ = false;
+  task_head_ = 0;
 }
 
 
-void I2C::addJob(task_type_t type, uint8_t addr, uint8_t *data, size_t len, void (*cb)(uint8_t))
+void I2C::addJob(TaskType type, uint8_t addr, uint8_t *data, size_t len, void (*cb)(uint8_t))
 {
   tasks_[task_head_].task = type;
-  tasks_[task_head_].addr = addr;
+  tasks_[task_head_].addr = addr << 1;
   tasks_[task_head_].data = data;
   tasks_[task_head_].len = len;
   tasks_[task_head_].cb = cb;
   task_head_ = (task_head_ + 1) % TASK_BUFFER_SIZE;
+  /// TODO: check we aren't smashing on tasks
+  /// TODO: check we aren't smashing on write buffer if writing
 
   if (!checkBusy())
   {
@@ -189,15 +188,17 @@ void I2C::advanceTask()
   task_idx_ = (task_idx_ + 1) % TASK_BUFFER_SIZE;
 }
 
-void I2C::read(uint8_t addr, uint8_t reg, uint8_t* data)
+int8_t I2C::read(uint8_t addr, uint8_t reg, uint8_t* data)
 {
-  addJob(START);
-  addJob(WRITE_MODE, addr);
-  addJob(WRITE, 0, copyToWriteBuf(reg), 1);
-  addJob(START);
-  addJob(READ_MODE, addr);
-  addJob(READ, 0, data, 1);
-  addJob(STOP);
+  clear_log;
+  log_line;
+  addJob(TaskType::START);
+  addJob(TaskType::WRITE_MODE, addr);
+  addJob(TaskType::WRITE, 0, copyToWriteBuf(reg), 1);
+  addJob(TaskType::START);
+  addJob(TaskType::READ_MODE, addr);
+  addJob(TaskType::READ, 0, data, 1);
+  addJob(TaskType::STOP);
   return_code_ = RESULT_SUCCESS;
 
   while (checkBusy())
@@ -208,26 +209,38 @@ void I2C::read(uint8_t addr, uint8_t reg, uint8_t* data)
   return return_code_;
 }
 
-void I2C::read(uint8_t addr, uint8_t reg, uint8_t *data, size_t len, bool blocking, void (*cb)(uint8_t))
+int8_t I2C::read(uint8_t addr, uint8_t reg, uint8_t *data, size_t len, bool blocking, void (*cb)(uint8_t))
 {
-  addJob(START);
-  addJob(WRITE_MODE, addr);
-  addJob(WRITE, 0, copyToWriteBuf(reg), 1);
-  addJob(START);
-  addJob(READ_MODE, addr);
-  addJob(READ, 0, data, len);
-  addJob(STOP, 0, 0, 0, cb);
+  clear_log;
+  log_line;
+  addJob(TaskType::START);
+  addJob(TaskType::WRITE_MODE, addr);
+  addJob(TaskType::WRITE, 0, copyToWriteBuf(reg), 1);
+  addJob(TaskType::START);
+  addJob(TaskType::READ_MODE, addr);
+  addJob(TaskType::READ, 0, data, len);
+  addJob(TaskType::STOP, 0, 0, 0, cb);
+  return_code_ = RESULT_SUCCESS;
+
+  while (blocking && checkBusy())
+  {
+    // wait
+  }
+  log_line;
+  return return_code_;
 }
 
-void I2C::write(uint8_t addr, uint8_t reg, uint8_t data)
+int8_t I2C::write(uint8_t addr, uint8_t reg, uint8_t data)
 {
-  addJob(START);
-  addJob(WRITE_MODE, addr);
-  addJob(WRITE, 0, copyToWriteBuf(reg), 1);
-  addJob(START);
-  addJob(WRITE_MODE, addr);
-  addJob(WRITE, 0, copyToWriteBuf(data), 1);
-  addJob(STOP);
+  clear_log;
+  log_line;
+  addJob(TaskType::START);
+  addJob(TaskType::WRITE_MODE, addr);
+  addJob(TaskType::WRITE, 0, copyToWriteBuf(reg), 1);
+  addJob(TaskType::START);
+  addJob(TaskType::WRITE_MODE, addr);
+  addJob(TaskType::WRITE, 0, copyToWriteBuf(data), 1);
+  addJob(TaskType::STOP);
 
   return_code_ = RESULT_SUCCESS;
 
@@ -235,82 +248,124 @@ void I2C::write(uint8_t addr, uint8_t reg, uint8_t data)
   {
     // wait for read to complete
   }
+  log_line;
+  return return_code_;
+}
 
+int8_t I2C::checkPresent(uint8_t addr)
+{
+  clear_log;
+  log_line;
+  size_t timeout = 500;
+  while (--timeout && I2C_GetFlagStatus(c_->dev, I2C_FLAG_BUSY));
+  if (timeout == 0)
+  {
+    log_line;
+    num_errors_++;
+    return false;
+  }
+
+  addJob(TaskType::START);
+  addJob(TaskType::WRITE_MODE, addr);
+  addJob(TaskType::WRITE, 0, copyToWriteBuf(0x00), 1);
+  addJob(TaskType::STOP);
+
+  return_code_ = RESULT_SUCCESS;
+
+  while (checkBusy())
+  {
+    // wait for read to complete
+  }
+  log_line;
   return return_code_;
 }
 
 
 uint8_t* I2C::copyToWriteBuf(uint8_t byte)
 {
+  log_line;
   write_buffer_[wb_head_] = byte;
   uint8_t* tmp =  write_buffer_ + wb_head_;
   wb_head_ = (wb_head_ + 1) % wb_head_;
   return tmp;
 }
 
+uint8_t* I2C::getWriteBufferData(uint8_t *begin, size_t write_idx)
+{
+  log_line;
+  uint8_t* data = begin + write_idx;
+  if (data >= write_buffer_+WRITE_BUFFER_SIZE)
+    data -= WRITE_BUFFER_SIZE;
+  return data;
+}
+
 bool I2C::handleJobs()
 {
+  log_line;
   if (task_idx_ == task_head_)
   {
+    log_line;
     busy_ = false;
     return true;
   }
 
+  log_line;
   Task& task(currentTask());
   busy_ = true;
   bool done = true;
-  switch (type)
+  switch (task.task)
   {
-    case START:
-      I2C_GenerateSTART(c_->dev, ENABLE);
-      I2C_ITConfig(c_->dev, I2C_IT_EVT | I2C_IT_ERR, ENABLE);
-      expected_event_ = I2C_EVENT_MASTER_MODE_SELECT;
-      idx_ = 0;
-      break;
+  case TaskType::START:
+    log_line;
+    I2C_GenerateSTART(c_->dev, ENABLE);
+    I2C_ITConfig(c_->dev, I2C_IT_EVT | I2C_IT_ERR, ENABLE);
+    expected_event_ = I2C_EVENT_MASTER_MODE_SELECT;
+    write_idx_ = 0;
+    break;
 
-    case WRITE_MODE:
-      I2C_Send7bitAddress(c_->dev, task.addr, I2C_Direction_Transmitter);
-      expected_event_ = I2C_EVENT_MASTER_TRANSMITTER_MODE_SELECTED;
-      break;
+  case TaskType::WRITE_MODE:
+    log_line;
+    I2C_Send7bitAddress(c_->dev, task.addr, I2C_Direction_Transmitter);
+    expected_event_ = I2C_EVENT_MASTER_TRANSMITTER_MODE_SELECTED;
+    break;
 
-    case READ_MODE:
-      I2C_Send7bitAddress(c_->dev, task.addr, I2C_Direction_Receiver);
-      expected_event_ = I2C_EVENT_MASTER_RECEIVER_MODE_SELECTED;
-      break;
+  case TaskType::READ_MODE:
+    log_line;
+    I2C_Send7bitAddress(c_->dev, task.addr, I2C_Direction_Receiver);
+    expected_event_ = I2C_EVENT_MASTER_RECEIVER_MODE_SELECTED;
+    break;
 
-    case WRITE:
-      I2C_SendData(c_->dev, task.data[idx_++]);
-      if (idx_ < task.len)
-        I2C_SendData(c_->dev, task.data[idx_++]);
-      expected_event_ = I2C_EVENT_MASTER_BYTE_TRANSMITTED;
-      done = (idx_ == task.len);
-      break;
+  case TaskType::WRITE:
+    log_line;
+    I2C_SendData(c_->dev, *getWriteBufferData(task.data, write_idx_++));
+    if (write_idx_ < task.len)
+      I2C_SendData(c_->dev, *getWriteBufferData(task.data, write_idx_++));
+    expected_event_ = I2C_EVENT_MASTER_BYTE_TRANSMITTED;
+    done = (write_idx_ == task.len);
+    break;
 
-    case READ:
-      DMA_DeInit(c_->DMA_Stream);
-      DMA_InitStructure_.DMA_BufferSize = static_cast<uint16_t>(len_);
-      DMA_InitStructure_.DMA_Memory0BaseAddr = reinterpret_cast<uint32_t>(data);
-      DMA_Init(c_->DMA_Stream, &DMA_InitStructure_);
-      DMA_SetCurrDataCounter(c_->DMA_Stream, task.len);
-      I2C_DMACmd(c_->dev, ENABLE);
-      DMA_ITConfig(c_->DMA_Stream, DMA_IT_TC, ENABLE);
-      DMA_Cmd(c_->DMA_Stream, ENABLE);
-      expected_event_ = I2C_EVENT_MASTER_BYTE_TRANSMITTED;
-      break;
+  case TaskType::READ:
+    log_line;
+    DMA_DeInit(c_->DMA_Stream);
+    DMA_InitStructure_.DMA_BufferSize = static_cast<uint16_t>(task.len);
+    DMA_InitStructure_.DMA_Memory0BaseAddr = reinterpret_cast<uint32_t>(task.data);
+    DMA_Init(c_->DMA_Stream, &DMA_InitStructure_);
+    DMA_SetCurrDataCounter(c_->DMA_Stream, task.len);
+    I2C_DMACmd(c_->dev, ENABLE);
+    DMA_ITConfig(c_->DMA_Stream, DMA_IT_TC, ENABLE);
+    DMA_Cmd(c_->DMA_Stream, ENABLE);
+    expected_event_ = I2C_EVENT_MASTER_BYTE_TRANSMITTED;
+    break;
 
-    case STOP:
-      I2C_ITConfig(c_->dev, I2C_IT_EVT | I2C_IT_ERR, DISABLE);
-      I2C_GenerateSTOP(c_->dev, ENABLE);
-      if (task.cb)
-        cb(RESULT_SUCCESS);
-      expected_event_ = 0;
-      break;
-
-    default:
-      num_errors_++;
-      I2C_GenerateSTOP(c_->dev, ENABLE);
-      expected_event_ = 0;
-      break;
+  case TaskType::STOP:
+    log_line;
+    I2C_ITConfig(c_->dev, I2C_IT_EVT | I2C_IT_ERR, DISABLE);
+    I2C_GenerateSTOP(c_->dev, ENABLE);
+    if (task.cb)
+      task.cb(RESULT_SUCCESS);
+    expected_event_ = 0;
+    busy_ = false;
+    break;
   }
 
   if (done)
@@ -323,14 +378,11 @@ void I2C::handleEvent()
 {
   uint32_t last_event = I2C_GetLastEvent(c_->dev);
   log_line;
-  if (last_event != expected_event_)
+  if ((last_event & expected_event_) == expected_event_)
   {
     log_line;
-    if (handleJobs(currentTask()))
-    {
+    if (handleJobs())
       log_line;
-      advanceTask();
-    }
   }
   else
   {
@@ -342,15 +394,13 @@ void I2C::handleEvent()
 void I2C::handleError()
 {
   log_line;
+  return_code_ = RESULT_ERROR;
   I2C_ITConfig(c_->dev, I2C_IT_EVT | I2C_IT_ERR, DISABLE);
-  while (currentTask().task != STOP)
+  while (currentTask().task != TaskType::STOP)
   {
     log_line;
     advanceTask();
   }
-  log_line;
-  handleJobs(currentTask());
-  advanceTask();
 
   //reset errors
   if (c_->dev->SR1 & AF)
@@ -363,6 +413,9 @@ void I2C::handleError()
     log_line;
     c_->dev->SR1 &= ~BERR;
   }
+
+  log_line;
+  handleJobs();
 }
 
 
@@ -375,12 +428,9 @@ extern "C"
 // C-based IRQ functions (defined in the startup script)
 void DMA1_Stream2_IRQHandler(void)
 {
-
   if (DMA_GetFlagStatus(DMA1_Stream2, DMA_FLAG_TCIF2))
   {
-    // Clear the DMA transmission complete flag
     DMA_ClearFlag(DMA1_Stream2, DMA_FLAG_TCIF2);
-    // Turn off the DMA
     I2C_DMACmd(I2C2, DISABLE);
     DMA_Cmd(DMA1_Stream2, DISABLE);
     I2C2_Ptr->handleEvent();
@@ -391,9 +441,7 @@ void DMA1_Stream0_IRQHandler(void)
 {
   if (DMA_GetFlagStatus(DMA1_Stream0, DMA_FLAG_TCIF0))
   {
-    // Clear the DMA transmission complete flag
     DMA_ClearFlag(DMA1_Stream0, DMA_FLAG_TCIF0);
-    // Turn off the DMA
     I2C_DMACmd(I2C1, DISABLE);
     DMA_Cmd(DMA1_Stream0, DISABLE);
     I2C1_Ptr->handleEvent();
@@ -401,27 +449,27 @@ void DMA1_Stream0_IRQHandler(void)
 }
 
 void I2C1_ER_IRQHandler(void) {
-  I2C1_Ptr->handle_error();
+  I2C1_Ptr->handleError();
 }
 
 void I2C1_EV_IRQHandler(void) {
-  I2C1_Ptr->handle_event();
+  I2C1_Ptr->handleEvent();
 }
 
 void I2C2_ER_IRQHandler(void) {
-  I2C2_Ptr->handle_error();
+  I2C2_Ptr->handleError();
 }
 
 void I2C2_EV_IRQHandler(void) {
-  I2C2_Ptr->handle_event();
+  I2C2_Ptr->handleEvent();
 }
 
 void I2C3_ER_IRQHandler(void) {
-  I2C3_Ptr->handle_error();
+  I2C3_Ptr->handleError();
 }
 
 void I2C3_EV_IRQHandler(void) {
-  I2C3_Ptr->handle_event();
+  I2C3_Ptr->handleEvent();
 }
 
 }

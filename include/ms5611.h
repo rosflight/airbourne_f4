@@ -33,7 +33,7 @@
 #define MS5611_H
 
 #include "system.h"
-#include "i2c.h"
+#include "i2c2.h"
 
 
 class MS5611
@@ -87,7 +87,7 @@ private:
   bool start_pres_meas();
   void convert();
 
-  I2C* i2c_;
+  i2c2::I2C* i2c_;
   uint8_t pres_buf_[3];
   uint8_t temp_buf_[3];
   int32_t pres_raw_;
@@ -105,7 +105,7 @@ private:
   callback_type_t callback_type_;
 
 public:
-  bool init(I2C* _i2c);
+  bool init(i2c2::I2C* _i2c);
   void update();
   void read(float *press, float *temp);
   bool present();

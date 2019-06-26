@@ -30,7 +30,7 @@
  */
 
 #include "system.h"
-#include "i2c.h"
+#include "i2c2.h"
 #include "ms5611.h"
 #include "led.h"
 #include "vcp.h"
@@ -61,8 +61,8 @@ int main() {
   delay(500);
 
   info.on();
-  I2C i2c1;
-  i2c1.init(&i2c_config[BARO_I2C]);
+  i2c2::I2C i2c1;
+  i2c1.init(&i2c_config[EXTERNAL_I2C]);
   MS5611 baro;
 
   baro.init(&i2c1);
@@ -75,7 +75,7 @@ int main() {
     {
       warn.off();
       info.toggle();
-      baro.read(&pressure, &temperature);
+//      baro.read(&pressure, &temperature);
       printf("%d Pa, %d.%d K\n",
              (int32_t)(pressure),
              (int32_t)(temperature),
