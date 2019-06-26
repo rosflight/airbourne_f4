@@ -91,8 +91,7 @@ void I2C::init(const i2c_hardware_struct_t *c)
 
   if (c->dev == I2C2)
     I2C2_Ptr = this;
-
-  if (c->dev == I2C3)
+ if (c->dev == I2C3)
     I2C3_Ptr = this;
 
   GPIO_PinAFConfig(c->GPIO, c->SCL_PinSource, c->GPIO_AF);
