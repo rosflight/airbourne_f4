@@ -61,7 +61,7 @@ bool MS5611::init(i2c2::I2C* _i2c)
 
   reset();
 
-  read_temp_mess();
+  read_temp_meas();
 
   // Read the PROM (try a couple times if it fails)
   bool got_valid_prom = false;
@@ -123,7 +123,7 @@ void MS5611::update()
         next_update_ms_ += 100;
       break;
     case READ_TEMP:
-      if (read_temp_mess())
+      if (read_temp_meas())
         next_update_ms_ += 100;
       break;
     case START_PRESS:
@@ -131,7 +131,7 @@ void MS5611::update()
         next_update_ms_ += 100;
       break;
     case READ_PRESS:
-      if (read_pres_mess())
+      if (read_pres_meas())
         next_update_ms_ += 100;
       break;
     default:
@@ -267,7 +267,7 @@ bool MS5611::start_pres_meas()
   return i2c_->write(ADDR, ADC_CONV + ADC_D1 + ADC_4096, &cb) == i2c2::I2C::RESULT_SUCCESS;
 }
 
-bool MS5611::read_pres_mess()
+bool MS5611::read_pres_meas()
 {
   waiting_for_cb_ = true;
   last_update_ms_ = millis();
@@ -287,7 +287,7 @@ bool MS5611::read_pres_mess()
   return false;
 }
 
-bool MS5611::read_temp_mess()
+bool MS5611::read_temp_meas()
 {
   waiting_for_cb_ = true;
   last_update_ms_ = millis();

@@ -133,7 +133,7 @@ CXXSOURCES = $(PRINTF_SRC) \
              led.cpp \
              main.cpp \
              vcp.cpp \
-             i2c.cpp \
+             i2c2.cpp \
              tfmini.cpp
 
 INCLUDE_DIRS =  $(SRC_DIR) \

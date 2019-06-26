@@ -32,15 +32,105 @@
 
 #include "tfmini.h"
 
+using namespace i2c2;
+
+void cb(int8_t status);
+TFMini* TFMini_Ptr;
+
 TFMini::TFMini()
 {
 
 }
 
-void TFMini::init(I2C *_i2c)
+bool TFMini::init(I2C *_i2c)
 {
     i2c_ = _i2c;
+    TFMini_Ptr = this;
+    while (millis() < 10); // wait for bootup
+    next_update_ms_ = 0;
+    last_update_ms_ = millis();
 
-    uint8_t reset_cmd[1] = {RESET};
-    i2c_->write(ADDR, 0xFF, RESET, NULL, true);
+    present_ = (i2c_->checkPresent(ADDR) == I2C::RESULT_SUCCESS);
+    if (!present_)
+      return false;
+
+    reset();
+    setParameter(SET_DETECTION_PATTERN, DET_PATTERN_AUTO);
+//    setParameter(SET_RANGE_MODE, RANGE_MODE_MIDDLE);
+
+    return true;
+}
+
+void TFMini::reset()
+{
+  i2c_->write(ADDR, RESET);
+  delay(3);
+}
+
+void TFMini::setParameter(uint16_t cmd, uint8_t val)
+{
+  uint8_t data[3] = {(uint8_t)(cmd >> 16), (uint8_t)(cmd & 0xFF), 0x01};
+
+  i2c_->clearLog();
+  i2c_->addJob(I2C::TaskType::START);
+  i2c_->addJob(I2C::TaskType::WRITE_MODE, ADDR);
+  i2c_->addJob(I2C::TaskType::WRITE, 0, i2c_->copyToWriteBuf(data,3), 3);
+  i2c_->addJob(I2C::TaskType::START);
+  i2c_->addJob(I2C::TaskType::WRITE_MODE, ADDR);
+  i2c_->addJob(I2C::TaskType::WRITE, 0, i2c_->copyToWriteBuf(val), 1);
+  i2c_->addJob(I2C::TaskType::STOP);
+}
+
+void TFMini::read_cb()
+{
+  last_update_ms_ = millis();
+  new_data_ = true;
+}
+
+bool TFMini::present()
+{
+  if (present_ && (millis() - last_update_ms_) < 100)
+  {
+    return true;
+  }
+  else
+  {
+    present_ = false;
+    return false;
+  }
+}
+
+void TFMini::read()
+{
+  uint8_t data[3] = {0x01, 0x02, 0x07};
+  i2c_->clearLog();
+  i2c_->waitForJob();
+  i2c_->addJob(I2C::TaskType::START);
+  i2c_->addJob(I2C::TaskType::WRITE_MODE, ADDR);
+  i2c_->addJob(I2C::TaskType::WRITE, 0, i2c_->copyToWriteBuf(data,3), 3);
+  i2c_->addJob(I2C::TaskType::START);
+  i2c_->addJob(I2C::TaskType::READ_MODE, ADDR);
+  i2c_->addJob(I2C::TaskType::READ, 0, packet_.buf, 7);
+  i2c_->addJob(I2C::TaskType::STOP);
+  while (i2c_->checkBusy())
+  {
+
+  }
+}
+
+bool TFMini::update()
+{
+  if (millis() > next_update_ms_)
+  {
+    read();
+  }
+
+}
+
+
+
+void cb(int8_t status)
+{
+  (void)status;
+  TFMini_Ptr->read_cb();
 }

@@ -84,6 +84,7 @@ namespace i2c2
 I2C::I2C()
 {
   memset(tasks_, 0, sizeof(tasks_));
+  memset(write_buffer_, 0xFF, sizeof(write_buffer_));
 }
 
 void I2C::init(const i2c_hardware_struct_t *c)
@@ -225,9 +226,10 @@ int8_t I2C::read(uint8_t addr, uint8_t reg, uint8_t* data)
   addJob(TaskType::STOP);
   return_code_ = RESULT_SUCCESS;
 
-  while (checkBusy())
+  if_timeout (checkBusy(), tout_block)
   {
-    // wait for read to complete
+    log_line;
+    return RESULT_ERROR;
   }
 
   return return_code_;
@@ -319,7 +321,7 @@ int8_t I2C::read(uint8_t addr, uint8_t reg, uint8_t *data, size_t len)
   addJob(TaskType::STOP);
   return_code_ = RESULT_SUCCESS;
 
-  if_timeout(checkBusy(), 1000)
+  if_timeout(checkBusy(), tout_block)
   {
     log_line;
     num_errors_++;
@@ -344,7 +346,7 @@ int8_t I2C::write(uint8_t addr, uint8_t reg, uint8_t data)
 
   return_code_ = RESULT_SUCCESS;
 
-  if_timeout(checkBusy(), 1000)
+  if_timeout(checkBusy(), tout_block)
   {
     log_line;
     num_errors_++;
@@ -368,7 +370,31 @@ int8_t I2C::write(uint8_t addr, uint8_t data)
 
   return_code_ = RESULT_SUCCESS;
 
-  if_timeout(checkBusy(), 1000)
+  if_timeout(checkBusy(), tout_block)
+  {
+    log_line;
+    num_errors_++;
+    return RESULT_ERROR;
+  }
+  log_line;
+  return return_code_;
+}
+
+int8_t I2C::write(uint8_t addr, uint8_t* data, size_t len)
+{
+  clear_log;
+  log_line;
+  if (waitForJob() == RESULT_ERROR)
+    return RESULT_ERROR;
+
+  addJob(TaskType::START);
+  addJob(TaskType::WRITE_MODE, addr);
+  addJob(TaskType::WRITE, 0, copyToWriteBuf(data, len), len);
+  addJob(TaskType::STOP);
+
+  return_code_ = RESULT_SUCCESS;
+
+  if_timeout(checkBusy(), tout_block)
   {
     log_line;
     num_errors_++;
@@ -408,7 +434,7 @@ int8_t I2C::checkPresent(uint8_t addr)
 
   return_code_ = RESULT_SUCCESS;
 
-  if_timeout(checkBusy(), tout)
+  if_timeout(checkBusy(), tout_block)
   {
     log_line;
     num_errors_++;
@@ -424,7 +450,19 @@ uint8_t* I2C::copyToWriteBuf(uint8_t byte)
   log_line;
   write_buffer_[wb_head_] = byte;
   uint8_t* tmp =  write_buffer_ + wb_head_;
-  wb_head_ = (wb_head_ + 1) % wb_head_;
+  wb_head_ = (wb_head_ + 1) % WRITE_BUFFER_SIZE;
+  return tmp;
+}
+
+uint8_t* I2C::copyToWriteBuf(uint8_t* data, size_t len)
+{
+  log_line;
+  uint8_t* tmp =  write_buffer_ + wb_head_;
+  for (int i = 0; i < len; i++)
+  {
+    write_buffer_[wb_head_] = data[i];
+    wb_head_ = (wb_head_ + 1) % WRITE_BUFFER_SIZE;
+  }
   return tmp;
 }
 
@@ -457,11 +495,6 @@ bool I2C::handleJobs()
   {
   case TaskType::START:
     log_line;
-    if_timeout(I2C_GetFlagStatus(c_->dev, I2C_FLAG_BUSY), tout)
-    {
-      log_line;
-      done = false;
-    }
     expected_event_ = I2C_EVENT_MASTER_MODE_SELECT;
     write_idx_ = 0;
     I2C_ITConfig(c_->dev, I2C_IT_EVT | I2C_IT_ERR, ENABLE);

@@ -30,7 +30,7 @@
  */
 
 #include "system.h"
-#include "i2c.h"
+#include "i2c2.h"
 #include "tfmini.h"
 #include "led.h"
 #include "vcp.h"
@@ -61,15 +61,17 @@ int main() {
   delay(500);
 
   info.on();
-  I2C i2c1;
+  i2c2::I2C i2c1;
   i2c1.init(&i2c_config[EXTERNAL_I2C]);
 
   TFMini laser;
+  laser.init(&i2c1);
 
   while (1)
   {
-    laser.init(&i2c1);
     delay(50);
     info.toggle();
+    laser.update();
+    printf("dist: %d, strength: %d\n", laser.packet_.data.dist, laser.packet_.data.strength);
   }
 }

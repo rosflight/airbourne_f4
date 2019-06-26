@@ -143,6 +143,7 @@ public:
   int8_t write(uint8_t addr, uint8_t data);
   int8_t write(uint8_t addr, uint8_t reg, uint8_t data);
   int8_t write(uint8_t addr, uint8_t data, void(*cb)(int8_t));
+  int8_t write(uint8_t addr, uint8_t* data, size_t len);
   int8_t read(uint8_t addr, uint8_t reg, uint8_t* data);
 
   int8_t read(uint8_t addr, uint8_t* data, size_t len);
@@ -151,6 +152,7 @@ public:
   int8_t read(uint8_t addr, uint8_t reg, uint8_t* data, size_t len, void(*cb)(int8_t));
 
   uint8_t* copyToWriteBuf(uint8_t byte);
+  uint8_t* copyToWriteBuf(uint8_t* data, size_t len);
   uint8_t* getWriteBufferData(uint8_t* begin, size_t write_idx);
 
   bool waitForJob();
