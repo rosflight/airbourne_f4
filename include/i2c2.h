@@ -101,6 +101,7 @@ private:
   // microseconds to wait for transfer to complete before adding a new one
   static constexpr uint64_t tout = 200;
   static constexpr uint64_t tout_block = 20000;
+  static constexpr uint64_t tout_reset = 20000;
 
   static constexpr size_t TASK_BUFFER_SIZE = 25;
   Task tasks_[TASK_BUFFER_SIZE];
@@ -161,8 +162,10 @@ public:
   void handleError();
   void handleEvent();
 
+
 private:
   bool handleJobs();
+  void unstick();
 
 
 };

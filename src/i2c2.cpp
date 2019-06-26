@@ -261,6 +261,10 @@ bool I2C::waitForJob()
 {
   if_timeout(I2C_GetFlagStatus(c_->dev, I2C_FLAG_BUSY), tout)
   {
+    if (micros() - last_event_us_ > tout_reset)
+    {
+      unstick();
+    }
     log_line;
     num_errors_++;
     return RESULT_ERROR;
@@ -627,6 +631,55 @@ void I2C::handleError()
 
   log_line;
   handleJobs();
+}
+
+void I2C::unstick()
+{
+  I2C_Cmd(c_->dev, DISABLE);
+
+  I2C_ClearFlag(c_->dev, I2C_FLAG_BUSY);
+
+  // Turn off the interrupts
+  I2C_ITConfig(c_->dev, I2C_IT_EVT | I2C_IT_ERR, DISABLE);
+
+  //reset errors
+  I2C_ClearFlag(c_->dev, I2C_SR1_OVR | I2C_SR1_AF | I2C_SR1_ARLO | I2C_SR1_BERR);
+
+  scl_.set_mode(GPIO::OUTPUT);
+  sda_.set_mode(GPIO::OUTPUT);
+
+  scl_.write(GPIO::HIGH);
+  sda_.write(GPIO::HIGH);
+
+  delayMicroseconds(100);
+
+  // clock out some bits
+  for (int i = 0; i < 16; ++i)
+  {
+    delayMicroseconds(1);
+    scl_.toggle();
+  }
+  delayMicroseconds(1);
+
+  // send a start condition
+  sda_.write(GPIO::LOW);
+  delayMicroseconds(1);
+  scl_.write(GPIO::LOW);
+  delayMicroseconds(1);
+
+  // then a stop
+  scl_.write(GPIO::HIGH);
+  delayMicroseconds(1);
+  sda_.write(GPIO::HIGH);
+  delayMicroseconds(1);
+
+  // turn things back on
+  scl_.set_mode(GPIO::PERIPH_IN_OUT);
+  sda_.set_mode(GPIO::PERIPH_IN_OUT);
+  I2C_Cmd(c_->dev, ENABLE);
+
+  last_event_us_ = micros();
+  log_line;
 }
 
 

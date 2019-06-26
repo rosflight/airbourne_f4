@@ -94,8 +94,9 @@ void TFMini::read_cb(int8_t status)
 
 bool TFMini::present()
 {
-  if (present_ && (millis() - last_update_ms_) < 100)
+  if ((millis() - last_update_ms_) < 100)
   {
+    present_ = true;
     return true;
   }
   else
@@ -127,12 +128,13 @@ void TFMini::convert()
 
 bool TFMini::update()
 {
-  if (!present_)
-    check_present();
 
   if (millis() > next_update_ms_)
   {
-    do_read();
+    if (present_)
+      do_read();
+    else
+      check_present();
   }
 
   if (new_data_)
@@ -141,6 +143,7 @@ bool TFMini::update()
 
 void TFMini::check_present()
 {
+
   i2c_->checkPresent(ADDR, &cb);
 }
 

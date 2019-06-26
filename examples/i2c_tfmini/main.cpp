@@ -72,8 +72,17 @@ int main() {
     delay(50);
     info.toggle();
     laser.update();
-    printf("dist: %d.%d, strength: %d\n",
-           (int)laser.distance(), (int)(laser.distance()*1000)%1000,
-           laser.strength());
+    if (laser.present())
+    {
+      warn.on();
+      printf("dist: %d.%d, strength: %d\n",
+             (int)laser.distance(), (int)(laser.distance()*1000)%1000,
+             laser.strength());
+    }
+    else
+    {
+      warn.off();
+      printf("No Laser\n");
+    }
   }
 }
