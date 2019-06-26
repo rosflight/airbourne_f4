@@ -33,7 +33,7 @@
 #include "hmc5883l.h"
 
 static HMC5883L* mag_ptr;
-static void read_cb(uint8_t result);
+static void read_cb(int8_t result);
 
 bool HMC5883L::init(I2C *i2c_drv)
 {
@@ -48,8 +48,7 @@ bool HMC5883L::init(I2C *i2c_drv)
   next_update_ms_ = millis();
 
   // Detect Magnetometer
-  uint8_t byte = 0;
-  if (i2c_->write(HMC58X3_ADDR, 0xFF, byte) != I2C::RESULT_SUCCESS)
+  if (i2c_->checkPresent(ADDR) != I2C::RESULT_SUCCESS)
   {
     mag_present_ = false;
     return false;
@@ -59,12 +58,18 @@ bool HMC5883L::init(I2C *i2c_drv)
     delay(1);
     bool result = true;
     // Configure HMC5833L
-    result &= i2c_->write(HMC58X3_ADDR, HMC58X3_CRA, HMC58X3_CRA_DO_75 | HMC58X3_CRA_NO_AVG | HMC58X3_CRA_MEAS_MODE_NORMAL ); // 75 Hz Measurement, no bias, no averaging
-    result &= i2c_->write(HMC58X3_ADDR, HMC58X3_CRB, HMC58X3_CRB_GN_390); // 390 LSB/Gauss
-    result &= i2c_->write(HMC58X3_ADDR, HMC58X3_MODE, HMC58X3_MODE_CONTINUOUS); // Continuous Measurement Mode
+    result &= configure(CRA, CRA_DO_75 | CRA_NO_AVG | CRA_MEAS_MODE_NORMAL ); // 75 Hz Measurement, no bias, no averaging
+    result &= configure(CRB, CRB_GN_390); // 390 LSB/Gauss
+    result &= configure(MODE, MODE_CONTINUOUS); // Continuous Measurement Mode
     mag_present_ = true;
     return result;
   }
+}
+
+bool HMC5883L::configure(uint8_t reg, uint8_t val)
+{
+  uint8_t data[2] = {reg, val};
+  return i2c_->write(ADDR, data, 2);
 }
 
 bool HMC5883L::present()
@@ -78,12 +83,12 @@ void HMC5883L::update()
 {
   if ( millis() > next_update_ms_)
   {
-    if (i2c_->read(HMC58X3_ADDR, HMC58X3_DATA, 6, i2c_buf_, &read_cb) == I2C::RESULT_SUCCESS)
+    if (i2c_->read(ADDR, DATA, i2c_buf_, 6, &read_cb) == I2C::RESULT_SUCCESS)
       next_update_ms_ += 10;
   }
 }
 
-void HMC5883L::cb(uint8_t result)
+void HMC5883L::cb(int8_t result)
 {
   if (result == I2C::RESULT_SUCCESS)
     mag_present_ = true;
@@ -93,7 +98,7 @@ void HMC5883L::cb(uint8_t result)
   data_[2] = static_cast<float>(static_cast<int16_t>((i2c_buf_[4] << 8) | i2c_buf_[5]));
 }
 
-void read_cb(uint8_t result)
+void read_cb(int8_t result)
 {
   mag_ptr->cb(result);
 }
