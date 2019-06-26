@@ -37,32 +37,11 @@
 
 #include "gpio.h"
 
+
 class I2C
 {
-public:
-
-  void init(const i2c_hardware_struct_t *c);
-  
-  enum : int8_t
-  {
-    RESULT_ERROR = 0,
-    RESULT_SUCCESS = 1,
-    RESULT_BUSY = -1
-  };
-  
-  int8_t read(uint8_t addr, uint8_t reg, uint8_t num_bytes, uint8_t* data, void(*callback)(uint8_t) = nullptr, bool blocking = false);
-  int8_t write(uint8_t addr, uint8_t reg, uint8_t data, void(*callback)(uint8_t), bool blocking = false);
-
-  // Single-byte read/write for configuring devices
-  int8_t write(uint8_t addr, uint8_t reg, uint8_t data);
-  int8_t read(uint8_t addr, uint8_t reg, uint8_t *data);
-  
-  inline uint16_t num_errors() { return error_count_; }
-
-private:
-
-  // [SR2 << 8 | SR1] Bits
-  enum {
+  enum
+    {
     SB = 0x0001,
     ADDR = 0x0002,
     BTF = 0x0004,
@@ -88,46 +67,103 @@ private:
     DUALF = 0x40 << 16,
   };
 
-  typedef enum
+public:
+  enum : int8_t
   {
-    IDLE,
-    READING,
-    WRITING
-  } current_status_t;
+    RESULT_ERROR = 0,
+    RESULT_SUCCESS = 1,
+    RESULT_BUSY = -1
+  };
 
-  void unstick();
-  void hardware_failure();
-  bool check_busy();
-  void handle_hardware_failure();
-  void (*cb_)(uint8_t);
+  enum class TaskType : uint8_t
+  {
+    START,
+    WRITE_MODE,
+    READ_MODE,
+    WRITE,
+    READ,
+    STOP,
+    DONE,
+  };
+
+private:
+  struct Task
+  {
+    TaskType task;
+    uint8_t addr;
+    uint8_t* data;
+    size_t len;
+    void (*cb)(int8_t);
+  };
+
+  // microseconds to wait for transfer to complete before adding a new one
+  static constexpr uint64_t tout = 200;
+  static constexpr uint64_t tout_block = 20000;
+  static constexpr uint64_t tout_reset = 20000;
+
+  static constexpr size_t TASK_BUFFER_SIZE = 25;
+  Task tasks_[TASK_BUFFER_SIZE];
+  size_t task_head_ = 0;
+  size_t task_tail_ = 0;
+  size_t task_idx_ = 0;
+
+  static constexpr size_t WRITE_BUFFER_SIZE = 50;
+  uint8_t write_buffer_[WRITE_BUFFER_SIZE];
+  size_t wb_head_ = 0;
+  volatile size_t write_idx_;
+
+  uint32_t last_event_;
+  uint32_t expected_event_;
+  volatile bool busy_;
+  size_t num_errors_;
+  int8_t return_code_;
   uint64_t last_event_us_;
+  bool timeout_;
+
+  // hardware
+  DMA_InitTypeDef  DMA_InitStructure_;
+  const i2c_hardware_struct_t* c_;
   GPIO scl_;
   GPIO sda_;
 
-  uint16_t error_count_ = 0;
-
-  //Variables for current job:
-  volatile current_status_t current_status_;
-  volatile uint8_t return_code_;
-  bool subaddress_sent_ = false;
-  bool done_ = false;
-
-  volatile uint8_t addr_;
-  volatile uint8_t reg_;
-  volatile uint8_t len_;
-  volatile uint8_t data_;
-
-  DMA_InitTypeDef  DMA_InitStructure_;
-  const i2c_hardware_struct_t *c_;
-
-  //interrupt handlers
 public:
-  void handle_error(); // Interrupts have to be public because they are trampolined from the pointers
-  void handle_event();
-  void transfer_complete_cb();
-};
+  I2C();
+  void init(const i2c_hardware_struct_t *c);
+  void addJob(TaskType type, uint8_t addr=0, uint8_t* data=nullptr, size_t len=1, void(*cb)(int8_t)=nullptr);
+  inline bool checkBusy() { return busy_; }
 
-//global i2c ptrs used by the event interrupts
-extern I2C* I2C1_Ptr;
-extern I2C* I2C2_Ptr;
-extern I2C* I2C3_Ptr;
+  Task& currentTask();
+  Task& nextTask();
+  Task& prevTask();
+  void advanceTask();
+
+  void clearLog();
+  int8_t checkPresent(uint8_t addr);
+  int8_t checkPresent(uint8_t addr, void(*cb)(int8_t));
+
+  int8_t write(uint8_t addr, uint8_t data);
+  int8_t write(uint8_t addr, uint8_t reg, uint8_t data);
+  int8_t write(uint8_t addr, uint8_t data, void(*cb)(int8_t));
+  int8_t write(uint8_t addr, uint8_t* data, size_t len);
+  int8_t read(uint8_t addr, uint8_t reg, uint8_t* data);
+
+  int8_t read(uint8_t addr, uint8_t* data, size_t len);
+  int8_t read(uint8_t addr, uint8_t reg, uint8_t* data, size_t len);
+  int8_t read(uint8_t addr, uint8_t* data, size_t len, void(*cb)(int8_t));
+  int8_t read(uint8_t addr, uint8_t reg, uint8_t* data, size_t len, void(*cb)(int8_t));
+
+  uint8_t* copyToWriteBuf(uint8_t byte);
+  uint8_t* copyToWriteBuf(uint8_t* data, size_t len);
+  uint8_t* getWriteBufferData(uint8_t* begin, size_t write_idx);
+
+  bool waitForJob();
+  void handleError();
+  void handleEvent();
+
+
+private:
+  bool handleJobs();
+  void unstick();
+
+
+};

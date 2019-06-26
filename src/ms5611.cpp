@@ -36,7 +36,7 @@ static void cb(int8_t result);
 
 #define REBOOT_PERIOD_MS 1000 * 60 * 30 // reboot the device every 30 minutes
 
-bool MS5611::init(i2c2::I2C* _i2c)
+bool MS5611::init(I2C* _i2c)
 {
   baro_ptr = this;
   i2c_ = _i2c;
@@ -50,7 +50,7 @@ bool MS5611::init(i2c2::I2C* _i2c)
   // It doesn't have to be 0x00 either, pretty much anything works in my experience
   i2c_->checkPresent(0x00);
 
-  if (i2c_->checkPresent(ADDR) == i2c2::I2C::RESULT_SUCCESS)
+  if (i2c_->checkPresent(ADDR) == I2C::RESULT_SUCCESS)
   {
     baro_present_ == true;
   }
@@ -160,8 +160,8 @@ bool MS5611::read_prom()
   // try a few times
   for (int i = 0; i < 8; i++)
   {
-    if ((i2c_->write(ADDR, PROM_RD + 2* i) == i2c2::I2C::RESULT_SUCCESS)
-        && (i2c_->read(ADDR, buf, 2) == i2c2::I2C::RESULT_SUCCESS))
+    if ((i2c_->write(ADDR, PROM_RD + 2* i) == I2C::RESULT_SUCCESS)
+        && (i2c_->read(ADDR, buf, 2) == I2C::RESULT_SUCCESS))
     {
       prom[i] = static_cast<uint16_t>(buf[0] << 8 | buf[1]);
     }
@@ -256,7 +256,7 @@ bool MS5611::start_temp_meas()
   waiting_for_cb_ = true;
   last_update_ms_ = millis();
   callback_type_ = CB_TEMP_START;
-  return i2c_->write(ADDR, ADC_CONV + ADC_D2 + ADC_4096, &cb) == i2c2::I2C::RESULT_SUCCESS;
+  return i2c_->write(ADDR, ADC_CONV + ADC_D2 + ADC_4096, &cb) == I2C::RESULT_SUCCESS;
 }
 
 bool MS5611::start_pres_meas()
@@ -264,7 +264,7 @@ bool MS5611::start_pres_meas()
   waiting_for_cb_ = true;
   last_update_ms_ = millis();
   callback_type_ = CB_PRES_START;
-  return i2c_->write(ADDR, ADC_CONV + ADC_D1 + ADC_4096, &cb) == i2c2::I2C::RESULT_SUCCESS;
+  return i2c_->write(ADDR, ADC_CONV + ADC_D1 + ADC_4096, &cb) == I2C::RESULT_SUCCESS;
 }
 
 bool MS5611::read_pres_meas()
@@ -274,14 +274,14 @@ bool MS5611::read_pres_meas()
   callback_type_ = CB_PRES_READ;
   if (i2c_->waitForJob())
   {
-    i2c_->addJob(i2c2::I2C::TaskType::START);
-    i2c_->addJob(i2c2::I2C::TaskType::WRITE_MODE, ADDR);
-    i2c_->addJob(i2c2::I2C::TaskType::WRITE, 0, i2c_->copyToWriteBuf(ADC_READ), 1);
-    i2c_->addJob(i2c2::I2C::TaskType::STOP, 0, 0, 0, 0);
-    i2c_->addJob(i2c2::I2C::TaskType::START);
-    i2c_->addJob(i2c2::I2C::TaskType::READ_MODE, ADDR);
-    i2c_->addJob(i2c2::I2C::TaskType::READ, 0, pres_buf_, 3);
-    i2c_->addJob(i2c2::I2C::TaskType::STOP, 0, 0, 0, &cb);
+    i2c_->addJob(I2C::TaskType::START);
+    i2c_->addJob(I2C::TaskType::WRITE_MODE, ADDR);
+    i2c_->addJob(I2C::TaskType::WRITE, 0, i2c_->copyToWriteBuf(ADC_READ), 1);
+    i2c_->addJob(I2C::TaskType::STOP, 0, 0, 0, 0);
+    i2c_->addJob(I2C::TaskType::START);
+    i2c_->addJob(I2C::TaskType::READ_MODE, ADDR);
+    i2c_->addJob(I2C::TaskType::READ, 0, pres_buf_, 3);
+    i2c_->addJob(I2C::TaskType::STOP, 0, 0, 0, &cb);
     return true;
   }
   return false;
@@ -294,14 +294,14 @@ bool MS5611::read_temp_meas()
   callback_type_ = CB_TEMP_READ;
   i2c_->waitForJob();
   i2c_->clearLog();
-  i2c_->addJob(i2c2::I2C::TaskType::START);
-  i2c_->addJob(i2c2::I2C::TaskType::WRITE_MODE, ADDR);
-  i2c_->addJob(i2c2::I2C::TaskType::WRITE, 0, i2c_->copyToWriteBuf(ADC_READ), 1);
-  i2c_->addJob(i2c2::I2C::TaskType::STOP, 0, 0, 0, 0);
-  i2c_->addJob(i2c2::I2C::TaskType::START);
-  i2c_->addJob(i2c2::I2C::TaskType::READ_MODE, ADDR);
-  i2c_->addJob(i2c2::I2C::TaskType::READ, 0, temp_buf_, 3);
-  i2c_->addJob(i2c2::I2C::TaskType::STOP, 0, 0, 0, &cb);
+  i2c_->addJob(I2C::TaskType::START);
+  i2c_->addJob(I2C::TaskType::WRITE_MODE, ADDR);
+  i2c_->addJob(I2C::TaskType::WRITE, 0, i2c_->copyToWriteBuf(ADC_READ), 1);
+  i2c_->addJob(I2C::TaskType::STOP, 0, 0, 0, 0);
+  i2c_->addJob(I2C::TaskType::START);
+  i2c_->addJob(I2C::TaskType::READ_MODE, ADDR);
+  i2c_->addJob(I2C::TaskType::READ, 0, temp_buf_, 3);
+  i2c_->addJob(I2C::TaskType::STOP, 0, 0, 0, &cb);
   while (i2c_->checkBusy())
   {
 
@@ -357,7 +357,7 @@ void MS5611::read(float * press, float* temp)
 
 void MS5611::master_cb(uint8_t result)
 {
-  if (result == i2c2::I2C::RESULT_SUCCESS)
+  if (result == I2C::RESULT_SUCCESS)
     baro_present_ = true;
   switch (callback_type_)
   {

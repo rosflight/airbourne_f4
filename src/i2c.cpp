@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Copyright (c) 2017, James Jackson
  *
  * All rights reserved.
@@ -29,22 +29,28 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+
 #include "i2c.h"
 
-#define while_check(cond, result) \
-{\
-  int32_t timeout_var = 200; \
-  while ((cond) && timeout_var) \
-  timeout_var--; \
-  if (!timeout_var) \
-{ \
-  handle_hardware_failure();\
-  result = RESULT_ERROR; \
-  }\
-  }
+
+//global i2c ptrs used by the event interrupts
+I2C* I2C1_Ptr;
+I2C* I2C2_Ptr;
+I2C* I2C3_Ptr;
+
+
+
+#define if_timeout(cond, us) \
+do {\
+  timeout_ = false;\
+  uint64_t start = micros();\
+  while((cond) && micros() < start + us);\
+}while(0);\
+if (cond)
+
 
 #ifndef NDEBUG
-class Debug_History
+class DebugHistory
 {
   uint32_t history_[60];
   uint32_t head_ = 0;
@@ -58,19 +64,23 @@ public:
   void clear()
   {
     memset(history_, 0, sizeof(history_));
+    head_ = 0;
   }
 };
-Debug_History event_history_;
-Debug_History interrupt_history_;
+DebugHistory event_history_;
+DebugHistory interrupt_history_;
 #define log_line event_history_.add_event(__LINE__)
+#define clear_log event_history_.clear()
 #else
 #define log_line
+#define clear_log
 #endif
 
-//global i2c ptrs used by the event interrupts
-I2C* I2C1_Ptr;
-I2C* I2C2_Ptr;
-I2C* I2C3_Ptr;
+I2C::I2C()
+{
+  memset(tasks_, 0, sizeof(tasks_));
+  memset(write_buffer_, 0xFF, sizeof(write_buffer_));
+}
 
 void I2C::init(const i2c_hardware_struct_t *c)
 {
@@ -136,125 +146,486 @@ void I2C::init(const i2c_hardware_struct_t *c)
   DMA_InitStructure_.DMA_MemoryDataSize = DMA_MemoryDataSize_Byte;
   DMA_InitStructure_.DMA_Priority = DMA_Priority_High;
   DMA_InitStructure_.DMA_DIR = DMA_DIR_PeripheralToMemory;
+  DMA_Init(c_->DMA_Stream, &DMA_InitStructure_);
 
   last_event_us_ = micros();
   I2C_Cmd(c->dev, ENABLE);
-
-  unstick(); //unsti1ck will properly initialize pins
-  log_line;
-}
-
-// blocking, single register read (for configuring devices)
-int8_t I2C::read(uint8_t addr, uint8_t reg, uint8_t *data)
-{
-  return read(addr, reg, 1, data, nullptr, false);
-}
-
-int8_t I2C::read(uint8_t addr, uint8_t reg, uint8_t num_bytes, uint8_t* data, void(*callback)(uint8_t), bool blocking)
-{
-  if (check_busy())
-    return RESULT_BUSY;
   log_line;
 
-  // configure the job
-  current_status_ = READING;
-  addr_ = addr << 1;
-  cb_ = callback;
-  reg_ = reg;
-  subaddress_sent_ = (reg_ == 0xFF);
-  len_ = num_bytes;
-  done_ = false;
-  return_code_ = RESULT_SUCCESS;
+  busy_ = false;
+  task_head_ = 0;
+}
 
-  DMA_DeInit(c_->DMA_Stream);
-  DMA_InitStructure_.DMA_BufferSize = static_cast<uint16_t>(len_);
-  DMA_InitStructure_.DMA_Memory0BaseAddr = reinterpret_cast<uint32_t>(data);
-  DMA_Init(c_->DMA_Stream, &DMA_InitStructure_);
+void I2C::clearLog()
+{
+  clear_log;
+}
 
-  I2C_Cmd(c_->dev, ENABLE);
+void I2C::addJob(TaskType type, uint8_t addr, uint8_t *data, size_t len, void (*cb)(int8_t))
+{
+  tasks_[task_head_].task = type;
+  tasks_[task_head_].addr = addr << 1;
+  tasks_[task_head_].data = data;
+  tasks_[task_head_].len = len;
+  tasks_[task_head_].cb = cb;
+  task_head_ = (task_head_ + 1) % TASK_BUFFER_SIZE;
+  /// TODO: check we aren't smashing on tasks
+  /// TODO: check we aren't smashing on write buffer if writing
 
-  while_check (I2C_GetFlagStatus(c_->dev, I2C_FLAG_BUSY), return_code_);
-
-  // If we don't need to send the subaddress, then go ahead and spool up the DMA NACK
-  if (subaddress_sent_)
+  if (!checkBusy())
   {
-    I2C_AcknowledgeConfig(c_->dev, ENABLE);
-    I2C_DMALastTransferCmd(c_->dev, ENABLE);
+    handleJobs();
   }
-  I2C_GenerateSTART(c_->dev, ENABLE);
+}
 
-  I2C_ITConfig(c_->dev, I2C_IT_EVT | I2C_IT_ERR, ENABLE);
+I2C::Task& I2C::currentTask()
+{
+  return tasks_[task_idx_];
+}
 
-  last_event_us_ = micros();
-  if (blocking)
+I2C::Task& I2C::nextTask()
+{
+  size_t tmp = (task_idx_ + 1) % TASK_BUFFER_SIZE;
+  return tasks_[tmp];
+}
+
+I2C::Task& I2C::prevTask()
+{
+  size_t tmp = (task_idx_ - 1 + TASK_BUFFER_SIZE) % TASK_BUFFER_SIZE;
+  return tasks_[tmp];
+}
+
+void I2C::advanceTask()
+{
+  task_idx_ = (task_idx_ + 1) % TASK_BUFFER_SIZE;
+}
+
+int8_t I2C::read(uint8_t addr, uint8_t reg, uint8_t* data)
+{
+  clear_log;
+  log_line;
+
+  if_timeout(I2C_GetFlagStatus(c_->dev, I2C_FLAG_BUSY), tout)
   {
     log_line;
-    while(check_busy());
+    num_errors_++;
+    return RESULT_ERROR;
   }
-  log_line;
-  last_event_us_ = micros();
+
+  addJob(TaskType::START);
+  addJob(TaskType::WRITE_MODE, addr);
+  addJob(TaskType::WRITE, 0, copyToWriteBuf(reg), 1);
+  addJob(TaskType::START);
+  addJob(TaskType::READ_MODE, addr);
+  addJob(TaskType::READ, 0, data, 1);
+  addJob(TaskType::STOP);
+  return_code_ = RESULT_SUCCESS;
+
+  if_timeout (checkBusy(), tout_block)
+  {
+    log_line;
+    return RESULT_ERROR;
+  }
 
   return return_code_;
 }
 
-// blocking, single register write (for configuring devices)
+int8_t I2C::read(uint8_t addr, uint8_t* data, size_t len)
+{
+  clear_log;
+  log_line;
+  if (waitForJob() == RESULT_ERROR)
+    return RESULT_ERROR;
+
+  addJob(TaskType::START);
+  addJob(TaskType::READ_MODE, addr);
+  addJob(TaskType::READ, 0, data, len);
+  addJob(TaskType::STOP);
+  return_code_ = RESULT_SUCCESS;
+
+  if_timeout (checkBusy(), tout_block)
+  {
+    log_line;
+    return RESULT_ERROR;
+  }
+
+  return return_code_;
+}
+
+bool I2C::waitForJob()
+{
+  if_timeout(I2C_GetFlagStatus(c_->dev, I2C_FLAG_BUSY), tout)
+  {
+    if (micros() - last_event_us_ > tout_reset)
+    {
+      unstick();
+    }
+    log_line;
+    num_errors_++;
+    return RESULT_ERROR;
+  }
+  return RESULT_SUCCESS;
+}
+
+int8_t I2C::read(uint8_t addr, uint8_t reg, uint8_t *data, size_t len, void (*cb)(int8_t))
+{
+  clear_log;
+  log_line;
+  if (waitForJob() == RESULT_ERROR)
+    return RESULT_ERROR;
+
+  addJob(TaskType::START);
+  addJob(TaskType::WRITE_MODE, addr);
+  addJob(TaskType::WRITE, 0, copyToWriteBuf(reg), 1);
+  addJob(TaskType::START);
+  addJob(TaskType::READ_MODE, addr);
+  addJob(TaskType::READ, 0, data, len);
+  addJob(TaskType::STOP, 0, 0, 0, cb);
+  return_code_ = RESULT_SUCCESS;
+
+  log_line;
+  return return_code_;
+}
+
+int8_t I2C::read(uint8_t addr, uint8_t *data, size_t len, void (*cb)(int8_t))
+{
+  clear_log;
+  log_line;
+  if (waitForJob() == RESULT_ERROR)
+    return RESULT_ERROR;
+
+  addJob(TaskType::START);
+  addJob(TaskType::READ_MODE, addr);
+  addJob(TaskType::READ, 0, data, len);
+  addJob(TaskType::STOP, 0, 0, 0, cb);
+  return_code_ = RESULT_SUCCESS;
+
+  log_line;
+  return return_code_;
+}
+
+int8_t I2C::read(uint8_t addr, uint8_t reg, uint8_t *data, size_t len)
+{
+  clear_log;
+  log_line;
+  if (waitForJob() == RESULT_ERROR)
+    return RESULT_ERROR;
+
+  addJob(TaskType::START);
+  addJob(TaskType::WRITE_MODE, addr);
+  addJob(TaskType::WRITE, 0, copyToWriteBuf(reg), 1);
+  addJob(TaskType::START);
+  addJob(TaskType::READ_MODE, addr);
+  addJob(TaskType::READ, 0, data, len);
+  addJob(TaskType::STOP);
+  return_code_ = RESULT_SUCCESS;
+
+  if_timeout(checkBusy(), tout_block)
+  {
+    log_line;
+    num_errors_++;
+    return RESULT_ERROR;
+  }
+  log_line;
+  return return_code_;
+}
+
 int8_t I2C::write(uint8_t addr, uint8_t reg, uint8_t data)
 {
-  return write(addr, reg, data, nullptr, true);
-}
-
-// asynchronous write
-int8_t I2C::write(uint8_t addr, uint8_t reg, uint8_t data, void(*callback)(uint8_t), bool blocking)
-{
-  if (check_busy())
-    return RESULT_BUSY;
-
+  clear_log;
   log_line;
-  current_status_ = WRITING;
-  addr_ = addr << 1;
-  cb_ = callback;
-  reg_ = reg;
-  subaddress_sent_ = (reg_ == 0xFF);
-  len_ = 1;
-  done_ = false;
-  data_ = data;
+  if (waitForJob() == RESULT_ERROR)
+    return RESULT_ERROR;
+
+  addJob(TaskType::START);
+  addJob(TaskType::WRITE_MODE, addr);
+  addJob(TaskType::WRITE, 0, copyToWriteBuf(reg), 1);
+  addJob(TaskType::WRITE, 0, copyToWriteBuf(data), 1);
+  addJob(TaskType::STOP);
+
   return_code_ = RESULT_SUCCESS;
 
-  I2C_Cmd(c_->dev, ENABLE);
-
-
-  while_check (I2C_GetFlagStatus(c_->dev, I2C_FLAG_BUSY), return_code_);
-
-  I2C_GenerateSTART(c_->dev, ENABLE);
-
-  I2C_ITConfig(c_->dev, I2C_IT_EVT | I2C_IT_ERR, ENABLE);
-
-  last_event_us_ = micros();
-  if (blocking)
+  if_timeout(checkBusy(), tout_block)
   {
     log_line;
-    while (check_busy());
+    num_errors_++;
+    return RESULT_ERROR;
   }
   log_line;
   return return_code_;
 }
 
-void I2C::transfer_complete_cb()
+int8_t I2C::write(uint8_t addr, uint8_t data)
 {
-  current_status_ = IDLE;
-  if (cb_)
-    cb_(return_code_);
+  clear_log;
   log_line;
+  if (waitForJob() == RESULT_ERROR)
+    return RESULT_ERROR;
+
+  addJob(TaskType::START);
+  addJob(TaskType::WRITE_MODE, addr);
+  addJob(TaskType::WRITE, 0, copyToWriteBuf(data), 1);
+  addJob(TaskType::STOP);
+
+  return_code_ = RESULT_SUCCESS;
+
+  if_timeout(checkBusy(), tout_block)
+  {
+    log_line;
+    num_errors_++;
+    return RESULT_ERROR;
+  }
+  log_line;
+  return return_code_;
+}
+
+int8_t I2C::write(uint8_t addr, uint8_t* data, size_t len)
+{
+  clear_log;
+  log_line;
+  if (waitForJob() == RESULT_ERROR)
+    return RESULT_ERROR;
+
+  addJob(TaskType::START);
+  addJob(TaskType::WRITE_MODE, addr);
+  addJob(TaskType::WRITE, 0, copyToWriteBuf(data, len), len);
+  addJob(TaskType::STOP);
+
+  return_code_ = RESULT_SUCCESS;
+
+  if_timeout(checkBusy(), tout_block)
+  {
+    log_line;
+    num_errors_++;
+    return RESULT_ERROR;
+  }
+  log_line;
+  return return_code_;
+}
+
+int8_t I2C::write(uint8_t addr, uint8_t data, void(*cb)(int8_t))
+{
+  clear_log;
+  log_line;
+  if (waitForJob() == RESULT_ERROR)
+    return RESULT_ERROR;
+\
+  addJob(TaskType::START);
+  addJob(TaskType::WRITE_MODE, addr);
+  addJob(TaskType::WRITE, 0, copyToWriteBuf(data), 1);
+  addJob(TaskType::STOP, 0, 0, 0, cb);
+  return_code_ = RESULT_SUCCESS;
+  log_line;
+  return return_code_;
+}
+
+int8_t I2C::checkPresent(uint8_t addr, void (*cb)(int8_t))
+{
+  clear_log;
+  log_line;
+  if (waitForJob() == RESULT_ERROR)
+    return RESULT_ERROR;
+
+  addJob(TaskType::START);
+  addJob(TaskType::WRITE_MODE, addr);
+  addJob(TaskType::WRITE, 0, copyToWriteBuf(0x00), 1);
+  addJob(TaskType::STOP, 0, 0, 0, cb);
+  return_code_ = RESULT_SUCCESS;
+  return return_code_;
+}
+
+int8_t I2C::checkPresent(uint8_t addr)
+{
+  clear_log;
+  log_line;
+  if (waitForJob() == RESULT_ERROR)
+    return RESULT_ERROR;
+
+  addJob(TaskType::START);
+  addJob(TaskType::WRITE_MODE, addr);
+  addJob(TaskType::WRITE, 0, copyToWriteBuf(0x00), 1);
+  addJob(TaskType::STOP);
+
+  return_code_ = RESULT_SUCCESS;
+
+  if_timeout(checkBusy(), tout_block)
+  {
+    log_line;
+    num_errors_++;
+    return RESULT_ERROR;
+  }
+  log_line;
+  return return_code_;
 }
 
 
-// if for some reason, a step in an I2C read or write fails, call this
-void I2C::handle_hardware_failure() {
-  error_count_++;
-  return_code_ = RESULT_ERROR;
+uint8_t* I2C::copyToWriteBuf(uint8_t byte)
+{
   log_line;
-  I2C_GenerateSTOP(c_->dev, ENABLE);
-//  unstick(); //unstick and reinitialize the hardware
+  write_buffer_[wb_head_] = byte;
+  uint8_t* tmp =  write_buffer_ + wb_head_;
+  wb_head_ = (wb_head_ + 1) % WRITE_BUFFER_SIZE;
+  return tmp;
+}
+
+uint8_t* I2C::copyToWriteBuf(uint8_t* data, size_t len)
+{
+  log_line;
+  uint8_t* tmp =  write_buffer_ + wb_head_;
+  for (int i = 0; i < len; i++)
+  {
+    write_buffer_[wb_head_] = data[i];
+    wb_head_ = (wb_head_ + 1) % WRITE_BUFFER_SIZE;
+  }
+  return tmp;
+}
+
+uint8_t* I2C::getWriteBufferData(uint8_t *begin, size_t write_idx)
+{
+  log_line;
+  uint8_t* data = begin + write_idx;
+  if (data >= write_buffer_+WRITE_BUFFER_SIZE)
+    data -= WRITE_BUFFER_SIZE;
+  return data;
+}
+
+bool I2C::handleJobs()
+{
+  log_line;
+  if (task_idx_ == task_head_)
+  {
+    log_line;
+    busy_ = false;
+    I2C_ITConfig(c_->dev, I2C_IT_EVT | I2C_IT_ERR, DISABLE);
+    return true;
+  }
+
+  log_line;
+  Task& task(currentTask());
+  busy_ = true;
+  bool done = true;
+  bool keep_going = false;
+  switch (task.task)
+  {
+  case TaskType::START:
+    log_line;
+    expected_event_ = I2C_EVENT_MASTER_MODE_SELECT;
+    write_idx_ = 0;
+    I2C_ITConfig(c_->dev, I2C_IT_EVT | I2C_IT_ERR, ENABLE);
+    I2C_Cmd(c_->dev, ENABLE);
+    I2C_GenerateSTART(c_->dev, ENABLE);
+    break;
+
+  case TaskType::WRITE_MODE:
+    log_line;
+    I2C_Send7bitAddress(c_->dev, task.addr, I2C_Direction_Transmitter);
+    expected_event_ = I2C_EVENT_MASTER_TRANSMITTER_MODE_SELECTED;
+    break;
+
+  case TaskType::READ_MODE:
+    log_line;
+    I2C_AcknowledgeConfig(c_->dev, ENABLE);
+    I2C_DMALastTransferCmd(c_->dev, ENABLE);
+    I2C_Send7bitAddress(c_->dev, task.addr, I2C_Direction_Receiver);
+    expected_event_ = I2C_EVENT_MASTER_RECEIVER_MODE_SELECTED;
+    break;
+
+  case TaskType::WRITE:
+    log_line;
+    I2C_SendData(c_->dev, *getWriteBufferData(task.data, write_idx_++));
+    if (write_idx_ < task.len)
+      I2C_SendData(c_->dev, *getWriteBufferData(task.data, write_idx_++));
+    expected_event_ = I2C_EVENT_MASTER_BYTE_TRANSMITTED;
+    done = (write_idx_ == task.len);
+    break;
+
+  case TaskType::READ:
+    log_line;
+    c_->DMA_Stream->M0AR = reinterpret_cast<uint32_t>(task.data);
+    DMA_SetCurrDataCounter(c_->DMA_Stream, task.len);
+    I2C_DMACmd(c_->dev, ENABLE);
+    DMA_ITConfig(c_->DMA_Stream, DMA_IT_TC, ENABLE);
+    DMA_Cmd(c_->DMA_Stream, ENABLE);
+    expected_event_ = RXNE & BTF;
+    break;
+
+  case TaskType::STOP:
+    log_line;
+    I2C_GenerateSTOP(c_->dev, ENABLE);
+    I2C_ITConfig(c_->dev, I2C_IT_EVT | I2C_IT_BUF, DISABLE);
+    I2C_Cmd(c_->dev, DISABLE);
+    expected_event_ = 0x00;
+    if (task.cb)
+      task.cb(return_code_);
+    if (task_idx_ == task_head_)
+    {
+      log_line;
+      busy_ = false;
+    }
+    else
+    {
+      log_line;
+      keep_going = true;
+    }
+  }
+
+  if (done)
+  {
+    log_line;
+    advanceTask();
+  }
+
+  if (keep_going)
+  {
+    log_line;
+    handleJobs();
+  }
+
+  return false;
+}
+
+void I2C::handleEvent()
+{
+  last_event_ = I2C_GetLastEvent(c_->dev);
+  log_line;
+  if ((last_event_ & expected_event_) == expected_event_)
+  {
+    last_event_us_ = micros();
+    log_line;
+    if (handleJobs())
+      log_line;
+  }
+}
+
+void I2C::handleError()
+{
+  log_line;
+  return_code_ = RESULT_ERROR;
+  I2C_ITConfig(c_->dev, I2C_IT_EVT | I2C_IT_ERR, DISABLE);
+  if (prevTask().task == TaskType::STOP)
+  {
+    int debug = 1;
+  }
+  while (currentTask().task != TaskType::STOP)
+  {
+    log_line;
+    advanceTask();
+  }
+
+  //reset errors
+  if (c_->dev->SR1 & AF)
+  {
+    log_line;
+    c_->dev->SR1 &= ~AF;
+  }
+  if (c_->dev->SR1 & BERR)
+  {
+    log_line;
+    c_->dev->SR1 &= ~BERR;
+  }
+
+  log_line;
+  handleJobs();
 }
 
 void I2C::unstick()
@@ -302,195 +673,10 @@ void I2C::unstick()
   sda_.set_mode(GPIO::PERIPH_IN_OUT);
   I2C_Cmd(c_->dev, ENABLE);
 
-  current_status_ = IDLE;
-
   last_event_us_ = micros();
   log_line;
 }
 
-
-// This is the I2C_IT_ERR handler
-void I2C::handle_error()
-{
-  log_line;
-  I2C_Cmd(c_->dev, DISABLE);
-  return_code_ = RESULT_ERROR;
-//  while_check (I2C_GetFlagStatus(c_->dev, I2C_FLAG_BUSY), return_code_);
-
-  // Turn off the interrupts
-  I2C_ITConfig(c_->dev, I2C_IT_EVT | I2C_IT_ERR, DISABLE);
-
-  if (c_->dev->SR1 & AF)
-  {
-      // Send the Stop
-      I2C_GenerateSTOP(c_->dev, ENABLE);
-
-      //reset errors
-      c_->dev->SR1 &= ~AF;
-  }
-  if (c_->dev->SR1 & BERR)
-  {
-      c_->dev->SR1 &= ~BERR;
-  }
-
-  current_status_ = IDLE;
-  log_line;
-  transfer_complete_cb();
-}
-
-// This is the I2C_IT_EV handler
-void I2C::handle_event()
-{
-  uint32_t last_event = I2C_GetLastEvent(c_->dev);
-  interrupt_history_.add_event(c_->dev->SR2 << 16 | c_->dev->SR1);
-  // We just sent a byte
-  if ((last_event & I2C_EVENT_MASTER_BYTE_TRANSMITTED) == I2C_EVENT_MASTER_BYTE_TRANSMITTED)
-  {
-    last_event_us_ = micros();
-    // If we are reading, then we just sent a subaddress and need to send
-    // a repeated start, and enable the DMA NACK
-    if (current_status_ == READING)
-    {
-      log_line;
-      I2C_AcknowledgeConfig(c_->dev, ENABLE);
-      I2C_DMALastTransferCmd(c_->dev, ENABLE);
-      I2C_GenerateSTART(c_->dev, ENABLE);
-    }
-    // We are in write mode and are done, need to clean up
-    else
-    {
-      log_line;
-      I2C_GenerateSTOP(c_->dev, ENABLE);
-      I2C_ITConfig(c_->dev, I2C_IT_EVT | I2C_IT_ERR, DISABLE);
-      transfer_complete_cb();
-    }
-  }
-
-  // We just sent the address in write mode
-  else if ((last_event & I2C_EVENT_MASTER_TRANSMITTER_MODE_SELECTED) == I2C_EVENT_MASTER_TRANSMITTER_MODE_SELECTED)
-  {
-    last_event_us_ = micros();
-    // We need to send the subaddress
-    if (!subaddress_sent_)
-    {
-      log_line;
-      I2C_SendData(c_->dev, reg_);
-      subaddress_sent_ = true;
-      if (current_status_ == WRITING)
-      {
-        log_line;
-        I2C_SendData(c_->dev, data_);
-        done_ = true;
-      }
-    }
-    // We need to send our data (no subaddress)
-    else
-    {
-      log_line;
-      I2C_SendData(c_->dev, data_);
-      done_ = true;
-    }
-  }
-
-  // We are in receiving mode, preparing to receive the big DMA dump
-  else if ((last_event & I2C_EVENT_MASTER_RECEIVER_MODE_SELECTED) == I2C_EVENT_MASTER_RECEIVER_MODE_SELECTED)
-  {
-    last_event_us_ = micros();
-    log_line;
-    //    I2C_ITConfig(c_->dev, I2C_IT_EVT, DISABLE);
-    DMA_SetCurrDataCounter(c_->DMA_Stream, len_);
-    I2C_DMACmd(c_->dev, ENABLE);
-    DMA_ITConfig(c_->DMA_Stream, DMA_IT_TC, ENABLE);
-    DMA_Cmd(c_->DMA_Stream, ENABLE);
-  }
-
-  // Start just sent
-  else if ((last_event & I2C_EVENT_MASTER_MODE_SELECT) == I2C_EVENT_MASTER_MODE_SELECT)
-  {
-    last_event_us_ = micros();
-    // we either don't need to send, or already sent the subaddress
-    if (subaddress_sent_ && current_status_ == READING)
-    {
-      log_line;
-      // Set up a receive
-      I2C_Send7bitAddress(c_->dev, addr_, I2C_Direction_Receiver);
-    }
-    // We need to either send the subaddress or our datas
-    else
-    {
-      log_line;
-      // Set up a write
-      I2C_Send7bitAddress(c_->dev, addr_, I2C_Direction_Transmitter);
-    }
-  }
-
-  // Sometimes we just get this over and over and over again
-  else if (last_event == SB)
-  {
-    // SB is cleared by clearing and resetting PE
-    I2C_Cmd(c_->dev, DISABLE);
-    I2C_Cmd(c_->dev, ENABLE);
-    error_count_++;
-  }
-}
-
-
-// This checks to make sure that the I2C device isn't currently handling an i2c job, and if
-// it is, that it hasn't stalled out
-bool I2C::check_busy()
-{
-  if (current_status_ == IDLE)
-    return false;
-  else
-  {
-    // If we haven't seen anything in a long while, then restart the device
-    if (micros() > last_event_us_ + 2000)
-    {
-//      error_count_++;
-//      // Send a stop condition
-//      I2C_GenerateSTOP(c_->dev, ENABLE);
-//      return_code_ = RESULT_SUCCESS;
-//      while_check (c_->dev->SR2 & BUSY, return_code_)
-
-      // Force reset of the bus
-      // This is really slow, but it seems to be the only
-      // way to regain a connection if bad things happen
-      unstick();
-      {
-      last_event_us_ = micros();
-//      if (return_code_ == RESULT_ERROR)
-//      {
-//        I2C_Cmd(c_->dev, DISABLE);
-//        scl_.set_mode(GPIO::OUTPUT);
-//        sda_.set_mode(GPIO::OUTPUT);
-
-//        // Write Pins low
-//        scl_.write(GPIO::LOW);
-//        sda_.write(GPIO::LOW);
-//        delayMicroseconds(1);
-
-//        // Send a stop
-//        scl_.write(GPIO::HIGH);
-//        delayMicroseconds(1);
-//        sda_.write(GPIO::HIGH);
-//        delayMicroseconds(1);
-
-//        // turn things back on
-//        scl_.set_mode(GPIO::PERIPH_IN_OUT);
-//        sda_.set_mode(GPIO::PERIPH_IN_OUT);
-//        I2C_Cmd(c_->dev, ENABLE);
-
-//        current_status_ = IDLE;
-//      }
-      log_line;
-      return false;
-    }
-    else
-    {
-      return true;
-    }
-  }
-}
 
 // Trampolines for C->C++ linkage
 extern "C"
@@ -499,66 +685,52 @@ extern "C"
 // C-based IRQ functions (defined in the startup script)
 void DMA1_Stream2_IRQHandler(void)
 {
-
+  log_line;
   if (DMA_GetFlagStatus(DMA1_Stream2, DMA_FLAG_TCIF2))
   {
-    /* Clear transmission complete flag */
+    log_line;
     DMA_ClearFlag(DMA1_Stream2, DMA_FLAG_TCIF2);
-
     I2C_DMACmd(I2C2, DISABLE);
-    /* Send I2C1 STOP Condition */
-    I2C_GenerateSTOP(I2C2, ENABLE);
-    /* Disable DMA channel*/
     DMA_Cmd(DMA1_Stream2, DISABLE);
-
-    /* Turn off I2C interrupts since we are done with the transfer */
-    I2C_ITConfig(I2C2, I2C_IT_EVT | I2C_IT_ERR, DISABLE);
-
-    I2C2_Ptr->transfer_complete_cb(); // TODO make this configurable
+    I2C2_Ptr->handleEvent();
   }
 }
 
 void DMA1_Stream0_IRQHandler(void)
 {
+  log_line;
   if (DMA_GetFlagStatus(DMA1_Stream0, DMA_FLAG_TCIF0))
   {
-    /* Clear transmission complete flag */
+    log_line;
     DMA_ClearFlag(DMA1_Stream0, DMA_FLAG_TCIF0);
-
     I2C_DMACmd(I2C1, DISABLE);
-    /* Send I2C1 STOP Condition */
-    I2C_GenerateSTOP(I2C1, ENABLE);
-    /* Disable DMA channel*/
     DMA_Cmd(DMA1_Stream0, DISABLE);
-    /* Turn off I2C interrupts, because we are done with the transfer */
-    I2C_ITConfig(I2C1, I2C_IT_EVT | I2C_IT_ERR, DISABLE);
-
-    I2C1_Ptr->transfer_complete_cb(); // TODO make this configurable
+    I2C1_Ptr->handleEvent();
   }
 }
 
 void I2C1_ER_IRQHandler(void) {
-  I2C1_Ptr->handle_error();
+  I2C1_Ptr->handleError();
 }
 
 void I2C1_EV_IRQHandler(void) {
-  I2C1_Ptr->handle_event();
+  I2C1_Ptr->handleEvent();
 }
 
 void I2C2_ER_IRQHandler(void) {
-  I2C2_Ptr->handle_error();
+  I2C2_Ptr->handleError();
 }
 
 void I2C2_EV_IRQHandler(void) {
-  I2C2_Ptr->handle_event();
+  I2C2_Ptr->handleEvent();
 }
 
 void I2C3_ER_IRQHandler(void) {
-  I2C3_Ptr->handle_error();
+  I2C3_Ptr->handleError();
 }
 
 void I2C3_EV_IRQHandler(void) {
-  I2C3_Ptr->handle_event();
+  I2C3_Ptr->handleEvent();
 }
 
 }

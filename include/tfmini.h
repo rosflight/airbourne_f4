@@ -32,7 +32,7 @@
 
 #include <stdint.h>
 
-#include "i2c2.h"
+#include "i2c.h"
 
 class TFMini
 {
@@ -90,7 +90,7 @@ class TFMini
 
 public:
   TFMini();
-  bool init(i2c2::I2C* _i2c);
+  bool init(I2C* _i2c);
   bool present();
   bool update();
   inline float distance() { return distance_; } // returns distance in meters
@@ -129,6 +129,6 @@ private:
 
   void setParameter(uint16_t cmd, uint8_t val);
 
-  i2c2::I2C* i2c_;
+  I2C* i2c_;
 
 };

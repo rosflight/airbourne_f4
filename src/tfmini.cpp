@@ -32,7 +32,6 @@
 
 #include "tfmini.h"
 
-using namespace i2c2;
 
 void cb(int8_t status);
 TFMini* TFMini_Ptr;
