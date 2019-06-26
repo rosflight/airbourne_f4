@@ -42,13 +42,6 @@ namespace i2c2
 
 class I2C
 {
-  enum : int8_t
-  {
-    RESULT_ERROR = 0,
-    RESULT_SUCCESS = 1,
-    RESULT_BUSY = -1
-  };
-
   enum
     {
     SB = 0x0001,
@@ -76,6 +69,14 @@ class I2C
     DUALF = 0x40 << 16,
   };
 
+public:
+  enum : int8_t
+  {
+    RESULT_ERROR = 0,
+    RESULT_SUCCESS = 1,
+    RESULT_BUSY = -1
+  };
+
   enum class TaskType : uint8_t
   {
     START,
@@ -84,16 +85,21 @@ class I2C
     WRITE,
     READ,
     STOP,
+    DONE,
   };
 
+private:
   struct Task
   {
     TaskType task;
     uint8_t addr;
     uint8_t* data;
     size_t len;
-    void (*cb)(uint8_t);
+    void (*cb)(int8_t);
   };
+
+  // microseconds to wait for transfer to complete before adding a new one
+  static constexpr uint64_t tout = 200;
 
   static constexpr size_t TASK_BUFFER_SIZE = 25;
   Task tasks_[TASK_BUFFER_SIZE];
@@ -106,11 +112,13 @@ class I2C
   size_t wb_head_ = 0;
   volatile size_t write_idx_;
 
+  uint32_t last_event_;
   uint32_t expected_event_;
   volatile bool busy_;
   size_t num_errors_;
   int8_t return_code_;
   uint64_t last_event_us_;
+  bool timeout_;
 
   // hardware
   DMA_InitTypeDef  DMA_InitStructure_;
@@ -121,7 +129,7 @@ class I2C
 public:
   I2C();
   void init(const i2c_hardware_struct_t *c);
-  void addJob(TaskType type, uint8_t addr=0, uint8_t* data=nullptr, size_t len=0, void(*cb)(uint8_t)=nullptr);
+  void addJob(TaskType type, uint8_t addr=0, uint8_t* data=nullptr, size_t len=0, void(*cb)(int8_t)=nullptr);
   inline bool checkBusy() { return busy_; }
 
   Task& currentTask();
@@ -130,14 +138,20 @@ public:
   void advanceTask();
 
   int8_t checkPresent(uint8_t addr);
+  int8_t write(uint8_t addr, uint8_t data);
   int8_t write(uint8_t addr, uint8_t reg, uint8_t data);
+  int8_t write(uint8_t addr, uint8_t data, void(*cb)(int8_t));
   int8_t read(uint8_t addr, uint8_t reg, uint8_t* data);
-  int8_t read(uint8_t addr, uint8_t reg, uint8_t* data, size_t len, bool blocking=false, void(*cb)(uint8_t)=nullptr);
+
+  int8_t read(uint8_t addr, uint8_t* data, size_t len);
+  int8_t read(uint8_t addr, uint8_t reg, uint8_t* data, size_t len);
+  int8_t read(uint8_t addr, uint8_t* data, size_t len, void(*cb)(int8_t));
+  int8_t read(uint8_t addr, uint8_t reg, uint8_t* data, size_t len, void(*cb)(int8_t));
 
   uint8_t* copyToWriteBuf(uint8_t byte);
   uint8_t* getWriteBufferData(uint8_t* begin, size_t write_idx);
 
-
+  bool waitForJob();
   void handleError();
   void handleEvent();
 

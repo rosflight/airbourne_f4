@@ -75,7 +75,7 @@ int main() {
     {
       warn.off();
       info.toggle();
-//      baro.read(&pressure, &temperature);
+      baro.read(&pressure, &temperature);
       printf("%d Pa, %d.%d K\n",
              (int32_t)(pressure),
              (int32_t)(temperature),

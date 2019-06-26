@@ -32,7 +32,7 @@
 #include "ms5611.h"
 
 MS5611* baro_ptr;
-static void cb(uint8_t result);
+static void cb(int8_t result);
 
 #define REBOOT_PERIOD_MS 1000 * 60 * 30 // reboot the device every 30 minutes
 
@@ -49,63 +49,58 @@ bool MS5611::init(i2c2::I2C* _i2c)
   // I'm not sure why this is required, but the barometer doesn't respond otherwise
   // It doesn't have to be 0x00 either, pretty much anything works in my experience
   i2c_->checkPresent(0x00);
-  int8_t success1 = i2c_->checkPresent(ADDR);
-  int8_t success2 = i2c_->checkPresent(0x02);
 
-  int debug = 1;
-//  delay(1);
-//  if (i2c_->write(ADDR, RESET, 1) != I2C::RESULT_SUCCESS)
-//  {
-//    baro_present_ = false;
-//    return false;
-//  }
-//  else
-//  {
-//    baro_present_ = true;
-//  }
+  if (i2c_->checkPresent(ADDR) == i2c2::I2C::RESULT_SUCCESS)
+  {
+    baro_present_ == true;
+  }
+  else {
+    baro_present_ == false;
+    return false;
+  }
 
-//  delay(3);
+  reset();
 
-//  // Read the PROM (try a couple times if it fails)
-//  bool got_valid_prom = false;
-//  for (int i = 0; i < 5; i++)
-//  {
-//    if (read_prom() == true)
-//    {
-//      if (calc_crc() != 0)
-//        continue;
-//      else
-//      {
-//        got_valid_prom = true;
-//        break;
-//      }
-//    }
-//  }
+  // Read the PROM (try a couple times if it fails)
+  bool got_valid_prom = false;
+  for (int i = 0; i < 5; i++)
+  {
+    if (read_prom() == true)
+    {
+      if (calc_crc() != 0)
+        continue;
+      else
+      {
+        got_valid_prom = true;
+        break;
+      }
+    }
+  }
 
-//  if (got_valid_prom)
-//  {
-//    state_ = START_TEMP;
-//    new_data_ = false;
-//    baro_present_ = true;
-//    next_reboot_ms_ = REBOOT_PERIOD_MS;
-//    return true;
-//  }
-//  else
-//  {
-//    return false;
-//  }
+  if (got_valid_prom)
+  {
+    state_ = START_TEMP;
+    new_data_ = false;
+    baro_present_ = true;
+    next_reboot_ms_ = REBOOT_PERIOD_MS;
+    return true;
+  }
+  else
+  {
+    return false;
+  }
 }
 
 bool MS5611::present()
 {
   if (baro_present_ && waiting_for_cb_ && (millis() > last_update_ms_ + 200))
-      baro_present_ = false;
+    baro_present_ = false;
   return baro_present_;
 }
 
 void MS5611::update()
 {
-//  uint32_t now_ms = millis();
+  uint32_t now_ms = millis();
   
 //  // Sometimes the barometer fails to respond.  If this happens, then reset it
 //  // the barometer also seems to stop responding after 72 minutes (suspiciously close to a overflow of uint32_t with a microsecond timer)
@@ -114,68 +109,70 @@ void MS5611::update()
 //  {
 //    last_update_ms_ = now_ms;
 //    callback_type_ = CB_RESET;
-////    i2c_->write(ADDR, RESET, 1, &cb, false);
+//    i2c_->write(ADDR, RESET, &cb);
 //  }
 
-//  else if (now_ms > next_update_ms_)
-//  {
-//    switch (state_)
-//    {
-//    case START_TEMP:
-//      if (start_temp_meas())
-//        next_update_ms_ += 100;
-//      break;
-//    case READ_TEMP:
-//      if (read_temp_mess())
-//        next_update_ms_ += 100;
-//      break;
-//    case START_PRESS:
-//      if (start_pres_meas())
-//        next_update_ms_ += 100;
-//      break;
-//    case READ_PRESS:
-//      if (read_pres_mess())
-//        next_update_ms_ += 100;
-//      break;
-//    default:
-//      state_ = START_TEMP;
-//      break;
-//    }
-//  }
+  if (now_ms > next_update_ms_)
+  {
+    switch (state_)
+    {
+    case START_TEMP:
+      if (start_temp_meas())
+        next_update_ms_ += 100;
+      break;
+    case READ_TEMP:
+      if (read_temp_mess())
+        next_update_ms_ += 100;
+      break;
+    case START_PRESS:
+      if (start_pres_meas())
+        next_update_ms_ += 100;
+      break;
+    case READ_PRESS:
+      if (read_pres_mess())
+        next_update_ms_ += 100;
+      break;
+    default:
+      state_ = START_TEMP;
+      break;
+    }
+  }
   
-//  if (new_data_)
-//  {
-//    convert();
-//  }
+  if (new_data_)
+  {
+    convert();
+  }
 }
 
 
 void MS5611::reset()
 {
-
+  i2c_->write(ADDR, RESET);
+  delayMicroseconds(2800);
 }
 
 bool MS5611::read_prom()
 {
-//  uint8_t buf[2] = {0, 0};
+  uint8_t buf[2] = {0, 0};
   
-//  // try a few times
-//  for (int i = 0; i < 8; i++)
-//  {
-//    i2c_->write(ADDR, 0xFF, PROM_RD + 2* i);
-//    if (i2c_->read(ADDR, 0xFF, 2, buf, nullptr, true) == I2C::RESULT_SUCCESS)
-//      prom[i] = static_cast<uint16_t>(buf[0] << 8 | buf[1]);
-//    else
-//    {
-//      reset();
-//      delay(3);
-//      i2c_->write(0, 0, 0);
-//      delay(3);
-//      // didn't work, try again
-//      return false;
-//    }
-//  }
-//  return true;
+  // try a few times
+  for (int i = 0; i < 8; i++)
+  {
+    if ((i2c_->write(ADDR, PROM_RD + 2* i) == i2c2::I2C::RESULT_SUCCESS)
+        && (i2c_->read(ADDR, buf, 2) == i2c2::I2C::RESULT_SUCCESS))
+    {
+      prom[i] = static_cast<uint16_t>(buf[0] << 8 | buf[1]);
+    }
+    else
+    {
+      // didn't work, reset and try again
+      reset();
+      i2c_->checkPresent(0x00);
+      delay(3);
+      return false;
+    }
+  }
+  return true;
 }
 
 int8_t MS5611::calc_crc()
@@ -210,35 +207,6 @@ int8_t MS5611::calc_crc()
   return -1;
 }
 
-//int8_t MS5611::calc_crc()
-//{    
-//  uint16_t n_rem;                      // crc reminder 
-//  uint16_t crc_read;                   // original value of the crc 
-//  uint8_t  n_bit; 
-//  n_rem = 0x00; 
-//  crc_read=prom[7];                      //save read CRC 
-//  prom[7]=(0xFF00 & (prom[7]));        //CRC byte is replaced by 0 
-//  for (uint8_t cnt = 0; cnt < 16; cnt++)                 // operation is performed on bytes 
-//  {// choose LSB or MSB 
-//    if (cnt%2==1) n_rem ^= ((prom[cnt>>1]) & 0x00FF); 
-//    else n_rem ^=  (prom[cnt>>1]>>8); 
-//    for (n_bit = 8; n_bit > 0; n_bit--) 
-//    { 
-//      if (n_rem & (0x8000)) 
-//      { 
-//        n_rem = (n_rem << 1) ^ 0x3000; 
-//      } 
-//      else 
-//      { 
-//        n_rem = (n_rem << 1); 
-//      } 
-//    } 
-//  } 
-//  n_rem=  (0x000F & (n_rem >> 12));       // final 4-bit reminder is CRC code 
-//  prom[7]=crc_read;               // restore the crc_read to its original place 
-//  return (n_rem ^ 0x0); 
-//}   
-
 void MS5611::convert()
 {
   int32_t press = 0;
@@ -247,7 +215,7 @@ void MS5611::convert()
   temp_raw_ = (temp_buf_[0] << 16) | (temp_buf_[1] << 8) | temp_buf_[2];
   pres_raw_ = (pres_buf_[0] << 16) | (pres_buf_[1] << 8) | pres_buf_[2];
   if(pres_raw_ > 9085466 * 2 / 3 && temp_raw_ > 0)
-  {  
+  {
     int32_t dT = temp_raw_ - (static_cast<int32_t>(prom[5]) << 8);
     int64_t off = (static_cast<int64_t>(prom[2]) << 16) + ((static_cast<int64_t>(prom[4]) * dT) >> 7);
     int64_t sens = (static_cast<int64_t>(prom[1]) << 15) + ((static_cast<int64_t>(prom[3]) * dT) >> 8);
@@ -281,94 +249,100 @@ void MS5611::convert()
   new_data_ = false;
 }
 
-//bool MS5611::start_temp_meas()
-//{
-//  waiting_for_cb_ = true;
-//  last_update_ms_ = millis();
-//  callback_type_ = CB_TEMP_START;
-//  return i2c_->write(ADDR, 0xFF, ADC_CONV + ADC_D2 + ADC_4096, &cb) > 0;
-//}
+bool MS5611::start_temp_meas()
+{
+  waiting_for_cb_ = true;
+  last_update_ms_ = millis();
+  callback_type_ = CB_TEMP_START;
+  return i2c_->write(ADDR, ADC_CONV + ADC_D2 + ADC_4096, &cb) == i2c2::I2C::RESULT_SUCCESS;
+}
 
-//bool MS5611::start_pres_meas()
-//{
-//  waiting_for_cb_ = true;
-//  last_update_ms_ = millis();
-//  callback_type_ = CB_PRES_START;
-//  return i2c_->write(ADDR, 0XFF, ADC_CONV + ADC_D1 + ADC_4096, &cb) > 0;
-//}
+bool MS5611::start_pres_meas()
+{
+  waiting_for_cb_ = true;
+  last_update_ms_ = millis();
+  callback_type_ = CB_PRES_START;
+  return i2c_->write(ADDR, ADC_CONV + ADC_D1 + ADC_4096, &cb) == i2c2::I2C::RESULT_SUCCESS;
+}
 
-//bool MS5611::read_pres_mess()
-//{
-//  waiting_for_cb_ = true;
-//  last_update_ms_ = millis();
-//  callback_type_ = CB_PRES_READ1;
-//  return i2c_->write(ADDR, 0xFF, ADC_READ, &cb) > 0;
-//}
+bool MS5611::read_pres_mess()
+{
+  waiting_for_cb_ = true;
+  last_update_ms_ = millis();
+  callback_type_ = CB_PRES_READ;
+  if (i2c_->waitForJob())
+  {
+    i2c_->addJob(i2c2::I2C::TaskType::START);
+    i2c_->addJob(i2c2::I2C::TaskType::WRITE_MODE, ADDR);
+    i2c_->addJob(i2c2::I2C::TaskType::WRITE, 0, i2c_->copyToWriteBuf(ADC_READ));
+    i2c_->addJob(i2c2::I2C::TaskType::STOP, 0, 0, 0, 0);
+    i2c_->addJob(i2c2::I2C::TaskType::START);
+    i2c_->addJob(i2c2::I2C::TaskType::READ_MODE, ADDR);
+    i2c_->addJob(i2c2::I2C::TaskType::READ, 0, pres_buf_, 3);
+    i2c_->addJob(i2c2::I2C::TaskType::STOP, 0, 0, 0, &cb);
+    return true;
+  }
+  return false;
+}
 
-//bool MS5611::read_temp_mess()
-//{
-//  waiting_for_cb_ = true;
-//  last_update_ms_ = millis();
-//  callback_type_ = CB_TEMP_READ1;
-//  return (i2c_->write(ADDR, 0xFF, ADC_READ, &cb) > 0);
-//}
+bool MS5611::read_temp_mess()
+{
+  waiting_for_cb_ = true;
+  last_update_ms_ = millis();
+  callback_type_ = CB_TEMP_READ;
+  if (i2c_->waitForJob())
+  {
+    i2c_->addJob(i2c2::I2C::TaskType::START);
+    i2c_->addJob(i2c2::I2C::TaskType::WRITE_MODE, ADDR);
+    i2c_->addJob(i2c2::I2C::TaskType::WRITE, 0, i2c_->copyToWriteBuf(ADC_READ));
+    i2c_->addJob(i2c2::I2C::TaskType::STOP, 0, 0, 0, 0);
+    i2c_->addJob(i2c2::I2C::TaskType::START);
+    i2c_->addJob(i2c2::I2C::TaskType::READ_MODE, ADDR);
+    i2c_->addJob(i2c2::I2C::TaskType::READ, 0, temp_buf_, 3);
+    i2c_->addJob(i2c2::I2C::TaskType::STOP, 0, 0, 0, &cb);
+    return true;
+  }
+  return false;
 
-//void MS5611::temp_read_cb1(uint8_t result)
-//{
-//  (void) result;
-//  waiting_for_cb_ = false;
-//  last_update_ms_ = millis();
-//  callback_type_ = CB_TEMP_READ2;
-//  i2c_->read(ADDR, 0xFF, 3, temp_buf_, &cb);
-//}
+}
 
-//void MS5611::pres_read_cb1(uint8_t result)
-//{
-//  (void) result;
-//  waiting_for_cb_ = false;
-//  last_update_ms_ = millis();
-//  callback_type_ = CB_PRES_READ2;
-//  i2c_->read(ADDR, 0xFF, 3, pres_buf_, &cb);
-//}
+void MS5611::temp_read_cb(uint8_t result)
+{
+  (void) result;
+  state_ = START_PRESS;
+  waiting_for_cb_ = false;
+  last_update_ms_ = millis();
+  next_update_ms_ = last_update_ms_ + 10;
+  new_data_ = true;
+}
 
+void MS5611::pres_read_cb(uint8_t result)
+{
+  (void) result;
+  state_ = START_TEMP;
+  waiting_for_cb_ = false;
+  last_update_ms_ = millis();
+  next_update_ms_ = last_update_ms_ + 10;
+  new_data_ = true;
+}
 
-//void MS5611::temp_read_cb2(uint8_t result)
-//{
-//  (void) result;
-//  state_ = START_PRESS;
-//  waiting_for_cb_ = false;
-//  last_update_ms_ = millis();
-//  next_update_ms_ = last_update_ms_ + 10;
-//  new_data_ = true;
-//}
+void MS5611::temp_start_cb(uint8_t result)
+{
+  (void) result;
+  state_ = READ_TEMP;
+  waiting_for_cb_ = false;
+  last_update_ms_ = millis();
+  next_update_ms_ = last_update_ms_ + 9;
+}
 
-//void MS5611::pres_read_cb2(uint8_t result)
-//{
-//  (void) result;
-//  state_ = START_TEMP;
-//  waiting_for_cb_ = false;
-//  last_update_ms_ = millis();
-//  next_update_ms_ = last_update_ms_ + 10;
-//  new_data_ = true;
-//}
-
-//void MS5611::temp_start_cb(uint8_t result)
-//{
-//  (void) result;
-//  state_ = READ_TEMP;
-//  waiting_for_cb_ = false;
-//  last_update_ms_ = millis();
-//  next_update_ms_ = last_update_ms_ + 10;
-//}
-
-//void MS5611::pres_start_cb(uint8_t result)
-//{
-//  (void) result;
-//  state_ = READ_PRESS;
-//  waiting_for_cb_ = false;
-//  last_update_ms_ = millis();
-//  next_update_ms_ = last_update_ms_ + 10;
-//}
+void MS5611::pres_start_cb(uint8_t result)
+{
+  (void) result;
+  state_ = READ_PRESS;
+  waiting_for_cb_ = false;
+  last_update_ms_ = millis();
+  next_update_ms_ = last_update_ms_ + 9;
+}
 
 //void MS5611::reset_cb(uint8_t result)
 //{
@@ -378,7 +352,7 @@ void MS5611::convert()
 //  next_reboot_ms_ = last_update_ms_ + REBOOT_PERIOD_MS;
 //  waiting_for_cb_ = false;
 //  callback_type_ = CB_WRITE_ZERO;
-//  i2c_->write(0, 0, 0, &cb, false);
+//  i2c_->write(0x00, 0x00, &cb);
 //}
 
 //void MS5611::write_zero_cb(uint8_t result)
@@ -391,46 +365,40 @@ void MS5611::convert()
 //  state_ = START_TEMP;
 //}
 
-//void MS5611::read(float * press, float* temp)
-//{
-//  (*press) = pressure_;
-//  (*temp) = temperature_;
-//}
+void MS5611::read(float * press, float* temp)
+{
+  (*press) = pressure_;
+  (*temp) = temperature_;
+}
 
-//void MS5611::master_cb(uint8_t result)
-//{
-//  if (result == I2C::RESULT_SUCCESS)
-//    baro_present_ = true;
-//  switch (callback_type_)
-//  {
-//  case CB_TEMP_READ1:
-//    temp_read_cb1(result);
-//    break;
-//  case CB_TEMP_READ2:
-//    temp_read_cb2(result);
-//    break;
-//  case CB_PRES_READ1:
-//    pres_read_cb1(result);
-//    break;
-//  case CB_PRES_READ2:
-//    pres_read_cb2(result);
-//    break;
-//  case CB_TEMP_START:
-//    temp_start_cb(result);
-//    break;
-//  case CB_PRES_START:
-//    pres_start_cb(result);
-//    break;
+void MS5611::master_cb(uint8_t result)
+{
+  if (result == i2c2::I2C::RESULT_SUCCESS)
+    baro_present_ = true;
+  switch (callback_type_)
+  {
+  case CB_TEMP_READ:
+    temp_read_cb(result);
+    break;
+  case CB_PRES_READ:
+    pres_read_cb(result);
+    break;
+  case CB_TEMP_START:
+    temp_start_cb(result);
+    break;
+  case CB_PRES_START:
+    pres_start_cb(result);
+    break;
 //  case CB_RESET:
 //    reset_cb(result);
 //    break;
 //  case CB_WRITE_ZERO:
 //    write_zero_cb(result);
 //    break;
-//  }
-//}
+  }
+}
 
-//void cb(uint8_t result)
-//{
-//  baro_ptr->master_cb(result);
-//}
+void cb(int8_t result)
+{
+  baro_ptr->master_cb(result);
+}

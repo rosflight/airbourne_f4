@@ -66,14 +66,10 @@ private:
   
   typedef enum
   {
-    CB_TEMP_READ1,
-    CB_TEMP_READ2,
-    CB_PRES_READ1,
-    CB_PRES_READ2,
+    CB_TEMP_READ,
+    CB_PRES_READ,
     CB_TEMP_START,
     CB_PRES_START,
-    CB_RESET,
-    CB_WRITE_ZERO,
   } callback_type_t;
 
   static const uint8_t ADDR = 0x77;
@@ -111,8 +107,8 @@ public:
   bool present();
 
   void master_cb(uint8_t result);
-  void temp_read_cb1(uint8_t result);
-  void pres_read_cb1(uint8_t result);
+  void temp_read_cb(uint8_t result);
+  void pres_read_cb(uint8_t result);
   void temp_read_cb2(uint8_t result);
   void pres_read_cb2(uint8_t result);
   void temp_start_cb(uint8_t result);
