@@ -61,6 +61,8 @@ bool MS5611::init(i2c2::I2C* _i2c)
 
   reset();
 
+  read_temp_mess();
+
   // Read the PROM (try a couple times if it fails)
   bool got_valid_prom = false;
   for (int i = 0; i < 5; i++)
@@ -274,7 +276,7 @@ bool MS5611::read_pres_mess()
   {
     i2c_->addJob(i2c2::I2C::TaskType::START);
     i2c_->addJob(i2c2::I2C::TaskType::WRITE_MODE, ADDR);
-    i2c_->addJob(i2c2::I2C::TaskType::WRITE, 0, i2c_->copyToWriteBuf(ADC_READ));
+    i2c_->addJob(i2c2::I2C::TaskType::WRITE, 0, i2c_->copyToWriteBuf(ADC_READ), 1);
     i2c_->addJob(i2c2::I2C::TaskType::STOP, 0, 0, 0, 0);
     i2c_->addJob(i2c2::I2C::TaskType::START);
     i2c_->addJob(i2c2::I2C::TaskType::READ_MODE, ADDR);
@@ -290,20 +292,23 @@ bool MS5611::read_temp_mess()
   waiting_for_cb_ = true;
   last_update_ms_ = millis();
   callback_type_ = CB_TEMP_READ;
-  if (i2c_->waitForJob())
+  i2c_->waitForJob();
+  i2c_->clearLog();
+  i2c_->addJob(i2c2::I2C::TaskType::START);
+  i2c_->addJob(i2c2::I2C::TaskType::WRITE_MODE, ADDR);
+  i2c_->addJob(i2c2::I2C::TaskType::WRITE, 0, i2c_->copyToWriteBuf(ADC_READ), 1);
+  i2c_->addJob(i2c2::I2C::TaskType::STOP, 0, 0, 0, 0);
+  i2c_->addJob(i2c2::I2C::TaskType::START);
+  i2c_->addJob(i2c2::I2C::TaskType::READ_MODE, ADDR);
+  i2c_->addJob(i2c2::I2C::TaskType::READ, 0, temp_buf_, 3);
+  i2c_->addJob(i2c2::I2C::TaskType::STOP, 0, 0, 0, &cb);
+  while (i2c_->checkBusy())
   {
-    i2c_->addJob(i2c2::I2C::TaskType::START);
-    i2c_->addJob(i2c2::I2C::TaskType::WRITE_MODE, ADDR);
-    i2c_->addJob(i2c2::I2C::TaskType::WRITE, 0, i2c_->copyToWriteBuf(ADC_READ));
-    i2c_->addJob(i2c2::I2C::TaskType::STOP, 0, 0, 0, 0);
-    i2c_->addJob(i2c2::I2C::TaskType::START);
-    i2c_->addJob(i2c2::I2C::TaskType::READ_MODE, ADDR);
-    i2c_->addJob(i2c2::I2C::TaskType::READ, 0, temp_buf_, 3);
-    i2c_->addJob(i2c2::I2C::TaskType::STOP, 0, 0, 0, &cb);
-    return true;
-  }
-  return false;
 
+  }
+
+  i2c_->waitForJob();
+  return true;
 }
 
 void MS5611::temp_read_cb(uint8_t result)
@@ -344,27 +349,6 @@ void MS5611::pres_start_cb(uint8_t result)
   next_update_ms_ = last_update_ms_ + 9;
 }
 
-//void MS5611::reset_cb(uint8_t result)
-//{
-//  (void) result;
-//  last_update_ms_ = millis();
-//  next_update_ms_ = last_update_ms_ + 10;
-//  next_reboot_ms_ = last_update_ms_ + REBOOT_PERIOD_MS;
-//  waiting_for_cb_ = false;
-//  callback_type_ = CB_WRITE_ZERO;
-//  i2c_->write(0x00, 0x00, &cb);
-//}
-
-//void MS5611::write_zero_cb(uint8_t result)
-//{
-//  (void) result;
-//  last_update_ms_ = millis();
-//  next_update_ms_ = last_update_ms_ + 10;
-//  next_reboot_ms_ = last_update_ms_ + REBOOT_PERIOD_MS;
-//  waiting_for_cb_ = false;
-//  state_ = START_TEMP;
-//}
-
 void MS5611::read(float * press, float* temp)
 {
   (*press) = pressure_;
@@ -389,12 +373,6 @@ void MS5611::master_cb(uint8_t result)
   case CB_PRES_START:
     pres_start_cb(result);
     break;
-//  case CB_RESET:
-//    reset_cb(result);
-//    break;
-//  case CB_WRITE_ZERO:
-//    write_zero_cb(result);
-//    break;
   }
 }
 

@@ -100,6 +100,7 @@ private:
 
   // microseconds to wait for transfer to complete before adding a new one
   static constexpr uint64_t tout = 200;
+  static constexpr uint64_t tout_block = 20000;
 
   static constexpr size_t TASK_BUFFER_SIZE = 25;
   Task tasks_[TASK_BUFFER_SIZE];
@@ -129,7 +130,7 @@ private:
 public:
   I2C();
   void init(const i2c_hardware_struct_t *c);
-  void addJob(TaskType type, uint8_t addr=0, uint8_t* data=nullptr, size_t len=0, void(*cb)(int8_t)=nullptr);
+  void addJob(TaskType type, uint8_t addr=0, uint8_t* data=nullptr, size_t len=1, void(*cb)(int8_t)=nullptr);
   inline bool checkBusy() { return busy_; }
 
   Task& currentTask();
@@ -137,6 +138,7 @@ public:
   Task& prevTask();
   void advanceTask();
 
+  void clearLog();
   int8_t checkPresent(uint8_t addr);
   int8_t write(uint8_t addr, uint8_t data);
   int8_t write(uint8_t addr, uint8_t reg, uint8_t data);

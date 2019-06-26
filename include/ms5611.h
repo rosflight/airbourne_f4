@@ -77,8 +77,8 @@ private:
   void reset();
   bool read_prom();
   int8_t calc_crc();
-  bool read_pres_mess();
-  bool read_temp_mess();
+  bool read_pres_meas();
+  bool read_temp_meas();
   bool start_temp_meas();
   bool start_pres_meas();
   void convert();
@@ -109,8 +109,6 @@ public:
   void master_cb(uint8_t result);
   void temp_read_cb(uint8_t result);
   void pres_read_cb(uint8_t result);
-  void temp_read_cb2(uint8_t result);
-  void pres_read_cb2(uint8_t result);
   void temp_start_cb(uint8_t result);
   void pres_start_cb(uint8_t result);
   void write_zero_cb(uint8_t result);

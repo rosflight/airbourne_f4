@@ -160,6 +160,10 @@ void I2C::init(const i2c_hardware_struct_t *c)
   task_head_ = 0;
 }
 
+void I2C::clearLog()
+{
+  clear_log;
+}
 
 void I2C::addJob(TaskType type, uint8_t addr, uint8_t *data, size_t len, void (*cb)(int8_t))
 {
@@ -233,13 +237,8 @@ int8_t I2C::read(uint8_t addr, uint8_t* data, size_t len)
 {
   clear_log;
   log_line;
-
-  if_timeout(I2C_GetFlagStatus(c_->dev, I2C_FLAG_BUSY), tout)
-  {
-    log_line;
-    num_errors_++;
+  if (waitForJob() == RESULT_ERROR)
     return RESULT_ERROR;
-  }
 
   addJob(TaskType::START);
   addJob(TaskType::READ_MODE, addr);
@@ -247,9 +246,10 @@ int8_t I2C::read(uint8_t addr, uint8_t* data, size_t len)
   addJob(TaskType::STOP);
   return_code_ = RESULT_SUCCESS;
 
-  while (checkBusy())
+  if_timeout (checkBusy(), tout_block)
   {
-    // wait for read to complete
+    log_line;
+    return RESULT_ERROR;
   }
 
   return return_code_;
@@ -270,13 +270,8 @@ int8_t I2C::read(uint8_t addr, uint8_t reg, uint8_t *data, size_t len, void (*cb
 {
   clear_log;
   log_line;
-
-  if_timeout(I2C_GetFlagStatus(c_->dev, I2C_FLAG_BUSY), tout)
-  {
-    log_line;
-    num_errors_++;
+  if (waitForJob() == RESULT_ERROR)
     return RESULT_ERROR;
-  }
 
   addJob(TaskType::START);
   addJob(TaskType::WRITE_MODE, addr);
@@ -295,13 +290,8 @@ int8_t I2C::read(uint8_t addr, uint8_t *data, size_t len, void (*cb)(int8_t))
 {
   clear_log;
   log_line;
-
-  if_timeout(I2C_GetFlagStatus(c_->dev, I2C_FLAG_BUSY), tout)
-  {
-    log_line;
-    num_errors_++;
+  if (waitForJob() == RESULT_ERROR)
     return RESULT_ERROR;
-  }
 
   addJob(TaskType::START);
   addJob(TaskType::READ_MODE, addr);
@@ -317,13 +307,8 @@ int8_t I2C::read(uint8_t addr, uint8_t reg, uint8_t *data, size_t len)
 {
   clear_log;
   log_line;
-
-  if_timeout(I2C_GetFlagStatus(c_->dev, I2C_FLAG_BUSY), tout)
-  {
-    log_line;
-    num_errors_++;
+  if (waitForJob() == RESULT_ERROR)
     return RESULT_ERROR;
-  }
 
   addJob(TaskType::START);
   addJob(TaskType::WRITE_MODE, addr);
@@ -348,13 +333,8 @@ int8_t I2C::write(uint8_t addr, uint8_t reg, uint8_t data)
 {
   clear_log;
   log_line;
-
-  if_timeout(I2C_GetFlagStatus(c_->dev, I2C_FLAG_BUSY), tout)
-  {
-    log_line;
-    num_errors_++;
+  if (waitForJob() == RESULT_ERROR)
     return RESULT_ERROR;
-  }
 
   addJob(TaskType::START);
   addJob(TaskType::WRITE_MODE, addr);
@@ -378,13 +358,8 @@ int8_t I2C::write(uint8_t addr, uint8_t data)
 {
   clear_log;
   log_line;
-
-  if_timeout(I2C_GetFlagStatus(c_->dev, I2C_FLAG_BUSY), tout)
-  {
-    log_line;
-    num_errors_++;
+  if (waitForJob() == RESULT_ERROR)
     return RESULT_ERROR;
-  }
 
   addJob(TaskType::START);
   addJob(TaskType::WRITE_MODE, addr);
@@ -407,6 +382,8 @@ int8_t I2C::write(uint8_t addr, uint8_t data, void(*cb)(int8_t))
 {
   clear_log;
   log_line;
+  if (waitForJob() == RESULT_ERROR)
+    return RESULT_ERROR;
 \
   addJob(TaskType::START);
   addJob(TaskType::WRITE_MODE, addr);
@@ -421,13 +398,8 @@ int8_t I2C::checkPresent(uint8_t addr)
 {
   clear_log;
   log_line;
-
-  if_timeout(I2C_GetFlagStatus(c_->dev, I2C_FLAG_BUSY), tout)
-  {
-    log_line;
-    num_errors_++;
+  if (waitForJob() == RESULT_ERROR)
     return RESULT_ERROR;
-  }
 
   addJob(TaskType::START);
   addJob(TaskType::WRITE_MODE, addr);
@@ -436,7 +408,7 @@ int8_t I2C::checkPresent(uint8_t addr)
 
   return_code_ = RESULT_SUCCESS;
 
-  if_timeout(checkBusy(), 100000000000)
+  if_timeout(checkBusy(), tout)
   {
     log_line;
     num_errors_++;
@@ -480,18 +452,20 @@ bool I2C::handleJobs()
   Task& task(currentTask());
   busy_ = true;
   bool done = true;
+  bool keep_going = false;
   switch (task.task)
   {
   case TaskType::START:
     log_line;
     if_timeout(I2C_GetFlagStatus(c_->dev, I2C_FLAG_BUSY), tout)
     {
+      log_line;
       done = false;
     }
     expected_event_ = I2C_EVENT_MASTER_MODE_SELECT;
     write_idx_ = 0;
-    I2C_Cmd(c_->dev, ENABLE);
     I2C_ITConfig(c_->dev, I2C_IT_EVT | I2C_IT_ERR, ENABLE);
+    I2C_Cmd(c_->dev, ENABLE);
     I2C_GenerateSTART(c_->dev, ENABLE);
     break;
 
@@ -531,19 +505,33 @@ bool I2C::handleJobs()
   case TaskType::STOP:
     log_line;
     I2C_GenerateSTOP(c_->dev, ENABLE);
-    I2C_ITConfig(c_->dev, I2C_IT_EVT | I2C_IT_BUF, ENABLE);
-    I2C_ITConfig(c_->dev, I2C_IT_EVT | I2C_IT_BUF | I2C_IT_ERR, DISABLE);
+    I2C_ITConfig(c_->dev, I2C_IT_EVT | I2C_IT_BUF, DISABLE);
     I2C_Cmd(c_->dev, DISABLE);
     expected_event_ = 0x00;
-    busy_ = false;
     if (task.cb)
       task.cb(return_code_);
+    if (task_idx_ == task_head_)
+    {
+      log_line;
+      busy_ = false;
+    }
+    else
+    {
+      log_line;
+      keep_going = true;
+    }
   }
 
   if (done)
   {
     log_line;
     advanceTask();
+  }
+
+  if (keep_going)
+  {
+    log_line;
+    handleJobs();
   }
 
   return false;
@@ -560,11 +548,6 @@ void I2C::handleEvent()
     if (handleJobs())
       log_line;
   }
-//  else
-//  {
-//    log_line;
-//    handleError();
-//  }
 }
 
 void I2C::handleError()
