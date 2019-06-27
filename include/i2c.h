@@ -160,6 +160,8 @@ public:
   void handleError();
   void handleEvent();
 
+  size_t num_errors() { return num_errors_; }
+
 
 private:
   bool handleJobs();
