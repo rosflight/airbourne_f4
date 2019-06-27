@@ -37,79 +37,79 @@ static void read_cb(int8_t result);
 
 bool HMC5883L::init(I2C *i2c_drv)
 {
-  mag_ptr = this;
-  mag_present_ = false;
-  i2c_ = i2c_drv;
-  
-  // Wait for the chip to power up
-  while (millis() < 10);
-  
-  last_update_ms_ = millis();
-  next_update_ms_ = millis();
-
-  // Detect Magnetometer
-  if (i2c_->checkPresent(ADDR) != I2C::RESULT_SUCCESS)
-  {
+    mag_ptr = this;
     mag_present_ = false;
-    return false;
-  }
-  else
-  {
-    delay(1);
-    bool result = true;
-    // Configure HMC5833L
-    result &= configure(CRA, CRA_DO_75 | CRA_NO_AVG | CRA_MEAS_MODE_NORMAL ); // 75 Hz Measurement, no bias, no averaging
-    result &= configure(CRB, CRB_GN_390); // 390 LSB/Gauss
-    result &= configure(MODE, MODE_CONTINUOUS); // Continuous Measurement Mode
-    mag_present_ = true;
-    return result;
-  }
+    i2c_ = i2c_drv;
+
+    // Wait for the chip to power up
+    while (millis() < 10);
+
+    last_update_ms_ = millis();
+    next_update_ms_ = millis();
+
+    // Detect Magnetometer
+    if (i2c_->checkPresent(ADDR) != I2C::RESULT_SUCCESS)
+    {
+        mag_present_ = false;
+        return false;
+    }
+    else
+    {
+        delay(1);
+        bool result = true;
+        // Configure HMC5833L
+        result &= configure(CRA, CRA_DO_75 | CRA_NO_AVG | CRA_MEAS_MODE_NORMAL ); // 75 Hz Measurement, no bias, no averaging
+        result &= configure(CRB, CRB_GN_390); // 390 LSB/Gauss
+        result &= configure(MODE, MODE_CONTINUOUS); // Continuous Measurement Mode
+        mag_present_ = true;
+        return result;
+    }
 }
 
 bool HMC5883L::configure(uint8_t reg, uint8_t val)
 {
-  uint8_t data[2] = {reg, val};
-  return i2c_->write(ADDR, data, 2);
+    uint8_t data[2] = {reg, val};
+    return i2c_->write(ADDR, data, 2);
 }
 
 bool HMC5883L::present()
 {
-  if (mag_present_ && millis() > last_update_ms_ + 200)
-    mag_present_ = false;
-  return mag_present_;
+    if (mag_present_ && millis() > last_update_ms_ + 200)
+        mag_present_ = false;
+    return mag_present_;
 }
 
 void HMC5883L::update()
 {
-  if ( millis() > next_update_ms_)
-  {
-    if (i2c_->read(ADDR, DATA, i2c_buf_, 6, &read_cb) == I2C::RESULT_SUCCESS)
-      next_update_ms_ += 10;
-  }
+    if ( millis() > next_update_ms_)
+    {
+        if (i2c_->read(ADDR, DATA, i2c_buf_, 6, &read_cb) == I2C::RESULT_SUCCESS)
+            next_update_ms_ += 10;
+    }
 }
 
 void HMC5883L::cb(int8_t result)
 {
-  if (result == I2C::RESULT_SUCCESS)
-    mag_present_ = true;
-  last_update_ms_ = millis();
-  data_[0] = static_cast<float>(static_cast<int16_t>((i2c_buf_[0] << 8) | i2c_buf_[1]));
-  data_[1] = static_cast<float>(static_cast<int16_t>((i2c_buf_[2] << 8) | i2c_buf_[3]));
-  data_[2] = static_cast<float>(static_cast<int16_t>((i2c_buf_[4] << 8) | i2c_buf_[5]));
+    if (result == I2C::RESULT_SUCCESS)
+        mag_present_ = true;
+    last_update_ms_ = millis();
+    data_[0] = static_cast<float>(static_cast<int16_t>((i2c_buf_[0] << 8) | i2c_buf_[1]));
+    data_[1] = static_cast<float>(static_cast<int16_t>((i2c_buf_[2] << 8) | i2c_buf_[3]));
+    data_[2] = static_cast<float>(static_cast<int16_t>((i2c_buf_[4] << 8) | i2c_buf_[5]));
 }
 
 void read_cb(int8_t result)
 {
-  mag_ptr->cb(result);
+    mag_ptr->cb(result);
 }
 
 bool HMC5883L::read(float mag_data[3])
 {
-  mag_data[0] = data_[0];
-  mag_data[1] = data_[1];
-  mag_data[2] = data_[2];
+    mag_data[0] = data_[0];
+    mag_data[1] = data_[1];
+    mag_data[2] = data_[2];
 
-  //if the mag's ADC over or underflows, then the data register is given the value of -4096
-  //the data register can also be assigned -4096 if there's a math overflow during bias calculation
-  return mag_data[0] != -4096 && mag_data[1] != -4096 && mag_data[2] != -4096;
+    //if the mag's ADC over or underflows, then the data register is given the value of -4096
+    //the data register can also be assigned -4096 if there's a math overflow during bias calculation
+    return mag_data[0] != -4096 && mag_data[1] != -4096 && mag_data[2] != -4096;
 }

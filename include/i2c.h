@@ -83,7 +83,6 @@ public:
     WRITE,
     READ,
     STOP,
-    DONE,
   };
 
 private:

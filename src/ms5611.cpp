@@ -52,10 +52,11 @@ bool MS5611::init(I2C* _i2c)
 
   if (i2c_->checkPresent(ADDR) == I2C::RESULT_SUCCESS)
   {
-    baro_present_ == true;
+    baro_present_ = true;
   }
-  else {
-    baro_present_ == false;
+  else
+  {
+    baro_present_ = false;
     return false;
   }
 

@@ -471,7 +471,7 @@ uint8_t* I2C::copyToWriteBuf(uint8_t* data, size_t len)
 {
   log_line;
   uint8_t* tmp =  write_buffer_ + wb_head_;
-  for (int i = 0; i < len; i++)
+  for (size_t i = 0; i < len; i++)
   {
     write_buffer_[wb_head_] = data[i];
     wb_head_ = (wb_head_ + 1) % WRITE_BUFFER_SIZE;
@@ -601,10 +601,6 @@ void I2C::handleError()
   log_line;
   return_code_ = RESULT_ERROR;
   I2C_ITConfig(c_->dev, I2C_IT_EVT | I2C_IT_ERR, DISABLE);
-  if (prevTask().task == TaskType::STOP)
-  {
-    int debug = 1;
-  }
   while (currentTask().task != TaskType::STOP)
   {
     log_line;
