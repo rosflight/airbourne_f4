@@ -72,8 +72,7 @@ int main() {
       warn.toggle();
       for (int j = 1; j < 128; j++)
       {
-        uint8_t data = 0;
-        int8_t result  = i2c[i].write(j, 0xFF, data);
+        int8_t result  = i2c[i].checkPresent(j);
         if (result > 0)
         {
           printf("I2C%d: found device at 0x%X\n", i+1, j);
