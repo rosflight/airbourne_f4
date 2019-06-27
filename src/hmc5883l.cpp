@@ -83,8 +83,11 @@ void HMC5883L::update()
 {
     if ( millis() > next_update_ms_)
     {
-        if (i2c_->read(ADDR, DATA, i2c_buf_, 6, &read_cb) == I2C::RESULT_SUCCESS)
-            next_update_ms_ += 10;
+        if (!present())
+          i2c_->checkPresent(ADDR, &read_cb);
+        else
+          i2c_->read(ADDR, DATA, i2c_buf_, 6, &read_cb);
+        next_update_ms_ += 10;
     }
 }
 
@@ -92,6 +95,7 @@ void HMC5883L::cb(int8_t result)
 {
     if (result == I2C::RESULT_SUCCESS)
         mag_present_ = true;
+
     last_update_ms_ = millis();
     data_[0] = static_cast<float>(static_cast<int16_t>((i2c_buf_[0] << 8) | i2c_buf_[1]));
     data_[1] = static_cast<float>(static_cast<int16_t>((i2c_buf_[2] << 8) | i2c_buf_[3]));

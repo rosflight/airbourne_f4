@@ -134,6 +134,7 @@ bool TFMini::update()
       do_read();
     else
       check_present();
+    next_update_ms_ = millis() + UPDATE_RATE_MS;
   }
 
   if (new_data_)

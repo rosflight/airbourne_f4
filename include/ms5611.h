@@ -70,6 +70,7 @@ private:
     CB_PRES_READ,
     CB_TEMP_START,
     CB_PRES_START,
+    CB_PRESENT,
   } callback_type_t;
 
   static const uint8_t ADDR = 0x77;

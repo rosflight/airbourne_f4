@@ -100,6 +100,7 @@ public:
   void read_cb(int8_t status);
 
 private:
+  static constexpr size_t UPDATE_RATE_MS = 20;
   void reset();
   void do_read();
   void convert();

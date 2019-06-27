@@ -96,7 +96,7 @@ bool MS5611::init(I2C* _i2c)
 
 bool MS5611::present()
 {
-  if (baro_present_ && waiting_for_cb_ && (millis() > last_update_ms_ + 200))
+  if (baro_present_ && (millis() > last_update_ms_ + 200))
     baro_present_ = false;
   return baro_present_;
 }
@@ -105,35 +105,31 @@ void MS5611::update()
 {
   uint32_t now_ms = millis();
   
-//  // Sometimes the barometer fails to respond.  If this happens, then reset it
-//  // the barometer also seems to stop responding after 72 minutes (suspiciously close to a overflow of uint32_t with a microsecond timer)
-//  // to avoid that, just reboot periodically
-//  if ((waiting_for_cb_ && now_ms) > last_update_ms_ + 20 || (now_ms > next_reboot_ms_))
-//  {
-//    last_update_ms_ = now_ms;
-//    callback_type_ = CB_RESET;
-//    i2c_->write(ADDR, RESET, &cb);
-//  }
+  if (now_ms < next_update_ms_)
+      return;
 
-  if (now_ms > next_update_ms_)
+  next_update_ms_ += 100;
+
+  if (!baro_present_)
+  {
+      callback_type_ = CB_PRESENT;
+      i2c_->checkPresent(ADDR, &cb);
+  }
+  else
   {
     switch (state_)
     {
     case START_TEMP:
-      if (start_temp_meas())
-        next_update_ms_ += 100;
+      start_temp_meas();
       break;
     case READ_TEMP:
-      if (read_temp_meas())
-        next_update_ms_ += 100;
+      read_temp_meas();
       break;
     case START_PRESS:
-      if (start_pres_meas())
-        next_update_ms_ += 100;
+      start_pres_meas();
       break;
     case READ_PRESS:
-      if (read_pres_meas())
-        next_update_ms_ += 100;
+      read_pres_meas();
       break;
     default:
       state_ = START_TEMP;
@@ -293,23 +289,20 @@ bool MS5611::read_temp_meas()
   waiting_for_cb_ = true;
   last_update_ms_ = millis();
   callback_type_ = CB_TEMP_READ;
-  i2c_->waitForJob();
-  i2c_->clearLog();
-  i2c_->addJob(I2C::TaskType::START);
-  i2c_->addJob(I2C::TaskType::WRITE_MODE, ADDR);
-  i2c_->addJob(I2C::TaskType::WRITE, 0, i2c_->copyToWriteBuf(ADC_READ), 1);
-  i2c_->addJob(I2C::TaskType::STOP, 0, 0, 0, 0);
-  i2c_->addJob(I2C::TaskType::START);
-  i2c_->addJob(I2C::TaskType::READ_MODE, ADDR);
-  i2c_->addJob(I2C::TaskType::READ, 0, temp_buf_, 3);
-  i2c_->addJob(I2C::TaskType::STOP, 0, 0, 0, &cb);
-  while (i2c_->checkBusy())
+  if (i2c_->waitForJob())
   {
-
+      i2c_->clearLog();
+      i2c_->addJob(I2C::TaskType::START);
+      i2c_->addJob(I2C::TaskType::WRITE_MODE, ADDR);
+      i2c_->addJob(I2C::TaskType::WRITE, 0, i2c_->copyToWriteBuf(ADC_READ), 1);
+      i2c_->addJob(I2C::TaskType::STOP, 0, 0, 0, 0);
+      i2c_->addJob(I2C::TaskType::START);
+      i2c_->addJob(I2C::TaskType::READ_MODE, ADDR);
+      i2c_->addJob(I2C::TaskType::READ, 0, temp_buf_, 3);
+      i2c_->addJob(I2C::TaskType::STOP, 0, 0, 0, &cb);
+      return true;
   }
-
-  i2c_->waitForJob();
-  return true;
+  return false;
 }
 
 void MS5611::temp_read_cb(uint8_t result)
@@ -373,6 +366,9 @@ void MS5611::master_cb(uint8_t result)
     break;
   case CB_PRES_START:
     pres_start_cb(result);
+    break;
+  default:
+    state_ = START_TEMP;
     break;
   }
 }

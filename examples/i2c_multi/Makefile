@@ -136,6 +136,8 @@ CXXSOURCES = $(PRINTF_SRC) \
              i2c.cpp \
              ms5611.cpp \
              ms4525.cpp \
+             mb1242.cpp \
+             tfmini.cpp \
              hmc5883l.cpp
 
 INCLUDE_DIRS =  $(SRC_DIR) \
