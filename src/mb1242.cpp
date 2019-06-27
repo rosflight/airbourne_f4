@@ -33,13 +33,13 @@
 
 I2CSonar* sonarPtr;
 
-void _I2C_Sonar_start_read_cb(uint8_t result)
+void _I2C_Sonar_start_read_cb(int8_t result)
 {
   (void)result;
   sonarPtr->cb_start_read(result);
 }
 
-void _I2C_Sonar_finished_read_cb(uint8_t result)
+void _I2C_Sonar_finished_read_cb(int8_t result)
 {
   (void)result;
   sonarPtr->cb_finished_read(result);
@@ -59,7 +59,7 @@ void I2CSonar::init(I2C *_i2c)
   value_ = 0;
   last_update_ms_ = millis();
   ready_to_ping_ = true;
-  if (i2c_->write(MB1242_DEFAULT_ADDRESS, MB1242_DEFAULT_REGISTER, MB1242_PING_COMMAND) == I2C::RESULT_SUCCESS)
+  if (i2c_->checkPresent(ADDR) == I2C::RESULT_SUCCESS)
   {
     sensor_present_ = true;
     last_callback_ms_ = millis();
@@ -86,14 +86,24 @@ bool I2CSonar::present()
 void I2CSonar::update()
 {
   uint64_t now=millis();
-  if (now > (last_update_ms_ + MB1242_UPDATE_WAIT_MILLIS))
+  if (now > (last_update_ms_ + UPDATE_WAIT_MS))
   {
     last_update_ms_ = now;
     if (ready_to_ping_)
-      i2c_->write(MB1242_DEFAULT_ADDRESS, MB1242_DEFAULT_REGISTER, MB1242_PING_COMMAND, &_I2C_Sonar_start_read_cb);
+      do_ping();
     else
-      i2c_->read(MB1242_DEFAULT_ADDRESS, MB1242_DEFAULT_REGISTER, 2, buffer_, &_I2C_Sonar_finished_read_cb);
+      do_read();
   }
+}
+
+void I2CSonar::do_ping()
+{
+  i2c_->write(ADDR, PING, &_I2C_Sonar_start_read_cb);
+}
+
+void I2CSonar::do_read()
+{
+  i2c_->read(ADDR, buffer_, 2, &_I2C_Sonar_finished_read_cb);
 }
 
 //Returns the most recent reading
@@ -107,7 +117,7 @@ float I2CSonar::read()
 #ifdef MB1242_RAW
     value=(float)centimeters * 0.01;
 #else
-    //Calibration from BreezySTM32 by Simon D. Levy
+    // Calibration from BreezySTM32 by Simon D. Levy
     value_=(1.071 * static_cast<float>(centimeters) + 3.103) / 100.0;
 #endif
     new_data_=false;
@@ -116,7 +126,7 @@ float I2CSonar::read()
 }
 
 //callback after the measure command has been sent to the sensor
-void I2CSonar::cb_start_read(uint8_t result)
+void I2CSonar::cb_start_read(int8_t result)
 {
   if (result == I2C::RESULT_SUCCESS)
   {
@@ -127,7 +137,7 @@ void I2CSonar::cb_start_read(uint8_t result)
 }
 
 //callback after reading from the sensor has finished
-void I2CSonar::cb_finished_read(uint8_t result)
+void I2CSonar::cb_finished_read(int8_t result)
 {
   if (result == I2C::RESULT_SUCCESS)
   {
