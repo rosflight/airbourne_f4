@@ -33,7 +33,7 @@
 
 MS4525* as_ptr;
 
-static void cb(uint8_t result)
+static void cb(int8_t result)
 {
   as_ptr->read_cb(result);
 }
@@ -45,8 +45,7 @@ bool MS4525::init(I2C *_i2c)
   as_ptr = this;
   i2c_ = _i2c;
   sensor_present_ = false;
-  uint8_t buf[1];
-  if (i2c_->read(ADDR, 0xFF, buf) == I2C::RESULT_SUCCESS)
+  if (i2c_->checkPresent(ADDR) == I2C::RESULT_SUCCESS)
     sensor_present_ = true;
   else
     sensor_present_ = false;
@@ -65,12 +64,12 @@ void MS4525::update()
 {
   if (millis() > next_update_ms_)
   {
-    if (i2c_->read(ADDR, 0xFF, 4, buf_, &cb) == I2C::RESULT_SUCCESS)
+    if (i2c_->read(ADDR, buf_, 4, &cb) == I2C::RESULT_SUCCESS)
       next_update_ms_ += 100;
   }
 }
 
-void MS4525::read_cb(uint8_t result)
+void MS4525::read_cb(int8_t result)
 {
   if (result == I2C::RESULT_SUCCESS)
   {

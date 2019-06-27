@@ -42,10 +42,13 @@ public:
   void update();
   void read(float *differential_pressure, float *temp);
 
-  void read_cb(uint8_t result);
+  void read_cb(int8_t result);
 
 private:
-  static const uint8_t ADDR = 0x28;
+  enum : uint8_t
+  {
+    ADDR = 0x28
+  };
 
   I2C* i2c_;
   uint8_t buf_[4];
