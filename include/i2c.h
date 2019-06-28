@@ -144,19 +144,16 @@ public:
   // functions with callbacks are asynchronous and return RESULT_SUCCESS if the job was queued properly
   // and the return code is forwarded through the callback.  Functions without a callback
   // are blocking and return the result immediately.
-  int8_t checkPresent(uint8_t addr);
-  int8_t checkPresent(uint8_t addr, void(*cb)(int8_t));
+  int8_t checkPresent(uint8_t addr, void(*cb)(int8_t)=nullptr);
 
-  int8_t write(uint8_t addr, uint8_t data);
-  int8_t write(uint8_t addr, uint8_t reg, uint8_t data);
-  int8_t write(uint8_t addr, uint8_t data, void(*cb)(int8_t));
-  int8_t write(uint8_t addr, uint8_t* data, size_t len);
-  int8_t read(uint8_t addr, uint8_t reg, uint8_t* data);
+  int8_t read(uint8_t addr, uint8_t reg, uint8_t* data, void(*cb)(int8_t)=nullptr);
+  int8_t read(uint8_t addr, uint8_t* data, size_t len, void(*cb)(int8_t)=nullptr);
+  int8_t read(uint8_t addr, uint8_t reg, uint8_t* data, size_t len, void(*cb)(int8_t)=nullptr);
 
-  int8_t read(uint8_t addr, uint8_t* data, size_t len);
-  int8_t read(uint8_t addr, uint8_t reg, uint8_t* data, size_t len);
-  int8_t read(uint8_t addr, uint8_t* data, size_t len, void(*cb)(int8_t));
-  int8_t read(uint8_t addr, uint8_t reg, uint8_t* data, size_t len, void(*cb)(int8_t));
+  int8_t write(uint8_t addr, uint8_t data, void(*cb)(int8_t)=nullptr);
+  int8_t write(uint8_t addr, uint8_t reg, uint8_t data, void(*cb)(int8_t)=nullptr);
+  int8_t write(uint8_t addr, uint8_t* data, size_t len, void(*cb)(int8_t));
+  int8_t write(uint8_t addr, uint8_t reg, uint8_t* data, size_t len, void(*cb)(int8_t)=nullptr);
 
   // These need to be public so the trampolines can land on them
   void handleError();
@@ -165,9 +162,8 @@ public:
   // This clears the internal trace log
   void clearLog();
 
-
-
 private:
+  // private read abstractions, all the helpers land here
 
   // This waits for the BUSY flag to clear (so we don't try to START during a STOP)
   // This should not take longer than 200 us (tout).  If it fails, then we reset the peripheral
