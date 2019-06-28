@@ -92,7 +92,7 @@ public:
   TFMini();
   bool init(I2C* _i2c);
   bool present();
-  bool update();
+  void update();
   inline float distance() { return distance_; } // returns distance in meters
   inline uint16_t strength() { return strength_; }
 

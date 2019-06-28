@@ -48,6 +48,16 @@ do {\
 }while(0);\
 if (cond)
 
+#define waitToFinish \
+do {\
+  if_timeout(checkBusy(), tout_block)\
+  {\
+    log_line;\
+    num_errors_++;\
+    return RESULT_ERROR;\
+  }\
+} while(0)
+
 
 #ifndef NDEBUG
 class DebugHistory
@@ -160,13 +170,30 @@ void I2C::clearLog()
   clear_log;
 }
 
-void I2C::addJob(TaskType type, uint8_t addr, uint8_t *data, size_t len, void (*cb)(int8_t))
+bool I2C::addJob(TaskType type, uint8_t addr, uint8_t *data, size_t len, void (*cb)(int8_t))
 {
+  // If we have gone all the way around the buffer and the current task still hasn't been handled,
+  // then we are smashing on the task buffer, return false
+  if (task_head_ == task_idx_ && !currentTask().handled_)
+    return false;
+
+  if (type == TaskType::WRITE)
+  {
+    // create a local copy, in case the data-to-be-written goes out of scope
+    uint8_t* local_data = copyToWriteBuf(data, len);
+    if (local_data == nullptr)
+      return false;  // ran out of room
+    tasks_[task_head_].data = local_data;
+  }
+  else
+  {
+    tasks_[task_head_].data = data;
+  }
   tasks_[task_head_].task = type;
   tasks_[task_head_].addr = addr << 1;
-  tasks_[task_head_].data = data;
   tasks_[task_head_].len = len;
   tasks_[task_head_].cb = cb;
+  tasks_[task_head_].handled_ = false;
   task_head_ = (task_head_ + 1) % TASK_BUFFER_SIZE;
   /// TODO: check we aren't smashing on tasks
   /// TODO: check we aren't smashing on write buffer if writing
@@ -175,6 +202,7 @@ void I2C::addJob(TaskType type, uint8_t addr, uint8_t *data, size_t len, void (*
   {
     handleJobs();
   }
+  return true;
 }
 
 I2C::Task& I2C::currentTask()
@@ -182,17 +210,6 @@ I2C::Task& I2C::currentTask()
   return tasks_[task_idx_];
 }
 
-I2C::Task& I2C::nextTask()
-{
-  size_t tmp = (task_idx_ + 1) % TASK_BUFFER_SIZE;
-  return tasks_[tmp];
-}
-
-I2C::Task& I2C::prevTask()
-{
-  size_t tmp = (task_idx_ - 1 + TASK_BUFFER_SIZE) % TASK_BUFFER_SIZE;
-  return tasks_[tmp];
-}
 
 void I2C::advanceTask()
 {
@@ -203,29 +220,20 @@ int8_t I2C::read(uint8_t addr, uint8_t reg, uint8_t* data)
 {
   clear_log;
   log_line;
+  waitToFinish;
 
-  if_timeout(I2C_GetFlagStatus(c_->dev, I2C_FLAG_BUSY), tout)
-  {
-    log_line;
-    num_errors_++;
+  if (addJob(TaskType::START)
+    && addJob(TaskType::WRITE_MODE, addr)
+    && addJob(TaskType::WRITE, 0, &reg, 1)
+    && addJob(TaskType::START)
+    && addJob(TaskType::READ_MODE, addr)
+    && addJob(TaskType::READ, 0, data, 1)
+    && addJob(TaskType::STOP))
+    return_code_ = RESULT_SUCCESS;
+  else
     return RESULT_ERROR;
-  }
 
-  addJob(TaskType::START);
-  addJob(TaskType::WRITE_MODE, addr);
-  addJob(TaskType::WRITE, 0, copyToWriteBuf(reg), 1);
-  addJob(TaskType::START);
-  addJob(TaskType::READ_MODE, addr);
-  addJob(TaskType::READ, 0, data, 1);
-  addJob(TaskType::STOP);
-  return_code_ = RESULT_SUCCESS;
-
-  if_timeout (checkBusy(), tout_block)
-  {
-    log_line;
-    return RESULT_ERROR;
-  }
-
+  waitToFinish;
   return return_code_;
 }
 
@@ -233,21 +241,17 @@ int8_t I2C::read(uint8_t addr, uint8_t* data, size_t len)
 {
   clear_log;
   log_line;
-  if (waitForJob() == RESULT_ERROR)
+  waitToFinish;
+
+  if (addJob(TaskType::START)
+    && addJob(TaskType::READ_MODE, addr)
+    && addJob(TaskType::READ, 0, data, len)
+    && addJob(TaskType::STOP))
+    return_code_ = RESULT_SUCCESS;
+  else
     return RESULT_ERROR;
 
-  addJob(TaskType::START);
-  addJob(TaskType::READ_MODE, addr);
-  addJob(TaskType::READ, 0, data, len);
-  addJob(TaskType::STOP);
-  return_code_ = RESULT_SUCCESS;
-
-  if_timeout (checkBusy(), tout_block)
-  {
-    log_line;
-    return RESULT_ERROR;
-  }
-
+  waitToFinish;
   return return_code_;
 }
 
@@ -273,14 +277,16 @@ int8_t I2C::read(uint8_t addr, uint8_t reg, uint8_t *data, size_t len, void (*cb
   if (waitForJob() == RESULT_ERROR)
     return RESULT_ERROR;
 
-  addJob(TaskType::START);
-  addJob(TaskType::WRITE_MODE, addr);
-  addJob(TaskType::WRITE, 0, copyToWriteBuf(reg), 1);
-  addJob(TaskType::START);
-  addJob(TaskType::READ_MODE, addr);
-  addJob(TaskType::READ, 0, data, len);
-  addJob(TaskType::STOP, 0, 0, 0, cb);
-  return_code_ = RESULT_SUCCESS;
+  if (addJob(TaskType::START)
+    && addJob(TaskType::WRITE_MODE, addr)
+    && addJob(TaskType::WRITE, 0, &reg, 1)
+    && addJob(TaskType::START)
+    && addJob(TaskType::READ_MODE, addr)
+    && addJob(TaskType::READ, 0, data, len)
+    && addJob(TaskType::STOP, 0, 0, 0, cb))
+    return_code_ = RESULT_SUCCESS;
+  else
+    return RESULT_ERROR;
 
   log_line;
   return return_code_;
@@ -293,11 +299,13 @@ int8_t I2C::read(uint8_t addr, uint8_t *data, size_t len, void (*cb)(int8_t))
   if (waitForJob() == RESULT_ERROR)
     return RESULT_ERROR;
 
-  addJob(TaskType::START);
-  addJob(TaskType::READ_MODE, addr);
-  addJob(TaskType::READ, 0, data, len);
-  addJob(TaskType::STOP, 0, 0, 0, cb);
-  return_code_ = RESULT_SUCCESS;
+  if (addJob(TaskType::START)
+    && addJob(TaskType::READ_MODE, addr)
+    && addJob(TaskType::READ, 0, data, len)
+    && addJob(TaskType::STOP, 0, 0, 0, cb))
+    return_code_ = RESULT_SUCCESS;
+  else
+    return RESULT_ERROR;
 
   log_line;
   return return_code_;
@@ -310,22 +318,18 @@ int8_t I2C::read(uint8_t addr, uint8_t reg, uint8_t *data, size_t len)
   if (waitForJob() == RESULT_ERROR)
     return RESULT_ERROR;
 
-  addJob(TaskType::START);
-  addJob(TaskType::WRITE_MODE, addr);
-  addJob(TaskType::WRITE, 0, copyToWriteBuf(reg), 1);
-  addJob(TaskType::START);
-  addJob(TaskType::READ_MODE, addr);
-  addJob(TaskType::READ, 0, data, len);
-  addJob(TaskType::STOP);
-  return_code_ = RESULT_SUCCESS;
-
-  if_timeout(checkBusy(), tout_block)
-  {
-    log_line;
-    num_errors_++;
+  if (addJob(TaskType::START)
+    && addJob(TaskType::WRITE_MODE, addr)
+    && addJob(TaskType::WRITE, 0, &reg, 1)
+    && addJob(TaskType::START)
+    && addJob(TaskType::READ_MODE, addr)
+    && addJob(TaskType::READ, 0, data, len)
+    && addJob(TaskType::STOP))
+    return_code_ = RESULT_SUCCESS;
+  else
     return RESULT_ERROR;
-  }
-  log_line;
+
+  waitToFinish;
   return return_code_;
 }
 
@@ -336,21 +340,16 @@ int8_t I2C::write(uint8_t addr, uint8_t reg, uint8_t data)
   if (waitForJob() == RESULT_ERROR)
     return RESULT_ERROR;
 
-  addJob(TaskType::START);
-  addJob(TaskType::WRITE_MODE, addr);
-  addJob(TaskType::WRITE, 0, copyToWriteBuf(reg), 1);
-  addJob(TaskType::WRITE, 0, copyToWriteBuf(data), 1);
-  addJob(TaskType::STOP);
-
-  return_code_ = RESULT_SUCCESS;
-
-  if_timeout(checkBusy(), tout_block)
-  {
-    log_line;
-    num_errors_++;
+  if (addJob(TaskType::START)
+    && addJob(TaskType::WRITE_MODE, addr)
+    && addJob(TaskType::WRITE, 0, &reg, 1)
+    && addJob(TaskType::WRITE, 0, &data, 1)
+    && addJob(TaskType::STOP))
+    return_code_ = RESULT_SUCCESS;
+  else
     return RESULT_ERROR;
-  }
-  log_line;
+
+  waitToFinish;
   return return_code_;
 }
 
@@ -361,20 +360,15 @@ int8_t I2C::write(uint8_t addr, uint8_t data)
   if (waitForJob() == RESULT_ERROR)
     return RESULT_ERROR;
 
-  addJob(TaskType::START);
-  addJob(TaskType::WRITE_MODE, addr);
-  addJob(TaskType::WRITE, 0, copyToWriteBuf(data), 1);
-  addJob(TaskType::STOP);
-
-  return_code_ = RESULT_SUCCESS;
-
-  if_timeout(checkBusy(), tout_block)
-  {
-    log_line;
-    num_errors_++;
+  if (addJob(TaskType::START)
+    && addJob(TaskType::WRITE_MODE, addr)
+    && addJob(TaskType::WRITE, 0, &data, 1)
+    && addJob(TaskType::STOP))
+    return_code_ = RESULT_SUCCESS;
+  else
     return RESULT_ERROR;
-  }
-  log_line;
+
+  waitToFinish;
   return return_code_;
 }
 
@@ -385,20 +379,15 @@ int8_t I2C::write(uint8_t addr, uint8_t* data, size_t len)
   if (waitForJob() == RESULT_ERROR)
     return RESULT_ERROR;
 
-  addJob(TaskType::START);
-  addJob(TaskType::WRITE_MODE, addr);
-  addJob(TaskType::WRITE, 0, copyToWriteBuf(data, len), len);
-  addJob(TaskType::STOP);
-
-  return_code_ = RESULT_SUCCESS;
-
-  if_timeout(checkBusy(), tout_block)
-  {
-    log_line;
-    num_errors_++;
+  if (addJob(TaskType::START)
+    && addJob(TaskType::WRITE_MODE, addr)
+    && addJob(TaskType::WRITE, 0, data, len)
+    && addJob(TaskType::STOP))
+    return_code_ = RESULT_SUCCESS;
+  else
     return RESULT_ERROR;
-  }
-  log_line;
+
+  waitToFinish;
   return return_code_;
 }
 
@@ -408,13 +397,14 @@ int8_t I2C::write(uint8_t addr, uint8_t data, void(*cb)(int8_t))
   log_line;
   if (waitForJob() == RESULT_ERROR)
     return RESULT_ERROR;
-\
-  addJob(TaskType::START);
-  addJob(TaskType::WRITE_MODE, addr);
-  addJob(TaskType::WRITE, 0, copyToWriteBuf(data), 1);
-  addJob(TaskType::STOP, 0, 0, 0, cb);
-  return_code_ = RESULT_SUCCESS;
-  log_line;
+
+  if (addJob(TaskType::START)
+    && addJob(TaskType::WRITE_MODE, addr)
+    && addJob(TaskType::WRITE, 0, &data, 1)
+    && addJob(TaskType::STOP, 0, 0, 0, cb))
+    return_code_ = RESULT_SUCCESS;
+  else
+    return RESULT_ERROR;
   return return_code_;
 }
 
@@ -425,11 +415,14 @@ int8_t I2C::checkPresent(uint8_t addr, void (*cb)(int8_t))
   if (waitForJob() == RESULT_ERROR)
     return RESULT_ERROR;
 
-  addJob(TaskType::START);
-  addJob(TaskType::WRITE_MODE, addr);
-  addJob(TaskType::WRITE, 0, copyToWriteBuf(0x00), 1);
-  addJob(TaskType::STOP, 0, 0, 0, cb);
-  return_code_ = RESULT_SUCCESS;
+  uint8_t dummy_byte = 0x00;
+  if (addJob(TaskType::START)
+    && addJob(TaskType::WRITE_MODE, addr)
+    && addJob(TaskType::WRITE, 0, &dummy_byte, 1)
+    && addJob(TaskType::STOP, 0, 0, 0, cb))
+    return_code_ = RESULT_SUCCESS;
+  else
+    return RESULT_ERROR;
   return return_code_;
 }
 
@@ -440,12 +433,14 @@ int8_t I2C::checkPresent(uint8_t addr)
   if (waitForJob() == RESULT_ERROR)
     return RESULT_ERROR;
 
-  addJob(TaskType::START);
-  addJob(TaskType::WRITE_MODE, addr);
-  addJob(TaskType::WRITE, 0, copyToWriteBuf(0x00), 1);
-  addJob(TaskType::STOP);
-
-  return_code_ = RESULT_SUCCESS;
+  uint8_t dummy_byte = 0x00;
+  if (addJob(TaskType::START)
+   && addJob(TaskType::WRITE_MODE, addr)
+   && addJob(TaskType::WRITE, 0, &dummy_byte, 1)
+   && addJob(TaskType::STOP))
+    return_code_ = RESULT_SUCCESS;
+  else
+    return RESULT_ERROR;
 
   if_timeout(checkBusy(), tout_block)
   {
@@ -457,18 +452,13 @@ int8_t I2C::checkPresent(uint8_t addr)
   return return_code_;
 }
 
-
-uint8_t* I2C::copyToWriteBuf(uint8_t byte)
-{
-  log_line;
-  write_buffer_[wb_head_] = byte;
-  uint8_t* tmp =  write_buffer_ + wb_head_;
-  wb_head_ = (wb_head_ + 1) % WRITE_BUFFER_SIZE;
-  return tmp;
-}
-
 uint8_t* I2C::copyToWriteBuf(uint8_t* data, size_t len)
 {
+  size_t remaining = (wb_head_ >= wb_tail_) ? WRITE_BUFFER_SIZE - (wb_head_ - wb_tail_):
+                                              wb_tail_ - wb_head_;
+  if (remaining < len)
+    return nullptr;
+
   log_line;
   uint8_t* tmp =  write_buffer_ + wb_head_;
   for (size_t i = 0; i < len; i++)
@@ -485,6 +475,7 @@ uint8_t* I2C::getWriteBufferData(uint8_t *begin, size_t write_idx)
   uint8_t* data = begin + write_idx;
   if (data >= write_buffer_+WRITE_BUFFER_SIZE)
     data -= WRITE_BUFFER_SIZE;
+  wb_tail_ = (wb_tail_ + 1) % WRITE_BUFFER_SIZE;
   return data;
 }
 
@@ -571,6 +562,7 @@ bool I2C::handleJobs()
   if (done)
   {
     log_line;
+    task.handled_ = true;
     advanceTask();
   }
 

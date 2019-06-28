@@ -75,10 +75,10 @@ void TFMini::setParameter(uint16_t cmd, uint8_t val)
   i2c_->clearLog();
   i2c_->addJob(I2C::TaskType::START);
   i2c_->addJob(I2C::TaskType::WRITE_MODE, ADDR);
-  i2c_->addJob(I2C::TaskType::WRITE, 0, i2c_->copyToWriteBuf(data,3), 3);
+  i2c_->addJob(I2C::TaskType::WRITE, 0, data, 3);
   i2c_->addJob(I2C::TaskType::START);
   i2c_->addJob(I2C::TaskType::WRITE_MODE, ADDR);
-  i2c_->addJob(I2C::TaskType::WRITE, 0, i2c_->copyToWriteBuf(val), 1);
+  i2c_->addJob(I2C::TaskType::WRITE, 0, &val, 1);
   i2c_->addJob(I2C::TaskType::STOP);
 }
 
@@ -109,10 +109,9 @@ void TFMini::do_read()
 {
   uint8_t data[3] = {0x01, 0x02, 0x07};
   i2c_->clearLog();
-  i2c_->waitForJob();
   i2c_->addJob(I2C::TaskType::START);
   i2c_->addJob(I2C::TaskType::WRITE_MODE, ADDR);
-  i2c_->addJob(I2C::TaskType::WRITE, 0, i2c_->copyToWriteBuf(data,3), 3);
+  i2c_->addJob(I2C::TaskType::WRITE, 0, data, 3);
   i2c_->addJob(I2C::TaskType::START);
   i2c_->addJob(I2C::TaskType::READ_MODE, ADDR);
   i2c_->addJob(I2C::TaskType::READ, 0, packet_.buf, 7);
@@ -125,7 +124,7 @@ void TFMini::convert()
   strength_ = packet_.data.strength;
 }
 
-bool TFMini::update()
+void TFMini::update()
 {
 
   if (millis() > next_update_ms_)

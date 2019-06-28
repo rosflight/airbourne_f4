@@ -93,6 +93,7 @@ private:
     uint8_t* data;
     size_t len;
     void (*cb)(int8_t);
+    bool handled_;
   };
 
   // microseconds to wait for transfer to complete before adding a new one
@@ -103,12 +104,12 @@ private:
   static constexpr size_t TASK_BUFFER_SIZE = 25;
   Task tasks_[TASK_BUFFER_SIZE];
   size_t task_head_ = 0;
-  size_t task_tail_ = 0;
   size_t task_idx_ = 0;
 
   static constexpr size_t WRITE_BUFFER_SIZE = 50;
   uint8_t write_buffer_[WRITE_BUFFER_SIZE];
   size_t wb_head_ = 0;
+  volatile size_t wb_tail_ = 0;
   volatile size_t write_idx_;
 
   uint32_t last_event_;
@@ -127,16 +128,22 @@ private:
 
 public:
   I2C();
+  // Initializes the NVIC, I2C and DMA
   void init(const i2c_hardware_struct_t *c);
-  void addJob(TaskType type, uint8_t addr=0, uint8_t* data=nullptr, size_t len=1, void(*cb)(int8_t)=nullptr);
-  inline bool checkBusy() { return busy_; }
+  size_t num_errors() { return num_errors_; }
+
+  // This adds a new job to the task buffer.  Returns false if there is no room on the buffer
+  bool addJob(TaskType type, uint8_t addr=0, uint8_t* data=nullptr, size_t len=1, void(*cb)(int8_t)=nullptr);
 
   Task& currentTask();
-  Task& nextTask();
-  Task& prevTask();
   void advanceTask();
 
-  void clearLog();
+  inline bool checkBusy() { return busy_; }
+
+  // Helper Abstractions (these call addJob in the right order and with the right arguments)
+  // functions with callbacks are asynchronous and return RESULT_SUCCESS if the job was queued properly
+  // and the return code is forwarded through the callback.  Functions without a callback
+  // are blocking and return the result immediately.
   int8_t checkPresent(uint8_t addr);
   int8_t checkPresent(uint8_t addr, void(*cb)(int8_t));
 
@@ -151,18 +158,24 @@ public:
   int8_t read(uint8_t addr, uint8_t* data, size_t len, void(*cb)(int8_t));
   int8_t read(uint8_t addr, uint8_t reg, uint8_t* data, size_t len, void(*cb)(int8_t));
 
-  uint8_t* copyToWriteBuf(uint8_t byte);
-  uint8_t* copyToWriteBuf(uint8_t* data, size_t len);
-  uint8_t* getWriteBufferData(uint8_t* begin, size_t write_idx);
-
-  bool waitForJob();
+  // These need to be public so the trampolines can land on them
   void handleError();
   void handleEvent();
 
-  size_t num_errors() { return num_errors_; }
+  // This clears the internal trace log
+  void clearLog();
+
 
 
 private:
+
+  // This waits for the BUSY flag to clear (so we don't try to START during a STOP)
+  // This should not take longer than 200 us (tout).  If it fails, then we reset the peripheral
+  // and return RESULT_ERROR
+  bool waitForJob();
+
+  uint8_t* copyToWriteBuf(uint8_t* data, size_t len);
+  uint8_t* getWriteBufferData(uint8_t* begin, size_t write_idx);
   bool handleJobs();
   void unstick();
 
