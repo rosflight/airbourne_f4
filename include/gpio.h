@@ -59,6 +59,7 @@ public:
   void write(gpio_write_t state);
   void toggle(void);
   void set_mode(gpio_mode_t mode);
+  void set_mode(gpio_mode_t mode, gpio_write_t state);
   bool read();
 
 private:

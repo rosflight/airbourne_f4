@@ -269,19 +269,19 @@ bool MS5611::read_pres_meas()
   waiting_for_cb_ = true;
   last_update_ms_ = millis();
   callback_type_ = CB_PRES_READ;
-  if (i2c_->waitForJob())
-  {
-    i2c_->addJob(I2C::TaskType::START);
-    i2c_->addJob(I2C::TaskType::WRITE_MODE, ADDR);
-    i2c_->addJob(I2C::TaskType::WRITE, 0, i2c_->copyToWriteBuf(ADC_READ), 1);
-    i2c_->addJob(I2C::TaskType::STOP, 0, 0, 0, 0);
-    i2c_->addJob(I2C::TaskType::START);
-    i2c_->addJob(I2C::TaskType::READ_MODE, ADDR);
-    i2c_->addJob(I2C::TaskType::READ, 0, pres_buf_, 3);
-    i2c_->addJob(I2C::TaskType::STOP, 0, 0, 0, &cb);
+  uint8_t byte = ADC_READ;
+  i2c_->clearLog();
+  if (i2c_->addJob(I2C::TaskType::START)
+    && i2c_->addJob(I2C::TaskType::WRITE_MODE, ADDR)
+    && i2c_->addJob(I2C::TaskType::WRITE, 0, &byte, 1)
+    && i2c_->addJob(I2C::TaskType::STOP, 0, 0, 0, 0)
+    && i2c_->addJob(I2C::TaskType::START)
+    && i2c_->addJob(I2C::TaskType::READ_MODE, ADDR)
+    && i2c_->addJob(I2C::TaskType::READ, 0, pres_buf_, 3)
+    && i2c_->addJob(I2C::TaskType::STOP, 0, 0, 0, &cb))
     return true;
-  }
-  return false;
+  else
+    return false;
 }
 
 bool MS5611::read_temp_meas()
@@ -289,20 +289,19 @@ bool MS5611::read_temp_meas()
   waiting_for_cb_ = true;
   last_update_ms_ = millis();
   callback_type_ = CB_TEMP_READ;
-  if (i2c_->waitForJob())
-  {
-      i2c_->clearLog();
-      i2c_->addJob(I2C::TaskType::START);
-      i2c_->addJob(I2C::TaskType::WRITE_MODE, ADDR);
-      i2c_->addJob(I2C::TaskType::WRITE, 0, i2c_->copyToWriteBuf(ADC_READ), 1);
-      i2c_->addJob(I2C::TaskType::STOP, 0, 0, 0, 0);
-      i2c_->addJob(I2C::TaskType::START);
-      i2c_->addJob(I2C::TaskType::READ_MODE, ADDR);
-      i2c_->addJob(I2C::TaskType::READ, 0, temp_buf_, 3);
-      i2c_->addJob(I2C::TaskType::STOP, 0, 0, 0, &cb);
+  uint8_t byte = ADC_READ;
+  i2c_->clearLog();
+  if (i2c_->addJob(I2C::TaskType::START)
+    && i2c_->addJob(I2C::TaskType::WRITE_MODE, ADDR)
+    && i2c_->addJob(I2C::TaskType::WRITE, 0, &byte, 1)
+    && i2c_->addJob(I2C::TaskType::STOP, 0, 0, 0, 0)
+    && i2c_->addJob(I2C::TaskType::START)
+    && i2c_->addJob(I2C::TaskType::READ_MODE, ADDR)
+    && i2c_->addJob(I2C::TaskType::READ, 0, temp_buf_, 3)
+    && i2c_->addJob(I2C::TaskType::STOP, 0, 0, 0, &cb))
       return true;
-  }
-  return false;
+  else
+    return false;
 }
 
 void MS5611::temp_read_cb(uint8_t result)

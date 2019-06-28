@@ -157,6 +157,7 @@ void I2C::init(const i2c_hardware_struct_t *c)
   DMA_InitStructure_.DMA_DIR = DMA_DIR_PeripheralToMemory;
   DMA_Init(c_->DMA_Stream, &DMA_InitStructure_);
 
+  unstick();
   last_event_us_ = micros();
   I2C_Cmd(c->dev, ENABLE);
   log_line;
@@ -627,33 +628,34 @@ void I2C::unstick()
   //reset errors
   I2C_ClearFlag(c_->dev, I2C_SR1_OVR | I2C_SR1_AF | I2C_SR1_ARLO | I2C_SR1_BERR);
 
-  scl_.set_mode(GPIO::OUTPUT);
-  sda_.set_mode(GPIO::OUTPUT);
-
   scl_.write(GPIO::HIGH);
   sda_.write(GPIO::HIGH);
+  scl_.set_mode(GPIO::OUTPUT, GPIO::HIGH);
+  sda_.set_mode(GPIO::OUTPUT, GPIO::HIGH);
 
-  delayMicroseconds(100);
+  delayMicroseconds(10);
+
+  static const int cyc = 200;
 
   // clock out some bits
-  for (int i = 0; i < 16; ++i)
+  for (int i = 0; i < 18; ++i)
   {
-    delayMicroseconds(1);
+    for (int i = 0; i < cyc; i++); // delay
     scl_.toggle();
   }
   delayMicroseconds(1);
 
   // send a start condition
-  sda_.write(GPIO::LOW);
-  delayMicroseconds(1);
   scl_.write(GPIO::LOW);
-  delayMicroseconds(1);
+  for (int i = 0; i < cyc; i++); // delay
+  sda_.write(GPIO::LOW);
+  for (int i = 0; i < cyc; i++); // delay
 
   // then a stop
   scl_.write(GPIO::HIGH);
-  delayMicroseconds(1);
+  for (int i = 0; i < cyc; i++); // delay
   sda_.write(GPIO::HIGH);
-  delayMicroseconds(1);
+  for (int i = 0; i < cyc; i++); // delay
 
   // turn things back on
   scl_.set_mode(GPIO::PERIPH_IN_OUT);
