@@ -113,6 +113,12 @@ void PWM_OUT::init(const pwm_hardware_struct_t* pwm_init, uint16_t frequency, ui
     break;
   }
 
+  // Set Main Output Enable Bit
+  if (TIMPtr == TIM1 || TIMPtr == TIM8)
+  {
+    TIM_CtrlPWMOutputs(TIMPtr, ENABLE);
+  }
+
   TIM_ARRPreloadConfig(TIMPtr, ENABLE);
   TIM_Cmd(TIMPtr, ENABLE);
 }
