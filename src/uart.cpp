@@ -89,12 +89,12 @@ void UART::init_UART(uint32_t baudrate, uart_mode_t mode)
   }
 
   USART_InitStruct.USART_HardwareFlowControl = USART_HardwareFlowControl_None;
-  USART_InitStruct.USART_Mode = USART_Mode_Rx | USART_Mode_Tx;//Set to both recieve and send
+  USART_InitStruct.USART_Mode = USART_Mode_Rx | USART_Mode_Tx;//Set to both receive and send
   USART_Init(c_->dev, &USART_InitStruct);
   //USART_OverSampling8Cmd(c_->dev, ENABLE);//Please don't break anything
 
   // Throw interrupts on byte receive
-  USART_ITConfig(c_->dev, USART_IT_RXNE, ENABLE);//enable interupts on recieve
+  USART_ITConfig(c_->dev, USART_IT_RXNE, ENABLE);//enable interupts on receive
   USART_Cmd(c_->dev, ENABLE);//reenable the usart
 }
 
