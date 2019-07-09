@@ -31,7 +31,7 @@
 
 #pragma once
 
-#include <stdint.h>
+#include <cstdint>
 
 #include "revo_f4.h"
 
@@ -86,14 +86,64 @@ public:
   };
 
 private:
+
   struct Task
   {
-    TaskType task;
-    uint8_t addr;
-    uint8_t* data;
-    size_t len;
-    void (*cb)(int8_t);
-    bool handled_;
+    TaskType type;
+    union {
+      uint8_t addr; // READ/WRITE
+      struct {
+        size_t buffer_idx;
+        size_t len;
+      } write; // WRITE
+      struct {
+        uint8_t* dst;
+        size_t len;
+      } read; // READ
+      void (*cb)(int8_t); // STOP
+    } data;
+  };
+
+  class TaskQueue
+  {
+  public:
+    inline const Task* current() const { return len_ > 0 ? buffer_ + tail_ : nullptr; }
+    inline Task* last_staged() { return stage_offset_ > 0 ? buffer_ + ((head_ + stage_offset_ - 1) % TASK_BUFFER_SIZE) : nullptr; }
+
+    bool stage_push();
+    void finalize_push();
+    void cancel_push();
+    void pop();
+
+  private:
+    static constexpr size_t TASK_BUFFER_SIZE = 25;
+
+    Task buffer_[TASK_BUFFER_SIZE];
+    size_t head_ = 0;
+    size_t tail_ = 0;
+    size_t len_ = 0;
+
+    size_t stage_offset_ = 0;
+  };
+
+  class WriteQueue
+  {
+  public:
+    bool stage_push(const uint8_t *src, size_t len, size_t *start);
+    void finalize_push();
+    void cancel_push();
+    void move_to_index(size_t index);
+    uint8_t consume_byte();
+
+  private:
+    static constexpr size_t WRITE_BUFFER_SIZE = 50;
+
+    uint8_t buffer_[WRITE_BUFFER_SIZE];
+    size_t head_ = 0;
+    size_t tail_ = 0;
+    size_t len_ = 0;
+
+    size_t stage_offset_ = 0;
   };
 
   // microseconds to wait for transfer to complete before adding a new one
@@ -102,15 +152,10 @@ private:
   static constexpr uint64_t tout_reset = 20000;
 
   static constexpr size_t TASK_BUFFER_SIZE = 25;
-  Task tasks_[TASK_BUFFER_SIZE];
-  size_t task_head_ = 0;
-  size_t task_idx_ = 0;
+  TaskQueue task_queue_;
 
   static constexpr size_t WRITE_BUFFER_SIZE = 50;
-  uint8_t write_buffer_[WRITE_BUFFER_SIZE];
-  size_t wb_head_ = 0;
-  volatile size_t wb_tail_ = 0;
-  volatile size_t write_idx_;
+  WriteQueue write_queue_;
 
   uint32_t last_event_;
   uint32_t expected_event_;
@@ -119,6 +164,12 @@ private:
   int8_t return_code_;
   uint64_t last_event_us_;
   bool timeout_;
+
+  Task const * current_task_;
+  size_t current_write_idx_;
+
+  bool add_job_in_progress_ = false;
+  bool add_job_success_;
 
   // hardware
   DMA_InitTypeDef  DMA_InitStructure_;
@@ -130,15 +181,18 @@ public:
   I2C();
   // Initializes the NVIC, I2C and DMA
   void init(const i2c_hardware_struct_t *c);
-  size_t num_errors() { return num_errors_; }
+  size_t num_errors() const { return num_errors_; }
 
-  // This adds a new job to the task buffer.  Returns false if there is no room on the buffer
-  bool addJob(TaskType type, uint8_t addr=0, uint8_t* data=nullptr, size_t len=1, void(*cb)(int8_t)=nullptr);
-
-  Task& currentTask();
-  void advanceTask();
-
-  inline bool checkBusy() { return busy_; }
+  // Advanced API
+  bool beginJob();
+  bool addTaskStart();
+  bool addTaskWriteMode(uint8_t addr);
+  bool addTaskReadMode(uint8_t addr);
+  inline bool addTaskWrite(uint8_t data) { return addTaskWrite(&data, 1); }
+  bool addTaskWrite(uint8_t *src, size_t len);
+  bool addTaskRead(uint8_t *dst, size_t len);
+  bool addTaskStop(void(*cb)(int8_t) = nullptr);
+  bool finalizeJob();
 
   // Helper Abstractions (these call addJob in the right order and with the right arguments)
   // functions with callbacks are asynchronous and return RESULT_SUCCESS if the job was queued properly
@@ -152,7 +206,7 @@ public:
 
   int8_t write(uint8_t addr, uint8_t data, void(*cb)(int8_t)=nullptr);
   int8_t write(uint8_t addr, uint8_t reg, uint8_t data, void(*cb)(int8_t)=nullptr);
-  int8_t write(uint8_t addr, uint8_t* data, size_t len, void(*cb)(int8_t));
+  int8_t write(uint8_t addr, uint8_t* data, size_t len, void(*cb)(int8_t)=nullptr);
   int8_t write(uint8_t addr, uint8_t reg, uint8_t* data, size_t len, void(*cb)(int8_t)=nullptr);
 
   // These need to be public so the trampolines can land on them
@@ -163,17 +217,8 @@ public:
   void clearLog();
 
 private:
-  // private read abstractions, all the helpers land here
-
-  // This waits for the BUSY flag to clear (so we don't try to START during a STOP)
-  // This should not take longer than 200 us (tout).  If it fails, then we reset the peripheral
-  // and return RESULT_ERROR
-  bool waitForJob();
-
-  uint8_t* copyToWriteBuf(uint8_t* data, size_t len);
-  uint8_t* getWriteBufferData(uint8_t* begin, size_t write_idx);
-  bool handleJobs();
+  void handleTask();
+  bool advanceTask();
   void unstick();
-
-
+  inline bool checkBusy() const { return busy_; }
 };

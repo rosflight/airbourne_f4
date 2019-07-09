@@ -59,7 +59,7 @@ int main() {
 
   warn.on();
   I2C i2c[NUM_I2C];
-  for (int i = 1; i < NUM_I2C; i++)
+  for (int i = 0; i < NUM_I2C; i++)
   {
     i2c[i].init(&i2c_config[i]);
   }
