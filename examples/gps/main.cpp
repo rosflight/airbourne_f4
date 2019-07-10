@@ -55,7 +55,7 @@ int main()
   serPtr = &vcp;
 
   UART uart;
-  uart.init(&uart_config[UART3], 115200);
+  uart.init(&uart_config[UART1], 115200);
 
   init_printf(NULL, _putc);
 
@@ -65,19 +65,17 @@ int main()
   LED led1;
   led1.init(LED1_GPIO, LED1_PIN);
 
-  double lla[3] = {};
-  float vel[3] = {};
-  uint8_t fix_type = 0;
-  uint32_t t_ms;
   while (1)
   {
     if (gps.new_data())
     {
-      gps.read(lla, vel, &fix_type, &t_ms);
-      printf("fix: %s\tt: %d\tlla: %6.6f, %6.6f, %4.2f\tvel: %3.3f, %3.3f, %3.3f\n",
-             fix_names[fix_type].c_str(), t_ms, lla[0], lla[1], lla[2],
-             (double)vel[0], (double)vel[1], (double)vel[2]);
+      UBLOX::NAV_PVT_t raw = gps.read_raw();
+      printf("fix: %s\tt: %d\tlla: %d, %d, %d\tvel: %d, %d, %d\n",
+             fix_names[raw.fixType].c_str(), raw.iTOW,
+             raw.lat, raw.lon, raw.height,
+             raw.velN, raw.velE, raw.velD);
       led1.toggle();
     }
+    delay(10);
   }
 }
