@@ -68,7 +68,7 @@ bool flash_write(void const* flash_loc, void const* data, uint8_t len)
   flash_erase();
   FLASH->CR|=FLASH_CR_PG;
   uint32_t const* dataPtr = static_cast<uint32_t const*>(data);
-  uint32_t flash_address= reinterpret_cast<const uint32_t>(flash_loc);
+  uint32_t flash_address= reinterpret_cast<uint32_t>(flash_loc);
   for (uint32_t i=0;i<len;i+=4)
     FLASH_ProgramWord(flash_address+i,*(dataPtr++));
   return true;
