@@ -180,16 +180,16 @@ public:
     };
     
     enum {
-      MASK_DYN            = 0b00000000001, // Apply dynamic model settings
-      MASK_MINEL 	  = 0b00000000010, // Apply minimum elevation settings
-      MASK_POSFIXMODE     = 0b00000000100, // Apply fix mode settings
-      MASK_DRLIM 	  = 0b00000001000, // Reserved
-      MASK_POSMASK 	  = 0b00000010000, // Apply position mask settings
-      MASK_TIMEMASK 	  = 0b00000100000, // Apply time mask settings
-      MASK_STATICHOLDMASK = 0b00001000000, // Apply static hold settings
-      MASK_DGPSMASK 	  = 0b00010000000, // Apply DGPS settings.
-      MASK_CNOTHRESHOLD   = 0b00100000000, // Apply CNO threshold settings (cnoThresh, cnoThreshNumSVs).
-      MASK_UTC 	          = 0b10000000000, // Apply UTC settings
+      MASK_DYN            = 0x01, // Apply dynamic model settings
+      MASK_MINEL 	      = 0x02, // Apply minimum elevation settings
+      MASK_POSFIXMODE     = 0x04, // Apply fix mode settings
+      MASK_DRLIM 	      = 0x08, // Reserved
+      MASK_POSMASK 	      = 0x10, // Apply position mask settings
+      MASK_TIMEMASK 	  = 0x20, // Apply time mask settings
+      MASK_STATICHOLDMASK = 0x40, // Apply static hold settings
+      MASK_DGPSMASK 	  = 0x80, // Apply DGPS settings.
+      MASK_CNOTHRESHOLD   = 0x100, // Apply CNO threshold settings (cnoThresh, cnoThreshNumSVs).
+      MASK_UTC 	          = 0x200, // Apply UTC settings
     };
     
     uint16_t mask;
@@ -222,20 +222,20 @@ public:
       PORT_SPI = 4
     };
     enum {
-      CHARLEN_8BIT = 0b11000000,
-      PARITY_NONE  = 0b100000000000,
+      CHARLEN_8BIT = 0xC0,
+      PARITY_NONE  = 0x800,
       STOP_BITS_1  = 0x0000          
     };
     enum {
-      IN_UBX   = 0b00000001,
-      IN_NMEA  = 0b00000010,
-      IN_RTCM  = 0b00000100,
-      IN_RTCM3 = 0b00100000,
+      IN_UBX   = 0x01,
+      IN_NMEA  = 0x02,
+      IN_RTCM  = 0x04,
+      IN_RTCM3 = 0x20
     };
     enum {
-      OUT_UBX   = 0b00000001,
-      OUT_NMEA  = 0b00000010,
-      OUT_RTCM3 = 0b00100000,
+      OUT_UBX   = 0x01,
+      OUT_NMEA  = 0x02,
+      OUT_RTCM3 = 0x20,
     };
     uint8_t portID;
     uint8_t reserved1;
@@ -263,24 +263,24 @@ public:
   
   typedef struct  {
     enum {
-      VALIDITY_FLAGS_VALIDDATE= 0b01, // Valid UTC Date (see Time Validity section for details)
-      VALIDITY_FLAGS_VALIDTIME = 0b10, // Valid UTC Time of Day (see Time Validity section for details)
-      VALIDITY_FLAGS_FULLYRESOLVED = 0b100, // UTC Time of Day has been fully resolved (no seconds uncertainty)
+      VALIDITY_FLAGS_VALIDDATE= 0x01, // Valid UTC Date (see Time Validity section for details)
+      VALIDITY_FLAGS_VALIDTIME = 0x02, // Valid UTC Time of Day (see Time Validity section for details)
+      VALIDITY_FLAGS_FULLYRESOLVED = 0x04, // UTC Time of Day has been fully resolved (no seconds uncertainty)
     };
     
     enum {
-      FIX_STATUS_GNSS_FIX_OK            = 0b00000001, // Valid Fix
-      FIX_STATUS_DIFF_SOLN              = 0b00000010, // Differential Corrections were applied
-      FIX_STATUS_PSM_STATE_NOT_ACTIVE   = 0b00000000, 
-      FIX_STATUS_PSM_STATE_ENABLED      = 0b00000100, 
-      FIX_STATUS_PSM_STATE_ACQUISITION  = 0b00001000, 
-      FIX_STATUS_PSM_STATE_TRACKING     = 0b00001100, 
-      FIX_STATUS_PSM_STATE_POWER_OPTIMIZED_TRACKING   = 0b00010000,
-      FIX_STATUS_PSM_STATE_INACTIVE     = 0b00010100,
-      FIX_STATUS_HEADING_VALID          = 0b00100000,
-      FIX_STATUS_CARR_SOLN_NONE         = 0b00000000,
-      FIX_STATUS_CARR_SOLN_FLOAT        = 0b01000000,
-      FIX_STATUS_CARR_SOLN_FIXED        = 0b10000000,
+      FIX_STATUS_PSM_STATE_NOT_ACTIVE   = 0x00,
+      FIX_STATUS_GNSS_FIX_OK            = 0x01, // Valid Fix
+      FIX_STATUS_DIFF_SOLN              = 0x02, // Differential Corrections were applied
+      FIX_STATUS_PSM_STATE_ENABLED      = 0x04,
+      FIX_STATUS_PSM_STATE_ACQUISITION  = 0x08,
+      FIX_STATUS_PSM_STATE_TRACKING     = 0x12,
+      FIX_STATUS_PSM_STATE_POWER_OPTIMIZED_TRACKING   = 0x10,
+      FIX_STATUS_PSM_STATE_INACTIVE     = 0x14,
+      FIX_STATUS_HEADING_VALID          = 0x20,
+      FIX_STATUS_CARR_SOLN_NONE         = 0x00,
+      FIX_STATUS_CARR_SOLN_FLOAT        = 0x40,
+      FIX_STATUS_CARR_SOLN_FIXED        = 0x80,
     };
     
     uint32_t iTOW; // ms GPS time of week of the  navigation epoch . See the  description of iTOW for details.

@@ -29,7 +29,7 @@ void UBLOX::init(UART* uart_drv)
   looking_for_nmea_ = true;
   serial_->register_rx_callback(read_callback);
   current_baudrate_ = 0;
-  for (int i = 0; i < sizeof(baudrates)/sizeof(uint32_t); i++)
+  for (size_t i = 0; i < sizeof(baudrates)/sizeof(uint32_t); i++)
   {
     serial_->set_mode(baudrates[i], UART::MODE_8N1);
     uint32_t start = millis();
@@ -167,7 +167,7 @@ void UBLOX::read_cb(uint8_t byte)
     parse_state_ = GOT_LENGTH1;
     break;
   case GOT_LENGTH1:
-    length_ |= (uint16_t) byte << 8;
+    length_ |= static_cast<uint16_t>(byte)<< 8;
     parse_state_ = GOT_LENGTH2;
     if (length_ > UBLOX_BUFFER_SIZE)
     {
@@ -321,8 +321,8 @@ bool UBLOX::decode_message()
 void UBLOX::convert_data()
 {
   double scaling = 1e-7 * 3.14159/180.0;
-  lla_[0] = (double)(nav_message_.lat) * scaling;
-  lla_[1] = (double)(nav_message_.lon) * scaling;
+  lla_[0] = static_cast<double>(nav_message_.lat) * scaling;
+  lla_[1] = static_cast<double>(nav_message_.lon) * scaling;
   lla_[2] = nav_message_.height * 1e-3;
   
   vel_[0] = nav_message_.velN * 1e-3;
@@ -343,10 +343,10 @@ void UBLOX::calculate_checksum(const uint8_t msg_cls, const uint8_t msg_id, cons
   ck_b = ck_b + ck_a;
   
   // Length
-  ck_a = ck_a + len & 0xFF;
+  ck_a = ck_a + (len & 0xFF);
   ck_b = ck_b + ck_a;
 
-  ck_a = ck_a + (len >> 8) & 0xFF;
+  ck_a = ck_a + ((len >> 8) & 0xFF);
   ck_b = ck_b + ck_a;
 
   // Payload

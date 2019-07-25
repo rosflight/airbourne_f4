@@ -59,7 +59,7 @@ void PWM_OUT::init(const pwm_hardware_struct_t* pwm_init, uint16_t frequency, ui
   uint32_t freq_prescale = prescaler_default * 2;
   uint32_t tim_prescaler = prescaler_default;
 
-  if (TIMPtr == TIM9 || TIMPtr == TIM10 || TIMPtr == TIM11)
+  if (TIMPtr == TIM1 || TIMPtr == TIM8 || TIMPtr == TIM9 || TIMPtr == TIM10 || TIMPtr == TIM11)
   {
     //For F4's (possibly others) TIM9-11 have a max timer clk double that of all the other TIMs
     //compensate for this by doubling its prescaler
@@ -111,6 +111,12 @@ void PWM_OUT::init(const pwm_hardware_struct_t* pwm_init, uint16_t frequency, ui
     TIM_OC4PreloadConfig(TIMPtr, TIM_OCPreload_Enable);
     CCR_ = &TIMPtr->CCR4;
     break;
+  }
+
+  // Set Main Output Enable Bit
+  if (TIMPtr == TIM1 || TIMPtr == TIM8)
+  {
+    TIM_CtrlPWMOutputs(TIMPtr, ENABLE);
   }
 
   TIM_ARRPreloadConfig(TIMPtr, ENABLE);
