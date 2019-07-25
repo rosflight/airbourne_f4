@@ -37,16 +37,24 @@
 #include "revo_f4.h"
 #include "backup_sram.h"
 #include "vcp.h"
+#include "printf.h"
 
 struct BackupData
 {
+    static constexpr uint32_t CHECKSUM_START = 0xA5A5;
+
     uint32_t reset_count;
     uint32_t some_data;
     uint32_t checksum;
 
+    BackupData()
+    {
+        memset(this, 0, sizeof(BackupData));
+    }
+
     uint32_t compute_checksum()
     {
-        uint32_t crc = 0;
+        uint32_t crc = CHECKSUM_START;
         for (size_t offset = 0; offset <= sizeof(BackupData) - sizeof(checksum) - sizeof(crc); offset++)
         {
             crc ^= *reinterpret_cast<uint32_t*>(reinterpret_cast<uint8_t*>(this) + offset);
@@ -62,27 +70,13 @@ void restart()
 
 int main()
 {
-	systemInit();
-    // backup_sram_init();
+    systemInit();
     VCP vcp;
     vcp.init();
     backup_sram_init();
 
-    // BackupData read_data = backup_sram_read();
-    // uint32_t reset_count = 0;
-    // if(check_backup_checksum(read_data))
-    //     reset_count = read_data.reset_count;
-    // BackupData write_data={};
-    // write_data.reset_count=++reset_count;
-    // write_data.error_code=0xDEADBEEF;
-    // write_data.checksum=generate_backup_checksum(write_data);
-    // delay(300);
-    // backup_sram_write(write_data);
-    // restart();
-
     // check for and process backup data if it exists
     BackupData read_data;
-    // backup_sram_read(reinterpret_cast<void*>(&read_data), sizeof(read_data));
     backup_sram_read(&read_data, sizeof(read_data));
 
     uint32_t reset_count = 0;
@@ -100,7 +94,6 @@ int main()
     write_data.reset_count = ++reset_count; // increment reset counter
     write_data.some_data = 0xDEADBEEF;
     write_data.checksum = write_data.compute_checksum();
-    // backup_sram_write(reinterpret_cast<const void*>(&write_data), sizeof(write_data));
     backup_sram_write(&write_data, sizeof(write_data));
 
     restart();

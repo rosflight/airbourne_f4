@@ -34,8 +34,10 @@ void backup_sram_read(void *dst, size_t len)
 
 void backup_sram_clear(size_t len)
 {
-#pragma GCC diagnostic push //Ignore blank fields in struct
-#pragma GCC diagnostic ignored "-Wmissing-field-initializers"
+    PWR_BackupAccessCmd(ENABLE);
+#pragma GCC diagnostic push //Ignore old style cast from included library
+#pragma GCC diagnostic ignored "-Wold-style-cast"
     std::memset(reinterpret_cast<void*>(BKPSRAM_BASE), 0, len);
 #pragma GCC diagnostic pop
+    PWR_BackupAccessCmd(DISABLE);
 }
