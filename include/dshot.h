@@ -2,8 +2,10 @@
 #ifndef DRV_DSHOT_H
 #define DRV_DSHOT_H
 
-#include "revo_f4.h"
 #include <array>
+
+#include "revo_f4.h"
+#include "system.h"
 
 // we have 16 timer values for the actual payload itself
 // then the 17th time value is a zero so we arent transmitting
@@ -24,8 +26,7 @@ public:
 
     DSHOT_OUT();
 
-    // TODO: temp, change bitrate to an enum
-    void init(dshot_speed_t dshot_speed);
+    void init(const dshot_hardware_struct_t* dshot_config, dshot_speed_t dshot_speed);
     void enable();
     void disable();
     void setRequestTelemetry(bool request_telemetry);
@@ -35,11 +36,10 @@ private:
     uint16_t prepareDshotPacket(float value);
     bool request_telemetry_;
 
-    TIM_TypeDef* TIMPtr;
-    DMA_Stream_TypeDef* DMAPtr;
-    DMA_TypeDef* DMABasePtr;
-    GPIO_TypeDef* port_;
-    uint16_t pin_;
+    const dshot_hardware_struct_t* config_;
+
+    // offset to access dma interrupt flags for this dshot instance
+    uint8_t dma_interrupt_flag_offset_;
 
     uint16_t out_buffer_[DSHOT_OUT_BUFF_SIZE];
 };

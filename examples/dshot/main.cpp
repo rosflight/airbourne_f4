@@ -36,11 +36,19 @@ int main()
 
     DSHOT_OUT dshot;
 
+    dshot_hardware_struct_t dshot_pwm1;
+    dshot_pwm1.tx_dma_base    = DMA1;
+    dshot_pwm1.tx_dma_stream  = DMA1_Stream2;
+    dshot_pwm1.tx_dma_channel = DMA_Channel_5;
+    dshot_pwm1.tx_tim         = TIM3;
+    dshot_pwm1.gpio_port      = GPIOB;
+    dshot_pwm1.gpio_pin       = GPIO_Pin_0;
+
     float test_value = 0;
     uint32_t last_print_ms = 0;
     uint16_t result, packet;
 
-    dshot.init(DSHOT_OUT::DSHOT_150);
+    dshot.init(&dshot_pwm1, DSHOT_OUT::DSHOT_150);
 
     while (1)
     {

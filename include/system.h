@@ -117,6 +117,15 @@ typedef struct {
 	uint32_t DMA_Tx_IT_Bit;
 } uart_hardware_struct_t;
 
+typedef struct {
+	DMA_TypeDef*			tx_dma_base;	// used to configure and handle interrupts
+	DMA_Stream_TypeDef* 	tx_dma_stream; 	// DSHOT commands are queued onto this DMA and sent to the ESC
+	uint32_t 				tx_dma_channel; // the channel the above DMA stream uses
+	TIM_TypeDef* 			tx_tim; 		// TIM connects to the GPIO to send properly timed dshot pulses
+	GPIO_TypeDef*			gpio_port;		// GPIO port the TIM connects to to send out pulses
+	uint16_t 				gpio_pin;		// GPIO pin being used on the above gpio port
+} dshot_hardware_struct_t;
+
 #ifdef __cplusplus
 extern "C" {
 #endif

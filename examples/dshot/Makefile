@@ -121,7 +121,8 @@ CSOURCES =  $(CMSIS_SRC) \
             $(PROCESSOR_SRC) \
             $(VCP_SRC) \
             system.c \
-            system_stm32f4xx.c
+            system_stm32f4xx.c \
+            system_helpers.c
 
 CXXSOURCES = $(SRC_DIR)/gpio.cpp \
              $(SRC_DIR)/led.cpp \
