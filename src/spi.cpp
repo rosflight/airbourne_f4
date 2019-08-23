@@ -37,7 +37,7 @@ SPI* SPI3ptr;
 
 static uint8_t dummy_buffer[256];
 
-void SPI::init(const spi_hardware_struct_t *c)
+void SPI::init(const spi_hardware_struct_t *c, CPOL cpol, CPHA cpha)
 {
   SPI_InitTypeDef  spi_init_struct;
 
@@ -66,8 +66,8 @@ void SPI::init(const spi_hardware_struct_t *c)
   spi_init_struct.SPI_Direction = SPI_Direction_2Lines_FullDuplex;
   spi_init_struct.SPI_Mode = SPI_Mode_Master;
   spi_init_struct.SPI_DataSize = SPI_DataSize_8b;
-  spi_init_struct.SPI_CPOL = SPI_CPOL_High;
-  spi_init_struct.SPI_CPHA = SPI_CPHA_2Edge;
+  spi_init_struct.SPI_CPOL = static_cast<uint16_t>(cpol);
+  spi_init_struct.SPI_CPHA = static_cast<uint16_t>(cpha);
   spi_init_struct.SPI_NSS = SPI_NSS_Soft;
   spi_init_struct.SPI_BaudRatePrescaler = SPI_BaudRatePrescaler_64;  // 42/64 = 0.65625 MHz SPI Clock
   spi_init_struct.SPI_FirstBit = SPI_FirstBit_MSB;
@@ -178,26 +178,43 @@ uint8_t SPI::transfer_byte(uint8_t data, GPIO *cs)
       return false;
   }
 
-  if (cs)
-    disable(*cs);
+  uint8_t rx_byte = static_cast<uint8_t>(SPI_I2S_ReceiveData(c_->dev));
 
-  return static_cast<uint8_t>(SPI_I2S_ReceiveData(c_->dev));
+  while (SPI_I2S_GetFlagStatus(c_->dev, SPI_I2S_FLAG_TXE) != SET)
+  {
+    if ((--spiTimeout) == 0)
+      return false;
+  }
+
+  if (cs)
+  {
+    while (SPI_I2S_GetFlagStatus(c_->dev, SPI_I2S_FLAG_BSY) != RESET)
+    {
+      if ((--spiTimeout) == 0)
+        return false;
+    }
+
+    delayMicroseconds(0); // seems to add just enough delay so that the enable pin doesn't go high until after the trailing clock edge occurs
+    disable(*cs);
+  }
+
+  return rx_byte;
 }
 
 bool SPI::write(const uint8_t *out_data, uint32_t num_bytes, GPIO* cs)
 {
 	busy_ = true;
-  
+
 	// Save Job parameters
 	in_buffer_ptr_ = dummy_buffer;
 	out_buffer_ptr_ = (out_data == NULL) ? dummy_buffer : out_data;
 	cs_ = cs;
-	transfer_cb_ = NULL;  
+	transfer_cb_ = NULL;
 	num_bytes_ = num_bytes;
-  
+
 	perform_transfer();
 	return true;
-	
+
 }
 
 bool SPI::transfer(uint8_t *out_data, uint32_t num_bytes, uint8_t* in_data, GPIO* cs, void (*cb)(void))
@@ -208,7 +225,7 @@ bool SPI::transfer(uint8_t *out_data, uint32_t num_bytes, uint8_t* in_data, GPIO
   in_buffer_ptr_ = (in_data == NULL) ? dummy_buffer : in_data;
   out_buffer_ptr_ = (out_data == NULL) ? dummy_buffer : out_data;
   cs_ = cs;
-  transfer_cb_ = cb;  
+  transfer_cb_ = cb;
   num_bytes_ = num_bytes;
 
   perform_transfer();
@@ -220,29 +237,29 @@ void SPI::perform_transfer()
 	// Configure the DMA
 	DMA_DeInit(c_->Tx_DMA_Stream); //SPI1_TX_DMA_STREAM
 	DMA_DeInit(c_->Rx_DMA_Stream); //SPI1_RX_DMA_STREAM
-  
+
 	DMA_InitStructure_.DMA_BufferSize = num_bytes_;
-  
+
 	// Configure Tx DMA
 	DMA_InitStructure_.DMA_DIR = DMA_DIR_MemoryToPeripheral;
 	DMA_InitStructure_.DMA_Memory0BaseAddr = reinterpret_cast<uint32_t>(out_buffer_ptr_);
 	DMA_Init(c_->Tx_DMA_Stream, &DMA_InitStructure_);
-  
+
 	// Configure Rx DMA
 	DMA_InitStructure_.DMA_DIR = DMA_DIR_PeripheralToMemory;
 	DMA_InitStructure_.DMA_Memory0BaseAddr = reinterpret_cast<uint32_t>(in_buffer_ptr_);
 	DMA_Init(c_->Rx_DMA_Stream, &DMA_InitStructure_);
-  
+
 	//  Configure the Interrupt
 	DMA_ITConfig(c_->Tx_DMA_Stream, DMA_IT_TC, ENABLE);
-  
+
 	if (cs_ != NULL)
 	  enable(*cs_);
-  
+
 	// Turn on the DMA streams
 	DMA_Cmd(c_->Tx_DMA_Stream, ENABLE);
 	DMA_Cmd(c_->Rx_DMA_Stream, ENABLE);
-  
+
 	// Enable the SPI Rx/Tx DMA request
 	SPI_I2S_DMACmd(c_->dev, SPI_I2S_DMAReq_Rx, ENABLE);
 	SPI_I2S_DMACmd(c_->dev, SPI_I2S_DMAReq_Tx, ENABLE);

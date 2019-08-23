@@ -39,8 +39,19 @@ class SPI
 {
 
 public:
+  enum class CPOL : uint16_t
+  {
+    CPOL_0 = SPI_CPOL_Low,
+    CPOL_1 = SPI_CPOL_High
+  };
 
-  void init(const spi_hardware_struct_t *conf);
+  enum class CPHA : uint16_t
+  {
+    CPHA_0 = SPI_CPHA_1Edge,
+    CPHA_1 = SPI_CPHA_2Edge
+  };
+
+  void init(const spi_hardware_struct_t *conf, CPOL cpol, CPHA cpha);
   void set_divisor(uint16_t new_divisor);
 
   void enable(GPIO& cs);
@@ -54,12 +65,12 @@ public:
   inline bool is_busy() {return busy_;}
 
 private:
-  
+
   void perform_transfer();
   uint8_t* in_buffer_ptr_;
   const uint8_t* out_buffer_ptr_;
   uint32_t num_bytes_;
-  
+
   const spi_hardware_struct_t* c_;
   GPIO mosi_;
   GPIO miso_;
