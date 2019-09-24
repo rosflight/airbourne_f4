@@ -271,17 +271,23 @@ bool MS5611::read_pres_meas()
   callback_type_ = CB_PRES_READ;
   uint8_t byte = ADC_READ;
   i2c_->clearLog();
-  if (i2c_->addJob(I2C::TaskType::START)
-    && i2c_->addJob(I2C::TaskType::WRITE_MODE, ADDR)
-    && i2c_->addJob(I2C::TaskType::WRITE, 0, &byte, 1)
-    && i2c_->addJob(I2C::TaskType::STOP, 0, 0, 0, 0)
-    && i2c_->addJob(I2C::TaskType::START)
-    && i2c_->addJob(I2C::TaskType::READ_MODE, ADDR)
-    && i2c_->addJob(I2C::TaskType::READ, 0, pres_buf_, 3)
-    && i2c_->addJob(I2C::TaskType::STOP, 0, 0, 0, &cb))
-    return true;
+
+  if (i2c_->beginJob()
+      && i2c_->addTaskStart()
+      && i2c_->addTaskWriteMode(ADDR)
+      && i2c_->addTaskWrite(&byte, 1)
+      && i2c_->addTaskStop()
+      && i2c_->addTaskStart()
+      && i2c_->addTaskReadMode(ADDR)
+      && i2c_->addTaskRead(pres_buf_, 3)
+      && i2c_->addTaskStop(&cb)
+      && i2c_->finalizeJob())
+  {
+    // TODO if (blocking) waitToFinish ????
+    return i2c_->RESULT_SUCCESS;
+  }
   else
-    return false;
+    return i2c_->RESULT_ERROR;
 }
 
 bool MS5611::read_temp_meas()
@@ -291,17 +297,23 @@ bool MS5611::read_temp_meas()
   callback_type_ = CB_TEMP_READ;
   uint8_t byte = ADC_READ;
   i2c_->clearLog();
-  if (i2c_->addJob(I2C::TaskType::START)
-    && i2c_->addJob(I2C::TaskType::WRITE_MODE, ADDR)
-    && i2c_->addJob(I2C::TaskType::WRITE, 0, &byte, 1)
-    && i2c_->addJob(I2C::TaskType::STOP, 0, 0, 0, 0)
-    && i2c_->addJob(I2C::TaskType::START)
-    && i2c_->addJob(I2C::TaskType::READ_MODE, ADDR)
-    && i2c_->addJob(I2C::TaskType::READ, 0, temp_buf_, 3)
-    && i2c_->addJob(I2C::TaskType::STOP, 0, 0, 0, &cb))
-      return true;
+
+  if (i2c_->beginJob()
+      && i2c_->addTaskStart()
+      && i2c_->addTaskWriteMode(ADDR)
+      && i2c_->addTaskWrite(&byte, 1)
+      && i2c_->addTaskStop()
+      && i2c_->addTaskStart()
+      && i2c_->addTaskReadMode(ADDR)
+      && i2c_->addTaskRead(temp_buf_, 3)
+      && i2c_->addTaskStop(&cb)
+      && i2c_->finalizeJob())
+  {
+    // TODO if (blocking) waitToFinish ????
+    return i2c_->RESULT_SUCCESS;
+  }
   else
-    return false;
+    return i2c_->RESULT_ERROR;
 }
 
 void MS5611::temp_read_cb(uint8_t result)
