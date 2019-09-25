@@ -74,14 +74,14 @@ int main() {
     laser.update();
     if (laser.present())
     {
-      warn.on();
+      warn.off();
       printf("dist: %d.%d, strength: %d\n",
              (int)laser.distance(), (int)(laser.distance()*1000)%1000,
              laser.strength());
     }
     else
     {
-      warn.off();
+      warn.on();
       printf("No Laser\n");
     }
   }

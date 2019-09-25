@@ -73,13 +73,15 @@ void TFMini::setParameter(uint16_t cmd, uint8_t val)
   uint8_t data[3] = {(uint8_t)(cmd >> 16), (uint8_t)(cmd & 0xFF), 0x01};
 
   i2c_->clearLog();
-  i2c_->addJob(I2C::TaskType::START);
-  i2c_->addJob(I2C::TaskType::WRITE_MODE, ADDR);
-  i2c_->addJob(I2C::TaskType::WRITE, 0, data, 3);
-  i2c_->addJob(I2C::TaskType::START);
-  i2c_->addJob(I2C::TaskType::WRITE_MODE, ADDR);
-  i2c_->addJob(I2C::TaskType::WRITE, 0, &val, 1);
-  i2c_->addJob(I2C::TaskType::STOP);
+  i2c_->beginJob();
+  i2c_->addTaskStart();
+  i2c_->addTaskWriteMode(ADDR);
+  i2c_->addTaskWrite(data, 3);
+  i2c_->addTaskStart();
+  i2c_->addTaskWriteMode(ADDR);
+  i2c_->addTaskWrite(&val, 1);
+  i2c_->addTaskStop();
+  i2c_->finalizeJob();
 }
 
 void TFMini::read_cb(int8_t status)
@@ -109,13 +111,15 @@ void TFMini::do_read()
 {
   uint8_t data[3] = {0x01, 0x02, 0x07};
   i2c_->clearLog();
-  i2c_->addJob(I2C::TaskType::START);
-  i2c_->addJob(I2C::TaskType::WRITE_MODE, ADDR);
-  i2c_->addJob(I2C::TaskType::WRITE, 0, data, 3);
-  i2c_->addJob(I2C::TaskType::START);
-  i2c_->addJob(I2C::TaskType::READ_MODE, ADDR);
-  i2c_->addJob(I2C::TaskType::READ, 0, packet_.buf, 7);
-  i2c_->addJob(I2C::TaskType::STOP, 0, 0, 0, &cb);
+  i2c_->beginJob();
+  i2c_->addTaskStart();
+  i2c_->addTaskWriteMode(ADDR);
+  i2c_->addTaskWrite(data, 3);
+  i2c_->addTaskStart();
+  i2c_->addTaskReadMode(ADDR);
+  i2c_->addTaskRead(packet_.buf, 7);
+  i2c_->addTaskStop(&cb);
+  i2c_->finalizeJob();
 }
 
 void TFMini::convert()
