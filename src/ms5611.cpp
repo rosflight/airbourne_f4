@@ -62,8 +62,6 @@ bool MS5611::init(I2C* _i2c)
 
   reset();
 
-  read_temp_meas();
-
   // Read the PROM (try a couple times if it fails)
   bool got_valid_prom = false;
   for (int i = 0; i < 5; i++)
@@ -154,10 +152,10 @@ bool MS5611::read_prom()
 {
   uint8_t buf[2] = {0, 0};
   
-  // try a few times
+  // Read 128 bit PROM 2 bytes at a time
   for (int i = 0; i < 8; i++)
   {
-    if ((i2c_->write(ADDR, PROM_RD + 2* i) == I2C::RESULT_SUCCESS)
+    if ((i2c_->write(ADDR, PROM_RD | (i<<1)) == I2C::RESULT_SUCCESS)
         && (i2c_->read(ADDR, buf, 2) == I2C::RESULT_SUCCESS))
     {
       prom[i] = static_cast<uint16_t>(buf[0] << 8 | buf[1]);
@@ -253,7 +251,7 @@ bool MS5611::start_temp_meas()
   waiting_for_cb_ = true;
   last_update_ms_ = millis();
   callback_type_ = CB_TEMP_START;
-  return i2c_->write(ADDR, ADC_CONV + ADC_D2 + ADC_4096, &cb) == I2C::RESULT_SUCCESS;
+  return i2c_->write(ADDR, ADC_CONV | ADC_D2 | ADC_4096, &cb) == I2C::RESULT_SUCCESS;
 }
 
 bool MS5611::start_pres_meas()
@@ -261,7 +259,15 @@ bool MS5611::start_pres_meas()
   waiting_for_cb_ = true;
   last_update_ms_ = millis();
   callback_type_ = CB_PRES_START;
-  return i2c_->write(ADDR, ADC_CONV + ADC_D1 + ADC_4096, &cb) == I2C::RESULT_SUCCESS;
+  return i2c_->write(ADDR, ADC_CONV | ADC_D1 | ADC_4096, &cb) == I2C::RESULT_SUCCESS;
+}
+
+bool MS5611::read_adc(uint8_t* read_buf)
+{
+  uint8_t byte = ADC_READ;
+  i2c_->clearLog();
+  return (i2c_->write(ADDR, &byte, 1) == I2C::RESULT_SUCCESS
+          && i2c_->read(ADDR, read_buf, 3, &cb) == I2C::RESULT_SUCCESS);
 }
 
 bool MS5611::read_pres_meas()
@@ -269,25 +275,8 @@ bool MS5611::read_pres_meas()
   waiting_for_cb_ = true;
   last_update_ms_ = millis();
   callback_type_ = CB_PRES_READ;
-  uint8_t byte = ADC_READ;
-  i2c_->clearLog();
 
-  if (i2c_->beginJob()
-      && i2c_->addTaskStart()
-      && i2c_->addTaskWriteMode(ADDR)
-      && i2c_->addTaskWrite(&byte, 1)
-      && i2c_->addTaskStop()
-      && i2c_->addTaskStart()
-      && i2c_->addTaskReadMode(ADDR)
-      && i2c_->addTaskRead(pres_buf_, 3)
-      && i2c_->addTaskStop(&cb)
-      && i2c_->finalizeJob())
-  {
-    // TODO if (blocking) waitToFinish ????
-    return i2c_->RESULT_SUCCESS;
-  }
-  else
-    return i2c_->RESULT_ERROR;
+  return read_adc(pres_buf_);
 }
 
 bool MS5611::read_temp_meas()
@@ -295,25 +284,8 @@ bool MS5611::read_temp_meas()
   waiting_for_cb_ = true;
   last_update_ms_ = millis();
   callback_type_ = CB_TEMP_READ;
-  uint8_t byte = ADC_READ;
-  i2c_->clearLog();
 
-  if (i2c_->beginJob()
-      && i2c_->addTaskStart()
-      && i2c_->addTaskWriteMode(ADDR)
-      && i2c_->addTaskWrite(&byte, 1)
-      && i2c_->addTaskStop()
-      && i2c_->addTaskStart()
-      && i2c_->addTaskReadMode(ADDR)
-      && i2c_->addTaskRead(temp_buf_, 3)
-      && i2c_->addTaskStop(&cb)
-      && i2c_->finalizeJob())
-  {
-    // TODO if (blocking) waitToFinish ????
-    return i2c_->RESULT_SUCCESS;
-  }
-  else
-    return i2c_->RESULT_ERROR;
+  return read_adc(temp_buf_);
 }
 
 void MS5611::temp_read_cb(uint8_t result)

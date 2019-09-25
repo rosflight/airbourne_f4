@@ -78,6 +78,7 @@ private:
   void reset();
   bool read_prom();
   int8_t calc_crc();
+  bool read_adc(uint8_t* read_buf);
   bool read_pres_meas();
   bool read_temp_meas();
   bool start_temp_meas();
