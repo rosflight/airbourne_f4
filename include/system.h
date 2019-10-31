@@ -35,7 +35,7 @@
 #define ARM_MATH_CM4
 
 #include <stdbool.h>
-#include <stdint.h>
+#include <cstdint>
 #include <ctype.h>
 #include <string.h>
 #include <stdarg.h>
