@@ -135,7 +135,9 @@ CXXSOURCES = $(PRINTF_SRC) \
              vcp.cpp \
              i2c.cpp \
              hmc5883l.cpp
-
+$(info $$STDPERIPH_SRC is [${STDPERIPH_SRC}])
+$(info $$CMSIS_SRC is [${CMSIS_SRC}])
+$(info $$CSOURCES is [${CSOURCES}])
 INCLUDE_DIRS =  $(SRC_DIR) \
                 $(ROOT)/include \
                 $(STDPERIPH_DIR)/inc \
