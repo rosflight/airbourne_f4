@@ -85,7 +85,8 @@ message(${ELF_TARGET})
 add_executable(${ELF_TARGET}
 	main.cpp
 	${ROOT_DIR}/src/vcp.cpp
-	${ROOT_DIR}/src/system.c
+        ${ROOT_DIR}/src/analog.cpp
+        ${ROOT_DIR}/src/system.c
 	${ROOT_DIR}/src/system_stm32f4xx.c
 	${ROOT_DIR}/src/led.cpp
 	${ROOT_DIR}/src/gpio.cpp
