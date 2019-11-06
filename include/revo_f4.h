@@ -166,6 +166,13 @@ const pwm_hardware_struct_t pwm_config[PWM_NUM_CHANNELS] =
 #define PPM_RC_IQRHandler TIM8_BRK_TIM12_IRQHandler
 
 
+/////////////////////// ANALOG CONFIG ///////////////////////
+#define VOLTAGE_GPIO GPIOC
+#define VOLTAGE_PIN GPIO_Pin_2
+#define VOLTAGE_ADC_CHANNEL ADC_Channel_12
+#define CURRENT_GPIO GPIOC
+#define CURRENT_PIN GPIO_Pin_1
+#define CURRENT_ADC_CHANNEL ADC_Channel_11
 
 
 #endif // REVO_F4_H
