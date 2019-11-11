@@ -35,12 +35,12 @@
 #include "analog_digital_converter.h"
 #include "analog_pin.h"
 
-VCP *uartPtr = NULL;
+VCP *vcpPtr = NULL;
 
 static void _putc(void *p, char c)
 {
   (void)p; // avoid compiler warning about unused variable
-  uartPtr->put_byte(c);
+  vcpPtr->put_byte(c);
 }
 
 int main()
@@ -50,7 +50,7 @@ int main()
 
   VCP vcp;
   vcp.init();
-  uartPtr = &vcp;
+  vcpPtr = &vcp;
   init_printf(NULL, _putc);
 
   /*
@@ -74,11 +74,14 @@ int main()
   AnalogPin current_pin;
   current_pin.init(&adc, CURRENT_GPIO, CURRENT_PIN, CURRENT_ADC_CHANNEL);
 
+  AnalogPin voltage_pin;
+  voltage_pin.init(&adc, VOLTAGE_GPIO, VOLTAGE_PIN, VOLTAGE_ADC_CHANNEL);
+
   while (true)
   {
-    double voltage = current_pin.read();
-    uint16_t raw_voltage = current_pin.read_raw();
-    printf("%d; %f\n",raw_voltage, voltage);
+    double voltage = voltage_pin.read();
+    double current = current_pin.read();
+    printf("%f;\t%f\n",voltage, current);
     delay(500);
   }
 }
