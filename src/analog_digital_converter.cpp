@@ -4,7 +4,9 @@ void AnalogDigitalConverter::init(const adc_hardware_struct_t *adc_def)
 {
   this->current_channels = 0;
   this->adc_def_ = adc_def;
+
   ADC_TypeDef *adc = adc_def_->adc;
+
   for (size_t index =0; index< CHANNEL_COUNT; index++)
     this->buffer[index]=AnalogDigitalConverter::NO_READING;
 
@@ -13,7 +15,6 @@ void AnalogDigitalConverter::init(const adc_hardware_struct_t *adc_def)
   adc_common_init_struct.ADC_Prescaler = ADC_Prescaler_Div2;
   adc_common_init_struct.ADC_DMAAccessMode = ADC_DMAAccessMode_1;
   adc_common_init_struct.ADC_TwoSamplingDelay = ADC_TwoSamplingDelay_5Cycles;
-  \
   ADC_CommonInit(&adc_common_init_struct);
 
   ADC_InitTypeDef adc_init_struct;
@@ -24,8 +25,10 @@ void AnalogDigitalConverter::init(const adc_hardware_struct_t *adc_def)
   adc_init_struct.ADC_DataAlign = ADC_DataAlign_Right;
   adc_init_struct.ADC_NbrOfConversion = 1; //This can't be less than 1
   ADC_Init(adc,&adc_init_struct);
+
   this->init_dma();
   ADC_ContinuousModeCmd(adc, ENABLE);
+
   this->is_initialized_ = true;
 }
 
@@ -39,12 +42,11 @@ void AnalogDigitalConverter::init_dma()
   dma_init_struct.DMA_Channel = this->adc_def_->DMA_channel;
   dma_init_struct.DMA_PeripheralBaseAddr = reinterpret_cast<uint32_t>(&(this->adc_def_->adc->DR));
   dma_init_struct.DMA_Memory0BaseAddr = reinterpret_cast<uint32_t>((this->buffer));
-  //dma_init_struct.DMA_Memory0BaseAddr = reinterpret_cast<uint32_t>(&(this->buffer));
   dma_init_struct.DMA_DIR = DMA_DIR_PeripheralToMemory;
   dma_init_struct.DMA_BufferSize = this->get_current_channel_count();
   dma_init_struct.DMA_PeripheralInc = DMA_PeripheralInc_Disable;
   dma_init_struct.DMA_MemoryInc = DMA_MemoryInc_Enable;
-  //DR is a uint32, even though it only has up to 12 bits of data, so word transfers?
+  // The ADC data register is 32 bits wide, even though the data is only 12 bits wide
   dma_init_struct.DMA_PeripheralDataSize = DMA_PeripheralDataSize_Word;
   dma_init_struct.DMA_MemoryDataSize = DMA_MemoryDataSize_Word;
   dma_init_struct.DMA_Mode = DMA_Mode_Circular;
@@ -70,7 +72,7 @@ uint8_t AnalogDigitalConverter::add_channel(uint8_t channel)
   this->adc_def_->adc->SQR1 &=(~SQR1_L_MASK);
   this->adc_def_->adc->SQR1 |=(((rank-1)<<SQR1_L_OFFSET)&SQR1_L_MASK);
 
-  this->init_dma(); // This sets up the DMA to use the correct buffer size
+  this->init_dma(); // reconfigure the DMA with the new memory size
   this->start_dma();
   ADC_Cmd(this->adc_def_->adc, ENABLE);
   ADC_SoftwareStartConv(this->adc_def_->adc);
@@ -86,16 +88,11 @@ bool AnalogDigitalConverter::is_initialized()
 }
 uint16_t AnalogDigitalConverter::read(uint8_t rank)
 {
-  //return (this->adc_def_->adc->DR & 0xFFFF);
-  return this->buffer[rank-1];
+  return (this->buffer[rank-1]& 0xFFFF);
 }
 
 
 uint8_t AnalogDigitalConverter::get_current_channel_count()
 {
   return this->current_channels;
-  /*
-  uint32_t length = this->adc_def_->adc->SQR1 & (AnalogDigitalConverter::SQR1_L_MASK);
-  length >> AnalogDigitalConverter::SQR1_L_OFFSET;
-  return length+1;*/
 }

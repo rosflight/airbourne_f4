@@ -53,21 +53,6 @@ int main()
   vcpPtr = &vcp;
   init_printf(NULL, _putc);
 
-  /*
-  RCC_APB2PeriphClockCmd(RCC_APB2Periph_ADC1,ENABLE);
-  GPIO current_gpio;
-  current_gpio.init(CURRENT_GPIO, CURRENT_PIN, GPIO::ANALOG);
-
-  ADC_InitTypeDef adc_init;
-  ADC_StructInit(&adc_init);
-  adc_init.ADC_Resolution = ADC_Resolution_12b;
-  adc_init.ADC_ScanConvMode = DISABLE;
-  adc_init.ADC_ContinuousConvMode = ENABLE;
-  ADC_RegularChannelConfig(ADC1, CURRENT_ADC_CHANNEL, 1, ADC_SampleTime_144Cycles);
-  ADC_ContinuousModeCmd(ADC1, ENABLE);
-  ADC_Cmd(ADC1, ENABLE);
-  ADC_SoftwareStartConv(ADC1);
-  */
   AnalogDigitalConverter adc;
   adc.init(&adc_config[0]);
 
