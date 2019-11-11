@@ -6,7 +6,7 @@ void AnalogDigitalConverter::init(const adc_hardware_struct_t *adc_def)
   this->adc_def_ = adc_def;
   ADC_TypeDef *adc = adc_def_->adc;
   for (size_t index =0; index< CHANNEL_COUNT; index++)
-    this->buffer[index]=2*RAW_READING_MAX;
+    this->buffer[index]=AnalogDigitalConverter::NO_READING;
 
   ADC_CommonInitTypeDef adc_common_init_struct;
   adc_common_init_struct.ADC_Mode = ADC_Mode_Independent;
@@ -38,7 +38,8 @@ void AnalogDigitalConverter::init_dma()
 
   dma_init_struct.DMA_Channel = this->adc_def_->DMA_channel;
   dma_init_struct.DMA_PeripheralBaseAddr = reinterpret_cast<uint32_t>(&(this->adc_def_->adc->DR));
-  dma_init_struct.DMA_Memory0BaseAddr = reinterpret_cast<uint32_t>(&(this->buffer));
+  dma_init_struct.DMA_Memory0BaseAddr = reinterpret_cast<uint32_t>((this->buffer));
+  //dma_init_struct.DMA_Memory0BaseAddr = reinterpret_cast<uint32_t>(&(this->buffer));
   dma_init_struct.DMA_DIR = DMA_DIR_PeripheralToMemory;
   dma_init_struct.DMA_BufferSize = this->get_current_channel_count();
   dma_init_struct.DMA_PeripheralInc = DMA_PeripheralInc_Disable;
@@ -62,14 +63,12 @@ void AnalogDigitalConverter::init_dma()
 uint8_t AnalogDigitalConverter::add_channel(uint8_t channel)
 {
   uint8_t rank = this->get_current_channel_count() + 1;
-  if (this->current_channels==0)
-    rank--;
   this->current_channels++;
   ADC_RegularChannelConfig(this->adc_def_->adc, channel, rank, ADC_SampleTime_480Cycles);
 
   //Increment the number of channels
   this->adc_def_->adc->SQR1 &=(~SQR1_L_MASK);
-  this->adc_def_->adc->SQR1 |=((rank<<SQR1_L_OFFSET)&SQR1_L_MASK);
+  this->adc_def_->adc->SQR1 |=(((rank-1)<<SQR1_L_OFFSET)&SQR1_L_MASK);
 
   this->init_dma(); // This sets up the DMA to use the correct buffer size
   this->start_dma();
@@ -94,7 +93,9 @@ uint16_t AnalogDigitalConverter::read(uint8_t rank)
 
 uint8_t AnalogDigitalConverter::get_current_channel_count()
 {
+  return this->current_channels;
+  /*
   uint32_t length = this->adc_def_->adc->SQR1 & (AnalogDigitalConverter::SQR1_L_MASK);
   length >> AnalogDigitalConverter::SQR1_L_OFFSET;
-  return length+1;
+  return length+1;*/
 }

@@ -22,6 +22,7 @@ private:
   static constexpr uint8_t CHANNEL_COUNT{16};
   static constexpr uint32_t SQR1_L_MASK{~0xFF0FFFFF};
   static constexpr uint8_t SQR1_L_OFFSET{20};
+  static constexpr uint16_t NO_READING{0xFFFF};
 
   volatile uint32_t buffer[CHANNEL_COUNT];
 
