@@ -1,4 +1,4 @@
-#include "BatteryMonitor.h"
+#include "battery_monitor.h"
 
 
 void BatteryMonitor::init(AnalogPin *voltage_pin, double voltage_multiplier, AnalogPin *current_pin,
@@ -21,6 +21,10 @@ void BatteryMonitor::init(AnalogPin *voltage_pin, double voltage_multiplier)
 double BatteryMonitor::read_voltage()
 {
   return this->voltage_pin_->read() * this->voltage_multiplier_;
+}
+double BatteryMonitor::read_current()
+{
+  return this->current_pin_->read() * this->current_multiplier_;
 }
 
 void BatteryMonitor::set_voltage_multiplier(double multiplier)

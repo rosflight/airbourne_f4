@@ -1,8 +1,6 @@
 #ifndef ANALOG_H
 #define ANALOG_H
 
-#endif // ANALOG_H
-
 #include "system.h"
 #include "gpio.h"
 #include "analog_digital_converter.h"
@@ -20,3 +18,4 @@ private:
   uint8_t rank;
 };
 
+#endif // ANALOG_H

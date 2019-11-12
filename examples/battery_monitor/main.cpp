@@ -32,8 +32,10 @@
 #include "system.h"
 #include "vcp.h"
 #include "printf.h"
+
 #include "analog_digital_converter.h"
 #include "analog_pin.h"
+#include "battery_monitor.h"
 
 VCP *vcpPtr = NULL;
 
@@ -62,10 +64,13 @@ int main()
   AnalogPin voltage_pin;
   voltage_pin.init(&adc, VOLTAGE_GPIO, VOLTAGE_PIN, VOLTAGE_ADC_CHANNEL);
 
+  BatteryMonitor monitor;
+  monitor.init(&voltage_pin, 1/63.69e-3,&current_pin,1/36.60e-3);
+
   while (true)
   {
-    double voltage = voltage_pin.read();
-    double current = current_pin.read();
+    double voltage = monitor.read_voltage();
+    double current = monitor.read_current();
     printf("%f;\t%f\n",voltage, current);
     delay(500);
   }
