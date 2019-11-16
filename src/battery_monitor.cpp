@@ -8,7 +8,6 @@ void BatteryMonitor::init(AnalogPin *voltage_pin, double voltage_multiplier, Ana
   this->voltage_multiplier_ = voltage_multiplier;
   this->current_pin_ = current_pin;
   this->current_multiplier_ = current_multiplier;
-  this->has_current_sense_ = true;
 }
 void BatteryMonitor::init(AnalogPin *voltage_pin, double voltage_multiplier)
 {
@@ -16,7 +15,6 @@ void BatteryMonitor::init(AnalogPin *voltage_pin, double voltage_multiplier)
   this->voltage_multiplier_ = voltage_multiplier;
   this->current_pin_ = nullptr;
   this->current_multiplier_ = 0;
-  this->has_current_sense_ = false;
 }
 double BatteryMonitor::read_voltage()
 {
@@ -24,7 +22,10 @@ double BatteryMonitor::read_voltage()
 }
 double BatteryMonitor::read_current()
 {
-  return this->current_pin_->read() * this->current_multiplier_;
+  if(this->current_pin == nullptr)
+    return 0;
+  else
+    return this->current_pin_->read() * this->current_multiplier_;
 }
 
 void BatteryMonitor::set_voltage_multiplier(double multiplier)
@@ -37,7 +38,12 @@ void BatteryMonitor::set_current_multiplier(double multiplier)
   this->current_multiplier_ = multiplier;
 }
 
+bool BatteryMonitor::has_voltage_sense()
+{
+  return (this->voltage_multiplier_ != 0);
+}
+
 bool BatteryMonitor::has_current_sense()
 {
-  return this->has_current_sense_;
+  return (this->current_multiplier_ != 0);
 }
