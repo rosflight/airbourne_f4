@@ -22,7 +22,7 @@ double BatteryMonitor::read_voltage()
 }
 double BatteryMonitor::read_current()
 {
-  if(this->current_pin == nullptr)
+  if(this->current_pin_ == nullptr)
     return 0;
   else
     return this->current_pin_->read() * this->current_multiplier_;
