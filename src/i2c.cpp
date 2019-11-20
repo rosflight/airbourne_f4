@@ -564,19 +564,19 @@ extern "C"
 {
 
 // C-based IRQ functions (defined in the startup script)
-  void DMA1_Stream2_IRQHandler(void)
+  void DMA1_Stream3_IRQHandler(void)
   {
 
-    if (DMA_GetFlagStatus(DMA1_Stream2, DMA_FLAG_TCIF2))
+    if (DMA_GetFlagStatus(DMA1_Stream3, DMA_FLAG_TCIF3))
     {
       /* Clear transmission complete flag */
-      DMA_ClearFlag(DMA1_Stream2, DMA_FLAG_TCIF2);
+      DMA_ClearFlag(DMA1_Stream3, DMA_FLAG_TCIF3);
 
       I2C_DMACmd(I2C2, DISABLE);
       /* Send I2C1 STOP Condition */
       I2C_GenerateSTOP(I2C2, ENABLE);
       /* Disable DMA channel*/
-      DMA_Cmd(DMA1_Stream2, DISABLE);
+      DMA_Cmd(DMA1_Stream3, DISABLE);
 
       /* Turn off I2C interrupts since we are done with the transfer */
       I2C_ITConfig(I2C2, I2C_IT_EVT | I2C_IT_ERR, DISABLE);

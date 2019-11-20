@@ -116,9 +116,9 @@ void UART::init_DMA()
   DMA_InitStructure.DMA_Priority = DMA_Priority_High;
   DMA_InitStructure.DMA_PeripheralInc = DMA_PeripheralInc_Disable;
   DMA_InitStructure.DMA_PeripheralBaseAddr = reinterpret_cast<uint32_t>(&(c_->dev->DR));
-  DMA_InitStructure.DMA_Channel = c_->DMA_Channel;
 
   // Configure the Tx DMA
+  DMA_InitStructure.DMA_Channel = c_->DMA_Tx_Channel;
   DMA_DeInit(c_->Tx_DMA_Stream);
   DMA_InitStructure.DMA_Mode = DMA_Mode_Normal;
   DMA_InitStructure.DMA_DIR = DMA_DIR_MemoryToPeripheral;
@@ -127,6 +127,7 @@ void UART::init_DMA()
   DMA_Init(c_->Tx_DMA_Stream, &DMA_InitStructure);
 
   // Configure the Rx DMA
+  DMA_InitStructure.DMA_Channel = c_->DMA_Rx_Channel;
   DMA_DeInit(c_->Rx_DMA_Stream);
   DMA_InitStructure.DMA_Mode = DMA_Mode_Circular;
   DMA_InitStructure.DMA_DIR = DMA_DIR_PeripheralToMemory;
@@ -372,12 +373,12 @@ extern "C"
     }
   }
 
-  void DMA1_Stream3_IRQHandler(void)
+  void DMA1_Stream4_IRQHandler(void)
   {
-    if (DMA_GetITStatus(DMA1_Stream3, DMA_IT_TCIF3))
+    if (DMA_GetITStatus(DMA1_Stream4, DMA_IT_TCIF4))
     {
-      DMA_ClearITPendingBit(DMA1_Stream3, DMA_IT_TCIF3);
-      DMA_Cmd(DMA1_Stream3, DISABLE);
+      DMA_ClearITPendingBit(DMA1_Stream4, DMA_IT_TCIF4);
+      DMA_Cmd(DMA1_Stream4, DISABLE);
       UART3Ptr->DMA_Tx_IRQ_callback();
     }
   }

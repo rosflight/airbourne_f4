@@ -54,7 +54,7 @@
 //	IRQn_Type Tx_DMA_IRQn;
 //	DMA_Stream_TypeDef* Rx_DMA_Stream;
 //	DMA_Stream_TypeDef* Tx_DMA_Stream;
-//	uint32_t DMA_CHannel;
+//	uint32_t DMA_Rx_Channel;
 //	uint32_t DMA_Rx_IT_Bit;
 //	uint32_t DMA_Tx_IT_Bit;
 //} uart_hardware_struct_t;
@@ -66,17 +66,17 @@ const uart_hardware_struct_t uart_config[NUM_UART] =
   {
     USART1, GPIOA, GPIO_Pin_10, GPIO_Pin_9, GPIO_PinSource10, GPIO_PinSource9,
     GPIO_AF_USART1, USART1_IRQn, DMA2_Stream5_IRQn, DMA2_Stream7_IRQn, DMA2_Stream5, //main port?
-    DMA2_Stream7, DMA_Channel_4, DMA_IT_TCIF2, DMA_IT_TCIF7
+    DMA2_Stream7, DMA_Channel_4, DMA_Channel_4, DMA_IT_TCIF2, DMA_IT_TCIF7
   },
   {
     USART2, GPIOA, GPIO_Pin_10, GPIO_Pin_9, GPIO_PinSource10, GPIO_PinSource9,
     GPIO_AF_USART2, USART2_IRQn, DMA1_Stream5_IRQn, DMA1_Stream6_IRQn, DMA1_Stream5, //Flex-IO port?
-    DMA1_Stream6, DMA_Channel_5, DMA_IT_TCIF5, DMA_IT_TCIF6
+    DMA1_Stream6, DMA_Channel_5, DMA_Channel_5, DMA_IT_TCIF5, DMA_IT_TCIF6
   },
   {
     USART3, GPIOB, GPIO_Pin_11, GPIO_Pin_10, GPIO_PinSource11, GPIO_PinSource10,
     GPIO_AF_USART3, USART3_IRQn, DMA1_Stream1_IRQn, DMA1_Stream3_IRQn, DMA1_Stream1, //Flexi port?
-    DMA1_Stream3, DMA_Channel_4, DMA_IT_TCIF1, DMA_IT_TCIF3
+    DMA1_Stream3, DMA_Channel_4, DMA_Channel_7, DMA_IT_TCIF1, DMA_IT_TCIF3
   },
 };
 
@@ -116,7 +116,7 @@ const spi_hardware_struct_t spi_config[NUM_SPI] =
   },
   {
     SPI3, GPIOC, GPIO_PinSource10, GPIO_Pin_10, GPIO_PinSource12, GPIO_Pin_12,GPIO_PinSource11, GPIO_Pin_11,
-    GPIO_AF_SPI3, DMA1_Stream5_IRQn, DMA1_Stream5, DMA1_Stream2, DMA_Channel_0, DMA_FLAG_TCIF5, DMA_FLAG_TCIF2
+    GPIO_AF_SPI3, DMA1_Stream7_IRQn, DMA1_Stream7, DMA1_Stream2, DMA_Channel_0, DMA_FLAG_TCIF7, DMA_FLAG_TCIF2
   }
 };
 #define MPU6000_SPI 0
@@ -137,7 +137,7 @@ const i2c_hardware_struct_t i2c_config[NUM_I2C] =
   },
   {
     I2C2, 100000, I2C2_EV_IRQn, I2C2_ER_IRQn, GPIOB, GPIO_AF_I2C2, GPIO_PinSource10, GPIO_Pin_10,
-    GPIO_PinSource11, GPIO_Pin_11, DMA1_Stream2, DMA_Channel_7, DMA1_Stream2_IRQn, DMA_FLAG_TCIF2
+    GPIO_PinSource11, GPIO_Pin_11, DMA1_Stream3, DMA_Channel_7, DMA1_Stream3_IRQn, DMA_FLAG_TCIF3
   }
 };
 #define MAG_I2C 0
@@ -200,6 +200,7 @@ const adc_hardware_struct_t adc_config[ADC_NUM] =
 #define CURRENT_GPIO GPIOC
 #define CURRENT_PIN GPIO_Pin_1
 #define CURRENT_ADC_CHANNEL ADC_Channel_11
+#define BATTERY_MONITOR_ADC 2
 
 
 #endif // REVO_F4_H

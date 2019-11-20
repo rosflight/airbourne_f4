@@ -296,7 +296,7 @@ extern "C"
       SPI1ptr->transfer_complete_cb();
     }
   }
-
+/* // SPI2 is disabled
   void DMA1_Stream4_IRQHandler()
   {
     if (DMA_GetITStatus(DMA1_Stream4, DMA_IT_TCIF4))
@@ -304,13 +304,13 @@ extern "C"
       DMA_ClearITPendingBit(DMA1_Stream4, DMA_IT_TCIF4);
       SPI2ptr->transfer_complete_cb();
     }
-  }
+  }*/
 
-  void DMA1_Stream5_IRQHandler()
+  void DMA1_Stream7_IRQHandler()
   {
-    if (DMA_GetITStatus(DMA1_Stream5, DMA_IT_TCIF5))
+    if (DMA_GetITStatus(DMA1_Stream7, DMA_IT_TCIF7))
     {
-      DMA_ClearITPendingBit(DMA1_Stream5, DMA_IT_TCIF5);
+      DMA_ClearITPendingBit(DMA1_Stream7, DMA_IT_TCIF7);
       SPI3ptr->transfer_complete_cb();
     }
   }
