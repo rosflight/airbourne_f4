@@ -75,8 +75,8 @@ const uart_hardware_struct_t uart_config[NUM_UART] =
   },
   {
     USART3, GPIOB, GPIO_Pin_11, GPIO_Pin_10, GPIO_PinSource11, GPIO_PinSource10,
-    GPIO_AF_USART3, USART3_IRQn, DMA1_Stream1_IRQn, DMA1_Stream3_IRQn, DMA1_Stream1, //Flexi port?
-    DMA1_Stream3, DMA_Channel_4, DMA_Channel_7, DMA_IT_TCIF1, DMA_IT_TCIF3
+    GPIO_AF_USART3, USART3_IRQn, DMA1_Stream1_IRQn, DMA1_Stream4_IRQn, DMA1_Stream1, //Flexi port?
+    DMA1_Stream4, DMA_Channel_4, DMA_Channel_7, DMA_IT_TCIF1, DMA_IT_TCIF3
   },
 };
 
