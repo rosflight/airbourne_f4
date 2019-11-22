@@ -571,7 +571,6 @@ extern "C"
     {
       /* Clear transmission complete flag */
       DMA_ClearFlag(DMA1_Stream3, DMA_FLAG_TCIF3);
-
       I2C_DMACmd(I2C2, DISABLE);
       /* Send I2C1 STOP Condition */
       I2C_GenerateSTOP(I2C2, ENABLE);

@@ -202,5 +202,4 @@ const adc_hardware_struct_t adc_config[ADC_NUM] =
 #define CURRENT_ADC_CHANNEL ADC_Channel_11
 #define BATTERY_MONITOR_ADC 2
 
-
 #endif // REVO_F4_H

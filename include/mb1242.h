@@ -66,6 +66,7 @@ private:
   uint8_t buffer_[2]; // for recieving data from the sensor
   bool sensor_present_; // Flag of whether we have received data from the sensor
 
+
 public:
   I2CSonar();
   void init(I2C *_i2c);
