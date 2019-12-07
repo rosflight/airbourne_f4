@@ -125,6 +125,17 @@ typedef struct
   uint32_t DMA_channel;
 } adc_hardware_struct_t;
 
+typedef struct
+{
+  GPIO_TypeDef *voltage_gpio;
+  uint16_t voltage_pin;
+  uint8_t voltage_adc_channel;
+  GPIO_TypeDef *current_gpio;
+  uint16_t current_pin;
+  uint8_t current_adc_channel;
+  const adc_hardware_struct_t *adc;
+} battery_monitor_hardware_struct_t;
+
 #ifdef __cplusplus
 extern "C" {
 #endif
