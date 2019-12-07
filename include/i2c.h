@@ -89,7 +89,8 @@ private:
   volatile uint8_t return_code_;
   bool subaddress_sent_ = false;
   bool done_ = false;
-  
+  bool initialized_ = false;
+
   volatile uint8_t  addr_;
   volatile uint8_t  reg_;
   volatile uint8_t  len_;
@@ -135,7 +136,9 @@ public:
   void unstick();
   void hardware_failure();
   bool check_busy();
-  int8_t read(uint8_t addr, uint8_t reg, uint8_t num_bytes, uint8_t* data, void(*callback)(uint8_t) = nullptr, bool blocking = false);
+  bool is_initialized(){return initialized_;}
+  int8_t read(uint8_t addr, uint8_t reg, uint8_t num_bytes, uint8_t *data, void(*callback)(uint8_t) = nullptr,
+              bool blocking = false);
   int8_t write(uint8_t addr, uint8_t reg, uint8_t data, void(*callback)(uint8_t), bool blocking = false);
   
   int8_t write(uint8_t addr, uint8_t reg, uint8_t data);

@@ -120,6 +120,7 @@ void I2C::init(const i2c_hardware_struct_t *c)
   
   unstick(); //unsti1ck will properly initialize pins
   log_line;
+  initialized_ = true;
 }
 
 void I2C::unstick()
