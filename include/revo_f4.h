@@ -194,12 +194,9 @@ const adc_hardware_struct_t adc_config[ADC_NUM] =
   {ADC2, DMA2_Stream2, DMA_Channel_1}, // could use DMA2 streams 2 or 3, channel 1 on both
   {ADC3, DMA2_Stream1, DMA_Channel_2} //  could use DMA2 streams 0 or 1, channel 2 on both
 };
-#define VOLTAGE_GPIO GPIOC
-#define VOLTAGE_PIN GPIO_Pin_2
-#define VOLTAGE_ADC_CHANNEL ADC_Channel_12
-#define CURRENT_GPIO GPIOC
-#define CURRENT_PIN GPIO_Pin_1
-#define CURRENT_ADC_CHANNEL ADC_Channel_11
 
+const battery_monitor_hardware_struct_t battery_monitor_config{
+  GPIOC,GPIO_Pin_2, ADC_Channel_12, GPIOC, GPIO_Pin_1, ADC_Channel_11, &adc_config[0]
+};
 
 #endif // REVO_F4_H

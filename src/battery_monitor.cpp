@@ -1,31 +1,19 @@
 #include "battery_monitor.h"
 
-
-void BatteryMonitor::init(AnalogPin *voltage_pin, double voltage_multiplier, AnalogPin *current_pin,
-                          double current_multiplier)
+void BatteryMonitor::init(const battery_monitor_hardware_struct_t &def, AnalogDigitalConverter *adc, float voltage_multiplier, float current_multiplier)
 {
-  this->voltage_pin_ = voltage_pin;
-  this->voltage_multiplier_ = voltage_multiplier;
-  this->current_pin_ = current_pin;
-  this->current_multiplier_ = current_multiplier;
+  voltage_pin_.init(adc, def.voltage_gpio, def.voltage_pin, def.voltage_adc_channel);
+  current_pin_.init(adc, def.current_gpio, def.current_pin, def.current_adc_channel);
+  voltage_multiplier_ = voltage_multiplier;
+  current_multiplier_ = current_multiplier;
 }
-void BatteryMonitor::init(AnalogPin *voltage_pin, double voltage_multiplier)
+float BatteryMonitor::read_voltage()
 {
-  this->voltage_pin_ = voltage_pin;
-  this->voltage_multiplier_ = voltage_multiplier;
-  this->current_pin_ = nullptr;
-  this->current_multiplier_ = 0;
+  return static_cast<float>(this->voltage_pin_.read()) * this->voltage_multiplier_;
 }
-double BatteryMonitor::read_voltage()
+float BatteryMonitor::read_current()
 {
-  return this->voltage_pin_->read() * this->voltage_multiplier_;
-}
-double BatteryMonitor::read_current()
-{
-  if(this->current_pin_ == nullptr)
-    return 0;
-  else
-    return this->current_pin_->read() * this->current_multiplier_;
+  return static_cast<float>(this->current_pin_.read()) * this->current_multiplier_;
 }
 
 void BatteryMonitor::set_voltage_multiplier(double multiplier)
