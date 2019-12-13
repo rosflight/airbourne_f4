@@ -67,6 +67,7 @@ void I2CSonar::init(I2C *_i2c)
     sensor_present_ = false;
     last_callback_ms_ = 0;
   }
+  sensor_initialized_ = true;
 }
 
 bool I2CSonar::present()
@@ -83,6 +84,8 @@ bool I2CSonar::present()
 // Feel free to call it more often, though.
 void I2CSonar::update()
 {
+  if(!sensor_initialized_)
+    return;
   uint64_t now=millis();
   if (now > (last_update_ms_ + MB1242_UPDATE_WAIT_MILLIS))
   {
