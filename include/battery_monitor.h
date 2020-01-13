@@ -7,7 +7,7 @@
 class BatteryMonitor
 {
 public:
-  void init(const battery_monitor_hardware_struct_t &def, AnalogDigitalConverter *adc, float voltage_multiplier, float current_multiplier);
+  void init(const BatteryMonitorHardwareStruct &def, AnalogDigitalConverter *adc, float voltage_multiplier, float current_multiplier);
   float read_voltage() const;
   float read_current() const;
   void set_voltage_multiplier(double multiplier);

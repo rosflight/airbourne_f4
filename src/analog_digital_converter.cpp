@@ -1,6 +1,6 @@
 #include "analog_digital_converter.h"
 
-void AnalogDigitalConverter::init(const adc_hardware_struct_t *adc_def)
+void AnalogDigitalConverter::init(const ADCHardwareStruct *adc_def)
 {
   this->current_channels = 0;
   this->adc_def_ = adc_def;

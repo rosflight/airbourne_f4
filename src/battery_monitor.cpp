@@ -1,6 +1,6 @@
 #include "battery_monitor.h"
 
-void BatteryMonitor::init(const battery_monitor_hardware_struct_t &def, AnalogDigitalConverter *adc, float voltage_multiplier, float current_multiplier)
+void BatteryMonitor::init(const BatteryMonitorHardwareStruct &def, AnalogDigitalConverter *adc, float voltage_multiplier, float current_multiplier)
 {
   voltage_pin_.init(adc, def.voltage_gpio, def.voltage_pin, def.voltage_adc_channel);
   current_pin_.init(adc, def.current_gpio, def.current_pin, def.current_adc_channel);

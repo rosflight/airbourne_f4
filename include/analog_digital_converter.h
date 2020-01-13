@@ -6,7 +6,7 @@
 class AnalogDigitalConverter
 {
 public:
-  void init(const adc_hardware_struct_t *adc_def);
+  void init(const ADCHardwareStruct *adc_def);
   // Adds a channel to the list that is scanned.
   // Returns the rank assigned to the channel. This is needed for reading
   // This method does not check for errors. Do not add more than CHANNEL_COUNT channels.
@@ -26,7 +26,7 @@ public:
   static constexpr uint8_t CHANNEL_COUNT{16};
 
 private:
-  const adc_hardware_struct_t *adc_def_;
+  const ADCHardwareStruct *adc_def_;
   bool is_initialized_{false};
   uint8_t current_channels;
 
