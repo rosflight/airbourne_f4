@@ -7,12 +7,12 @@ void AnalogPin::init(AnalogDigitalConverter *adc, GPIO_TypeDef *BasePort, uint16
   this->rank = this->adc_->add_channel(adc_channel);
 }
 
-double AnalogPin::read()
+double AnalogPin::read() const
 {
-  return this->read_raw() * AnalogDigitalConverter::REFERENCE_VOLTAGE / AnalogDigitalConverter::RAW_READING_MAX;
+  return read_raw() * AnalogDigitalConverter::REFERENCE_VOLTAGE / AnalogDigitalConverter::RAW_READING_MAX;
 }
 
-uint16_t AnalogPin::read_raw()
+uint16_t AnalogPin::read_raw() const
 {
-  return this->adc_->read(this->rank);
+  return adc_->read(rank);
 }

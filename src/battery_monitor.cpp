@@ -7,11 +7,11 @@ void BatteryMonitor::init(const battery_monitor_hardware_struct_t &def, AnalogDi
   voltage_multiplier_ = voltage_multiplier;
   current_multiplier_ = current_multiplier;
 }
-float BatteryMonitor::read_voltage()
+float BatteryMonitor::read_voltage() const
 {
   return static_cast<float>(this->voltage_pin_.read()) * this->voltage_multiplier_;
 }
-float BatteryMonitor::read_current()
+float BatteryMonitor::read_current() const
 {
   return static_cast<float>(this->current_pin_.read()) * this->current_multiplier_;
 }
@@ -26,12 +26,12 @@ void BatteryMonitor::set_current_multiplier(double multiplier)
   this->current_multiplier_ = multiplier;
 }
 
-bool BatteryMonitor::has_voltage_sense()
+bool BatteryMonitor::has_voltage_sense() const
 {
   return (this->voltage_multiplier_ != 0);
 }
 
-bool BatteryMonitor::has_current_sense()
+bool BatteryMonitor::has_current_sense() const
 {
   return (this->current_multiplier_ != 0);
 }

@@ -9,8 +9,8 @@ class AnalogPin
 {
 public:
   void init(AnalogDigitalConverter *adc_, GPIO_TypeDef *BasePort, uint16_t pin, uint8_t adc_channel);
-  double read();
-  uint16_t read_raw();
+  double read() const; // Returns a reading in volts
+  uint16_t read_raw() const; // Returns a raw reading. See AnalogDigitalConverter.read()
 
 private:
   GPIO gpio_;
