@@ -123,7 +123,7 @@ typedef struct
   ADC_TypeDef *adc;
   DMA_Stream_TypeDef *DMA_Stream;
   uint32_t DMA_channel;
-} adc_hardware_struct_t;
+} ADCHardwareStruct;
 
 typedef struct
 {
@@ -133,8 +133,8 @@ typedef struct
   GPIO_TypeDef *current_gpio;
   uint16_t current_pin;
   uint8_t current_adc_channel;
-  const adc_hardware_struct_t *adc;
-} battery_monitor_hardware_struct_t;
+  const ADCHardwareStruct *adc;
+} BatteryMonitorHardwareStruct;
 
 #ifdef __cplusplus
 extern "C" {
