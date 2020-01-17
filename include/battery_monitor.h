@@ -17,8 +17,8 @@ public:
 private:
   AnalogPin voltage_pin_;
   AnalogPin current_pin_;
-  float voltage_multiplier_;
-  float current_multiplier_;
+  float voltage_multiplier_{0};
+  float current_multiplier_{0};
 };
 
 #endif // BATTERYMONITOR_H
