@@ -185,7 +185,7 @@ const pwm_hardware_struct_t pwm_config[PWM_NUM_CHANNELS] =
 
 /////////////////////// ANALOG CONFIG ///////////////////////
 #define ADC_NUM 3
-const adc_hardware_struct_t adc_config[ADC_NUM] =
+const ADCHardwareStruct adc_config[ADC_NUM] =
 {
   {ADC1, DMA2_Stream0, DMA_Channel_0}, // could use DMA2 streams 0 or 4, channel 0 on both
   // Note that ADC2 conflicts with SPI1 over the DMA. Do not use both at the same time,
@@ -195,7 +195,7 @@ const adc_hardware_struct_t adc_config[ADC_NUM] =
   {ADC3, DMA2_Stream1, DMA_Channel_2} //  could use DMA2 streams 0 or 1, channel 2 on both
 };
 
-const battery_monitor_hardware_struct_t battery_monitor_config{
+const BatteryMonitorHardwareStruct battery_monitor_config{
   GPIOC,GPIO_Pin_2, ADC_Channel_12, GPIOC, GPIO_Pin_1, ADC_Channel_11, &adc_config[0]
 };
 

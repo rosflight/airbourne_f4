@@ -1,6 +1,6 @@
 #include "analog_digital_converter.h"
 
-void AnalogDigitalConverter::init(const adc_hardware_struct_t *adc_def)
+void AnalogDigitalConverter::init(const ADCHardwareStruct *adc_def)
 {
   this->current_channels = 0;
   this->adc_def_ = adc_def;
@@ -82,17 +82,16 @@ void AnalogDigitalConverter::start_dma()
 {
   DMA_Cmd(this->adc_def_->DMA_Stream, ENABLE);
 }
-bool AnalogDigitalConverter::is_initialized()
+bool AnalogDigitalConverter::is_initialized() const
 {
   return this->is_initialized_;
 }
-uint16_t AnalogDigitalConverter::read(uint8_t rank)
+uint16_t AnalogDigitalConverter::read(uint8_t rank) const
 {
   return (this->buffer[rank-1]& 0xFFFF);
 }
 
-
-uint8_t AnalogDigitalConverter::get_current_channel_count()
+uint8_t AnalogDigitalConverter::get_current_channel_count() const
 {
   return this->current_channels;
 }
