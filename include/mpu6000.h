@@ -166,12 +166,13 @@ public:
   void data_transfer_callback();
   void exti_cb();
   bool new_data();
+  inline bool is_initialized(){return spi;}
 
 private:
   void write(uint8_t reg, uint8_t data);
   bool new_data_ = false;
   uint64_t imu_timestamp_ = 0;
-  SPI *spi;
+  SPI *spi{nullptr};
   GPIO exti_;
   GPIO cs_;
   float accel_scale_;

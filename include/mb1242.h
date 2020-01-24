@@ -74,6 +74,7 @@ public:
   void update(); // Tries to either start a measurement, or read it from the sensor
   // update will do nothing if it has done something in the last MB1242_UPDATE_WAIT_MILLIS ms
   // Calling it more frequently won't break anything
+  inline bool is_initialized(){return sensor_initialized_;}
 
   // Callbacks. For internal use only, but public so the I2C peripheral can call them
   void cb_start_read(uint8_t result); // callback after the measure command has been sent to the sensor
