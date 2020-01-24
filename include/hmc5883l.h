@@ -89,9 +89,9 @@ public:
   bool read(float mag_data[]);
   bool present();
   void cb(uint8_t result);
-
+  inline bool is_initialized(){return i2c_;}
 private:
-  I2C* i2c_;
+  I2C *i2c_{nullptr};
   uint8_t i2c_buf_[6];
   volatile float data_[3];
   uint32_t last_update_ms_;
