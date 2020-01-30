@@ -45,7 +45,7 @@ void UART::init(const uart_hardware_struct_t *conf, uint32_t baudrate, uart_mode
 
   //initialize pins
   rx_pin_.init(c_->GPIO, c_->Rx_Pin, GPIO::PERIPH_IN_OUT);
-  tx_pin_.init(c_->GPIO, c_->Tx_Pin, GPIO::PERIPH_IN_OUT);
+  tx_pin_.init(c_->GPIO, c_->Tx_Pin, GPIO::PERIPH_OUT);
   GPIO_PinAFConfig(c_->GPIO, c_->Rx_PinSource, c_->GPIO_AF);
   GPIO_PinAFConfig(c_->GPIO, c_->Tx_PinSource, c_->GPIO_AF);
 
