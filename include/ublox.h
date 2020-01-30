@@ -292,11 +292,31 @@ public:
     uint16_t measRate; // (ms) The elapsed time between GNSS measurements which defines the rate
     uint16_t navRate; // (cycles) The ratio between the number of measurements and the number of navigation solutions, e.g. 5 means five measurements for every navigation solution
     uint16_t timeRef; // Time system to which measurements are aligned
-  } __attribute__((packed)) CFG_RATE_t;
-
-  //Time data is pulled into a separate struct for ease of use
-  typedef struct
-  {
+  }__attribute__((packed)) CFG_RATE_t;
+  
+  typedef struct  {
+    enum {
+      VALIDITY_FLAGS_VALIDDATE= 0x01, // Valid UTC Date (see Time Validity section for details)
+      VALIDITY_FLAGS_VALIDTIME = 0x02, // Valid UTC Time of Day (see Time Validity section for details)
+      VALIDITY_FLAGS_FULLYRESOLVED = 0x04, // UTC Time of Day has been fully resolved (no seconds uncertainty)
+    };
+    
+    enum {
+      FIX_STATUS_PSM_STATE_NOT_ACTIVE   = 0x00,
+      FIX_STATUS_GNSS_FIX_OK            = 0x01, // Valid Fix
+      FIX_STATUS_DIFF_SOLN              = 0x02, // Differential Corrections were applied
+      FIX_STATUS_PSM_STATE_ENABLED      = 0x04,
+      FIX_STATUS_PSM_STATE_ACQUISITION  = 0x08,
+      FIX_STATUS_PSM_STATE_TRACKING     = 0x12,
+      FIX_STATUS_PSM_STATE_POWER_OPTIMIZED_TRACKING   = 0x10,
+      FIX_STATUS_PSM_STATE_INACTIVE     = 0x14,
+      FIX_STATUS_HEADING_VALID          = 0x20,
+      FIX_STATUS_CARR_SOLN_NONE         = 0x00,
+      FIX_STATUS_CARR_SOLN_FLOAT        = 0x40,
+      FIX_STATUS_CARR_SOLN_FIXED        = 0x80,
+    };
+    
+    uint32_t iTOW; // ms GPS time of week of the  navigation epoch . See the  description of iTOW for details.
     uint16_t year; // y Year (UTC)
     uint8_t month; // month Month, range 1..12 (UTC)
     uint8_t day; // d Day of month, range 1..31 (UTC)

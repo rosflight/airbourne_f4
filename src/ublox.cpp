@@ -63,7 +63,7 @@ void UBLOX::init(UART *uart)
 bool UBLOX::detect_baudrate()
 {
   current_baudrate_ = 0;
-  for (uint32_t i = 0; i < sizeof(baudrates)/sizeof(uint32_t); i++)
+  for (size_t i = 0; i < sizeof(baudrates)/sizeof(uint32_t); i++)
   {
     DBG("Trying %d baudrate\n", baudrates[i]);
     serial_->set_mode(baudrates[i], UART::MODE_8N1);
@@ -463,8 +463,9 @@ bool UBLOX::decode_message()
 
 void UBLOX::convert_data()
 {
-  lla_[0] = static_cast<double>(nav_message_.lat) * 1e-7L;
-  lla_[1] = static_cast<double>(nav_message_.lon) * 1e-7L;
+  double scaling = 1e-7 * 3.14159/180.0;
+  lla_[0] = static_cast<double>(nav_message_.lat) * scaling;
+  lla_[1] = static_cast<double>(nav_message_.lon) * scaling;
   lla_[2] = nav_message_.height * 1e-3;
 
   vel_[0] = nav_message_.velN * 1e-3;
