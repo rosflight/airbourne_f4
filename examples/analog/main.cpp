@@ -30,30 +30,43 @@
  */
 
 #include "system.h"
-#include "i2c.h"
+#include "vcp.h"
+#include "printf.h"
+#include "analog_digital_converter.h"
+#include "analog_pin.h"
 
-class MS4525
+VCP *vcpPtr = NULL;
+
+static void _putc(void *p, char c)
 {
-public:
-  MS4525();
+  (void)p; // avoid compiler warning about unused variable
+  vcpPtr->put_byte(c);
+}
 
-  bool init(I2C *_i2c);
-  bool present();
-  void update();
-  void read(float *differential_pressure, float *temp);
+int main()
+{
 
-  void read_cb(uint8_t result);
-  inline bool is_initialized(){return i2c_;}
+  systemInit();
 
-private:
-  static const uint8_t ADDR = 0x28;
+  VCP vcp;
+  vcp.init();
+  vcpPtr = &vcp;
+  init_printf(NULL, _putc);
 
-  I2C *i2c_{nullptr};
-  uint8_t buf_[4];
-  float diff_press_;
-  float temp_;
-  uint32_t next_update_ms_;
-  uint32_t last_update_ms_;
-  bool new_data_;
-  bool sensor_present_;
-};
+  AnalogDigitalConverter adc;
+  adc.init(&adc_config[0]);
+
+  AnalogPin current_pin;
+  current_pin.init(&adc, CURRENT_GPIO, CURRENT_PIN, CURRENT_ADC_CHANNEL);
+
+  AnalogPin voltage_pin;
+  voltage_pin.init(&adc, VOLTAGE_GPIO, VOLTAGE_PIN, VOLTAGE_ADC_CHANNEL);
+
+  while (true)
+  {
+    double voltage = voltage_pin.read();
+    double current = current_pin.read();
+    printf("%f;\t%f\n",voltage, current);
+    delay(500);
+  }
+}

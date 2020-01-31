@@ -63,15 +63,21 @@
 #define UART3 2
 const uart_hardware_struct_t uart_config[NUM_UART] =
 {
-  {USART1, GPIOA, GPIO_Pin_10, GPIO_Pin_9, GPIO_PinSource10, GPIO_PinSource9,
-   GPIO_AF_USART1, USART1_IRQn, DMA2_Stream5_IRQn, DMA2_Stream7_IRQn, DMA2_Stream5,
-   DMA2_Stream7, DMA_Channel_4, DMA_IT_TCIF5, DMA_IT_TCIF7},
-  {USART2, GPIOA, GPIO_Pin_10, GPIO_Pin_9, GPIO_PinSource10, GPIO_PinSource9,
-   GPIO_AF_USART2, USART2_IRQn, DMA1_Stream5_IRQn, DMA1_Stream6_IRQn, DMA1_Stream5,
-   DMA1_Stream6, DMA_Channel_5, DMA_IT_TCIF5, DMA_IT_TCIF6},
-  {USART3, GPIOB, GPIO_Pin_11, GPIO_Pin_10, GPIO_PinSource11, GPIO_PinSource10,
-   GPIO_AF_USART3, USART3_IRQn, DMA1_Stream1_IRQn, DMA1_Stream3_IRQn, DMA1_Stream1,
-   DMA1_Stream3, DMA_Channel_4, DMA_IT_TCIF1, DMA_IT_TCIF3},
+  {
+    USART1, GPIOA, GPIO_Pin_10, GPIO_Pin_9, GPIO_PinSource10, GPIO_PinSource9,
+    GPIO_AF_USART1, USART1_IRQn, DMA2_Stream5_IRQn, DMA2_Stream7_IRQn, DMA2_Stream5, //main port
+    DMA2_Stream7, DMA_Channel_4, DMA_IT_TCIF5, DMA_IT_TCIF7
+  },
+  {
+    USART2, GPIOA, GPIO_Pin_10, GPIO_Pin_9, GPIO_PinSource10, GPIO_PinSource9,
+    GPIO_AF_USART2, USART2_IRQn, DMA1_Stream5_IRQn, DMA1_Stream6_IRQn, DMA1_Stream5, //Flex-IO port
+    DMA1_Stream6, DMA_Channel_5, DMA_IT_TCIF5, DMA_IT_TCIF6
+  },
+  {
+    USART3, GPIOB, GPIO_Pin_11, GPIO_Pin_10, GPIO_PinSource11, GPIO_PinSource10,
+    GPIO_AF_USART3, USART3_IRQn, DMA1_Stream1_IRQn, DMA1_Stream3_IRQn, DMA1_Stream1, //Flexi port
+    DMA1_Stream3, DMA_Channel_4, DMA_IT_TCIF1, DMA_IT_TCIF3
+  },
 };
 
 #define SBUS_UART 0
@@ -177,6 +183,20 @@ const pwm_hardware_struct_t pwm_config[PWM_NUM_CHANNELS] =
 #define PPM_RC_IQRHandler TIM8_BRK_TIM12_IRQHandler
 
 
+/////////////////////// ANALOG CONFIG ///////////////////////
+#define ADC_NUM 3
+const ADCHardwareStruct adc_config[ADC_NUM] =
+{
+  {ADC1, DMA2_Stream0, DMA_Channel_0}, // could use DMA2 streams 0 or 4, channel 0 on both
+  // Note that ADC2 conflicts with SPI1 over the DMA. Do not use both at the same time,
+  // unless you change one or the other to not use the DMA
+  // At time of this writing, SPI1 is the IMU, so don't break it
+  {ADC2, DMA2_Stream2, DMA_Channel_1}, // could use DMA2 streams 2 or 3, channel 1 on both
+  {ADC3, DMA2_Stream1, DMA_Channel_2} //  could use DMA2 streams 0 or 1, channel 2 on both
+};
 
+const BatteryMonitorHardwareStruct battery_monitor_config{
+  GPIOC,GPIO_Pin_2, ADC_Channel_12, GPIOC, GPIO_Pin_1, ADC_Channel_11, &adc_config[0]
+};
 
 #endif // REVO_F4_H
