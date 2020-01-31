@@ -3,6 +3,7 @@
 #include <time.h>
 
 #define DEG2RAD (3.14159 / 180.0)
+//#include "printf.h"
 //#define DBG(...) printf(__VA_ARGS__)
 #define DBG(...)
 #ifndef M_PI
@@ -53,6 +54,7 @@ void UBLOX::init(UART *uart)
 
   //Zeroing the data
   this->nav_message_ = {};
+  is_initialized_ = true;
 }
 
 //Attempt to detect the baudrate by trying a rate, waiting 1 s, and

@@ -458,6 +458,7 @@ public:
   };
 
   void init(UART *uart);
+  inline bool is_initialized(){return is_initialized_;}
 
   bool present();
   bool new_data(); //Returns true if new data has been recieved, AND the time of week stamps on all of the data matches
@@ -493,6 +494,8 @@ private:
   void calculate_checksum(const uint8_t msg_cls, const uint8_t msg_id, const uint16_t len, const UBX_message_t payload,
                           uint8_t &ck_a, uint8_t &ck_b) const;
   bool send_message(uint8_t msg_class, uint8_t msg_id, UBX_message_t &message, uint16_t len);
+
+  bool is_initialized_{false};
 
   uint32_t current_baudrate_ = 115200;
   const uint32_t baudrates[5] = {115200, 19200, 57600, 9600, 38400};
