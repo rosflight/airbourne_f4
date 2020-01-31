@@ -38,14 +38,14 @@ void UBLOX::init(UART *uart)
   serial_ = uart;
 
 
-  serial_->set_mode(115200, UART::MODE_8N1);
+  serial_->set_mode(BAUD_RATE, UART_MODE);
   serial_->register_rx_callback(cb);
 
   if (!detect_baudrate())
     return;
 
   // Otherwise, Configure the GNSS receiver
-  set_baudrate(115200);
+  set_baudrate(BAUD_RATE);
   set_dynamic_mode();
   set_nav_rate(100);
   enable_message(CLASS_NAV, NAV_PVT, 1);

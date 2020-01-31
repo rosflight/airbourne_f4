@@ -437,6 +437,9 @@ public:
     uint32_t s_acc;//cm/s
   };
 
+  static constexpr uint32_t BAUD_RATE{115200};
+  static constexpr UART::uart_mode_t UART_MODE{UART::MODE_8N1};
+
   void init(UART *uart);
   inline bool is_initialized(){return is_initialized_;}
 
