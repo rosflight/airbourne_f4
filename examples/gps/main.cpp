@@ -57,17 +57,27 @@ int main()
   UART uart;
   uart.init(&uart_config[UART1], 115200);
 
+
   init_printf(NULL, _putc);
 
   UBLOX gps;
   gps.init(&uart);
 
+  while(!gps.is_initialized())
+  {
+    printf("GPS not initialized");
+    delay(200);
+    gps.init(&uart);
+  }
+
   LED led1;
   led1.init(LED1_GPIO, LED1_PIN);
 
+  delay(5000); //Wait for the UBX to boot up
+
   while (1)
   {
-    if (gps.new_data())
+    // if (gps.new_data())
     {
       UBLOX::NAV_PVT_t raw = gps.read_raw();
       printf("fix: %s\tt: %d\tlla: %d, %d, %d\tvel: %d, %d, %d\n",
@@ -76,6 +86,6 @@ int main()
              raw.velN, raw.velE, raw.velD);
       led1.toggle();
     }
-    delay(10);
+    delay(1000);
   }
 }
