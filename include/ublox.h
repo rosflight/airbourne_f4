@@ -461,7 +461,7 @@ public:
   static constexpr UART::uart_mode_t UART_MODE{UART::MODE_8N1};
 
   void init(UART *uart);
-  inline bool is_initialized(){return is_initialized_;}
+  void continue_search();
 
   bool present();
   bool new_data(); //Returns true if new data has been recieved, AND the time of week stamps on all of the data matches
@@ -488,6 +488,9 @@ public:
 
 private:
   bool detect_baudrate();
+  void start_detect_baudrate_async();
+  void increment_detect_baudrate_async();
+  void finish_init();
   void convert_data();
   void enable_message(uint8_t msg_cls, uint8_t msg_id, uint8_t rate);
   void set_baudrate(const uint32_t baudrate);
@@ -500,8 +503,13 @@ private:
 
   bool is_initialized_{false};
 
-  uint32_t current_baudrate_ = 115200;
-  const uint32_t baudrates[5] = {115200, 19200, 57600, 9600, 38400};
+  uint32_t current_baudrate_ = BAUD_RATE;
+  static constexpr size_t BAUDRATE_SEARCH_COUNT{5};
+  static constexpr uint32_t BAUDRATE_SEARCH_TIME_MS{1000};
+  const uint32_t baudrates[BAUDRATE_SEARCH_COUNT] = {115200, 19200, 57600, 9600, 38400};
+  bool searching_baudrate_{false};
+  size_t baudrate_search_index_{0};
+  uint32_t last_baudrate_change_ms_{0};
 
   UBX_message_t out_message_ = {};
   UBX_message_t in_message_ = {};

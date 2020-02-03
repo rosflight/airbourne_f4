@@ -41,10 +41,17 @@ void UBLOX::init(UART *uart)
   serial_->set_mode(BAUD_RATE, UART_MODE);
   serial_->register_rx_callback(cb);
 
-  if (!detect_baudrate())
+  if (!detect_baudrate()) // TODO entirely remove blocking initialization
+  {
+    start_detect_baudrate_async();
     return;
+  }
+  finish_init();
+}
 
-  // Otherwise, Configure the GNSS receiver
+void UBLOX::finish_init()
+{
+  // Configure the GNSS receiver
   set_baudrate(BAUD_RATE);
   set_dynamic_mode();
   set_nav_rate(100);
@@ -68,7 +75,7 @@ bool UBLOX::detect_baudrate()
   for (size_t i = 0; i < sizeof(baudrates)/sizeof(uint32_t); i++)
   {
     DBG("Trying %d baudrate\n", baudrates[i]);
-    serial_->set_mode(baudrates[i], UART::MODE_8N1);
+    serial_->set_mode(baudrates[i], UART_MODE);
     uint32_t timeout_ms(1000);
     uint32_t start_ms = millis();
     uint32_t now_ms = millis();
@@ -88,6 +95,31 @@ bool UBLOX::detect_baudrate()
       break;
   }
   return got_message_;
+}
+
+void UBLOX::start_detect_baudrate_async()
+{
+  baudrate_search_index_ = BAUDRATE_SEARCH_COUNT-1; // once incremented, this goes to 0
+  increment_detect_baudrate_async();
+}
+
+void UBLOX::increment_detect_baudrate_async()
+{
+  searching_baudrate_ = false; // To prevent hits during this function
+  baudrate_search_index_ = (baudrate_search_index_+1) % BAUDRATE_SEARCH_COUNT;
+  current_baudrate_ = baudrates[baudrate_search_index_];
+  DBG("Trying %d baudrate\n", current_baudrate_);
+  serial_->set_mode(current_baudrate_, UART_MODE);
+  last_baudrate_change_ms_ = millis();
+  searching_baudrate_ = true;
+}
+
+void UBLOX::continue_search()
+{
+  if (got_message_)
+    finish_init();
+  else if (millis() > last_baudrate_change_ms_ + BAUDRATE_SEARCH_TIME_MS)
+    increment_detect_baudrate_async();
 }
 
 bool UBLOX::send_message(uint8_t msg_class, uint8_t msg_id, UBX_message_t &message, uint16_t len)
@@ -134,7 +166,7 @@ void UBLOX::set_baudrate(const uint32_t baudrate)
 //it has ever recieved a valid message
 bool UBLOX::present()
 {
-  return got_message_;
+  return is_initialized_;
 }
 
 //Set the dynamic mode to airborne, with a max acceleration of 4G
