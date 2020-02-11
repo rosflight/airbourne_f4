@@ -56,11 +56,13 @@ int main()
   AnalogDigitalConverter adc;
   adc.init(&adc_config[0]);
 
+  const BatteryMonitorHardwareStruct &cfg = battery_monitor_config;
+
   AnalogPin current_pin;
-  current_pin.init(&adc, CURRENT_GPIO, CURRENT_PIN, CURRENT_ADC_CHANNEL);
+  current_pin.init(&adc, cfg.current_gpio, cfg.current_pin, cfg.current_adc_channel);
 
   AnalogPin voltage_pin;
-  voltage_pin.init(&adc, VOLTAGE_GPIO, VOLTAGE_PIN, VOLTAGE_ADC_CHANNEL);
+  voltage_pin.init(&adc, cfg.voltage_gpio, cfg.voltage_pin, cfg.voltage_adc_channel);
 
   while (true)
   {
