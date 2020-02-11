@@ -3,26 +3,68 @@
 
 #include "system.h"
 
+/**
+ * @brief A driver for the analog-digital converters available on the microcontroller.
+ * @details Besides initialization, it is most convenient to work with the ADC with the
+ * AnalogPin class, which handles adding channels and reading results.
+ */
 class AnalogDigitalConverter
 {
 public:
+  /**
+   * @brief Initializes the ADC according to the definition struct provided
+   * @param A hardware struct defining the resources for the ADC
+   */
   void init(const ADCHardwareStruct *adc_def);
-  // Adds a channel to the list that is scanned.
-  // Returns the rank assigned to the channel. This is needed for reading
-  // This method does not check for errors. Do not add more than CHANNEL_COUNT channels.
-  // (i.e don't call add_channel more than CHANNEL_COUNT times
+  /**
+   * @brief Adds a channel to the list that is scanned.
+   * @details This returns the rank assigned to the channel, which is needed to read it later
+   * This method does not check for errors. Do not add more than CHANNEL_COUNT channels,
+   * by calling add_channel more than CHANNEL_COUNT times
+   * @param channel The index of the channel to be read
+   * @return The rank of the added channel
+   */
   uint8_t add_channel(uint8_t channel);
   // Returns a value between 0 and RAW_READING_MAX. 0 represents 0V, and RAW_READING_MAX
   // represents REFERENCE_VOLTAGE
   // The parameter, rank, is the return value from add_channel when the channel was added
+  /**
+   * @brief Reads a single channel.
+   * @details The reading is between 0 and RAW_READING_MAX. 0 represents 0V, and
+   * RAW_READING_MAX represents REFERENCE_VOLTAGE (typically 3.3V).
+   * Takes the rank of the channel as a parameter, which is returned from add_channel
+   * @param rank The rank of the channel to be read.
+   * @return
+   */
   uint16_t read(uint8_t rank) const;
+  /**
+   * @brief Checks if the adc has been initialized, i.e. init has been called.
+   * @return if the adc has been initialized
+   */
   bool is_initialized() const;
-  // The current number of pins using this ADC. Must not exceed CHANNEL_COUNT
+  /**
+   * @brief Checks the number of used channels. If this exceeds CHANNEL_COUNT, stuff will break
+   * @return The number of ADC channels in use for this ADC
+   */
   uint8_t get_current_channel_count() const;
 
+  /**
+   * The reference voltage used for the ADC, which is hardware-dependent.
+   * Unit is volts.
+   */
   static constexpr double REFERENCE_VOLTAGE{3.3};
+  /**
+   * The maximum reading from a channel. This reading corresponds to REFERENCE_VOLTAGE volts.
+   */
   static constexpr uint16_t RAW_READING_MAX{0xFFF};
+  /**
+   * A value indicating that the channel value has not yet been read by the ADC.
+   * If you get this for more than just the startup time, your channel may not be initialized
+   */
   static constexpr uint16_t NO_READING{0xFFFF};
+  /**
+   * The maximum number of channels on a single ADC. Hardware-dependent
+   */
   static constexpr uint8_t CHANNEL_COUNT{16};
 
 private:
@@ -30,6 +72,7 @@ private:
   bool is_initialized_{false};
   uint8_t current_channels;
 
+  // These two constants are used for adjusting the ADC configuration when a channel is added
   static constexpr uint32_t SQR1_L_MASK{~0xFF0FFFFF};
   static constexpr uint8_t SQR1_L_OFFSET{20};
 

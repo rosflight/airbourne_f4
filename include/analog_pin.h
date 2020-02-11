@@ -5,12 +5,35 @@
 #include "gpio.h"
 #include "analog_digital_converter.h"
 
+/**
+ * @brief A class to represent a single pin configured for analog input
+ * @details This class manages the connection to the ADC, and does some of the math for reading.
+ * This class does not initialize the ADC.
+ */
 class AnalogPin
 {
 public:
-  void init(AnalogDigitalConverter *adc_, GPIO_TypeDef *BasePort, uint16_t pin, uint8_t adc_channel);
+  /**
+   * @brief Initializes a pin to read analog values.
+   * @details This initialization includes configuring the GPIO, and adding a channel to the ADC.
+   * This does not configure the ADC. ADC configuration must happen before
+   * @param adc The ADC this pin is to use
+   * @param basePort The GPIO definition for this pin to use
+   * @param pin The GPIO number for the pin
+   * @param adc_channel The ADC channel number for the pin, defined by the hardware
+   */
+  void init(AnalogDigitalConverter *adc, GPIO_TypeDef *basePort, uint16_t pin, uint8_t adc_channel);
+  /**
+   * @brief Get the last reading of the pin, in volts
+   * @return The most recent reading, in volts
+   */
   double read() const; // Returns a reading in volts
-  uint16_t read_raw() const; // Returns a raw reading. See AnalogDigitalConverter.read()
+  /**
+   * @brief Get the most recent reading of the pin, directly from the ADC.
+   * See AnalogDigitalConverter.read for the details on interpreting this value.
+   * @return The most recent raw reading
+   */
+  uint16_t read_raw() const;
 
 private:
   GPIO gpio_;
