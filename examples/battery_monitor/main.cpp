@@ -58,19 +58,13 @@ int main()
   AnalogDigitalConverter adc;
   adc.init(&adc_config[0]);
 
-  AnalogPin current_pin;
-  current_pin.init(&adc, CURRENT_GPIO, CURRENT_PIN, CURRENT_ADC_CHANNEL);
-
-  AnalogPin voltage_pin;
-  voltage_pin.init(&adc, VOLTAGE_GPIO, VOLTAGE_PIN, VOLTAGE_ADC_CHANNEL);
-
   BatteryMonitor monitor;
-  monitor.init(&voltage_pin, 1/63.69e-3,&current_pin,1/36.60e-3);
+  monitor.init(battery_monitor_config, &adc, 15.701, 27.322);
 
   while (true)
   {
-    double voltage = monitor.read_voltage();
-    double current = monitor.read_current();
+    float voltage = monitor.read_voltage();
+    float current = monitor.read_current();
     printf("%f;\t%f\n",voltage, current);
     delay(500);
   }
