@@ -4,6 +4,12 @@
 #include "analog_pin.h"
 #include "system.h"
 
+/**
+ * @brief A driver for analog battery monitors
+ * @details These battery monitors provide an analog voltage proportional to the battery
+ * voltage and/or current. This class handles setting up pins and unit conversions.
+ * This class does not initialize the ADC.
+ */
 class BatteryMonitor
 {
 public:
