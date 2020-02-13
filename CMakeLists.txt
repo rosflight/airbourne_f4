@@ -29,9 +29,7 @@ cmake_minimum_required(VERSION 3.10)
 project(airbourne C CXX ASM)
 
 # Project-Wide Settings
-# include(cmake/Options.cmake)
 include(cmake/ExampleRule.cmake)
-include(cmake/CompileFlags.cmake)
 include(cmake/ToolChain.cmake)
 
 add_subdirectory(lib)
