@@ -30,7 +30,6 @@ set(STARTUP_SCRIPT ${CMAKE_CURRENT_LIST_DIR}/../lib/startup/stm32f405.s)
 set(OBJ_COPY arm-none-eabi-objcopy)
 
 function(add_example name)
-    message("Creating example ${name} from ${ARGN}")
     add_executable(${name}.elf ${ARGN} ${STARTUP_SCRIPT})
     target_link_libraries(${name}.elf airbourne_core printf)
 
