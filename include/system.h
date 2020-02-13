@@ -51,6 +51,7 @@
 #include "stm32f4xx_tim.h"
 #include "stm32f4xx_dma.h"
 #include "stm32f4xx_usart.h"
+#include "stm32f4xx_adc.h"
 #include "misc.h"
 
 typedef struct {
@@ -116,6 +117,24 @@ typedef struct {
 	uint32_t DMA_Rx_IT_Bit;
 	uint32_t DMA_Tx_IT_Bit;
 } uart_hardware_struct_t;
+
+typedef struct
+{
+  ADC_TypeDef *adc;
+  DMA_Stream_TypeDef *DMA_Stream;
+  uint32_t DMA_channel;
+} ADCHardwareStruct;
+
+typedef struct
+{
+  GPIO_TypeDef *voltage_gpio;
+  uint16_t voltage_pin;
+  uint8_t voltage_adc_channel;
+  GPIO_TypeDef *current_gpio;
+  uint16_t current_pin;
+  uint8_t current_adc_channel;
+  const ADCHardwareStruct *adc;
+} BatteryMonitorHardwareStruct;
 
 #ifdef __cplusplus
 extern "C" {

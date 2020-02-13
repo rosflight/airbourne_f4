@@ -26,7 +26,7 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-TARGET = backup_sram
+TARGET = battery_monitor
 
 BOARD ?= REVO
 
@@ -130,10 +130,11 @@ CSOURCES =  $(CMSIS_SRC) \
 
 CXXSOURCES = $(PRINTF_SRC) \
 			 gpio.cpp \
-             led.cpp \
              main.cpp \
              vcp.cpp \
-	     backup_sram.cpp
+	     analog_digital_converter.cpp \
+	     analog_pin.cpp \
+	     battery_monitor.cpp
 
 INCLUDE_DIRS =  $(SRC_DIR) \
                 $(ROOT)/include \
