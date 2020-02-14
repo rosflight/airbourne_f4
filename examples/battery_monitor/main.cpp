@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, James Jackson
+ * Copyright (c) 2020, Richard Henrichsen
  *
  * All rights reserved.
  *
