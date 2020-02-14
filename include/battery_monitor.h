@@ -71,7 +71,8 @@ public:
    * @details Because the battery voltage is usually much too high for the ADC to read,
    * analog battery monitors use a voltage divider or similar to reduce the voltage to a
    * reasonable level. The voltage read by the ADC is multiplied by the voltage multiplier
-   * to get the actual reading. This number can be obtained from the spec sheet for the
+   * to get the actual reading. I.e BatteryVoltage = ADCVoltage * VoltageMultiplier.
+   * This number can be obtained from the spec sheet for the
    * battery monitor, or through simple math for DIY monitors. This value is in volts per volt
    * (i.e. unitless).
    * @param multiplier The new voltage multiplier
@@ -81,8 +82,10 @@ public:
    * @brief Sets the current multiplier for the battery monitor.
    * @details Analog battery monitors which support current measurement generate a voltage
    * proportional to the current through them. This voltage is read by the ADC, and then
-   * multiplied by the current multiplier to measure the current. This number can be obtained
-   * from the spec sheet for the battery monitor. This value is in amps per volt.
+   * multiplied by the current multiplier to measure the current.
+   * I.e BatteryCurrent = ADCVoltage * CurrentMultiplier.
+   * This number can be obtained from the spec sheet for the battery monitor.
+   * This value is in amps per volt.
    * @param multiplier
    */
   void set_current_multiplier(double multiplier);
