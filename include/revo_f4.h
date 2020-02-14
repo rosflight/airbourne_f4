@@ -166,6 +166,20 @@ const pwm_hardware_struct_t pwm_config[PWM_NUM_CHANNELS] =
 #define PPM_RC_IQRHandler TIM8_BRK_TIM12_IRQHandler
 
 
+/////////////////////// ANALOG CONFIG ///////////////////////
+#define ADC_NUM 3
+const ADCHardwareStruct adc_config[ADC_NUM] =
+{
+  {ADC1, DMA2_Stream0, DMA_Channel_0}, // could use DMA2 streams 0 or 4, channel 0 on both
+  // Note that ADC2 conflicts with SPI1 over the DMA. Do not use both at the same time,
+  // unless you change one or the other to not use the DMA
+  // At time of this writing, SPI1 is the IMU, so don't break it
+  {ADC2, DMA2_Stream2, DMA_Channel_1}, // could use DMA2 streams 2 or 3, channel 1 on both
+  {ADC3, DMA2_Stream1, DMA_Channel_2} //  could use DMA2 streams 0 or 1, channel 2 on both
+};
 
+const BatteryMonitorHardwareStruct battery_monitor_config{
+  GPIOC,GPIO_Pin_2, ADC_Channel_12, GPIOC, GPIO_Pin_1, ADC_Channel_11, &adc_config[0]
+};
 
 #endif // REVO_F4_H
