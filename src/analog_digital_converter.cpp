@@ -101,8 +101,8 @@ uint8_t AnalogDigitalConverter::add_channel(uint8_t channel)
   ADC_RegularChannelConfig(this->adc_def_->adc, channel, index, ADC_SampleTime_480Cycles);
 
   //Increment the number of channels
-  this->adc_def_->adc->SQR1 &=(~SQR1_L_MASK);
-  this->adc_def_->adc->SQR1 |=(((index-1)<<SQR1_L_OFFSET)&SQR1_L_MASK);
+  this->adc_def_->adc->SQR1 &=(~SQR1_CHANNEL_COUNT_MASK);
+  this->adc_def_->adc->SQR1 |=(((index-1)<<SQR1_CHANNEL_COUNT_OFFSET)&SQR1_CHANNEL_COUNT_MASK);
 
   this->init_dma(); // reconfigure the DMA with the new memory size
   this->start_dma();

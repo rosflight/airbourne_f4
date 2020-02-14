@@ -105,8 +105,8 @@ private:
   uint8_t current_channels;
 
   // These two constants are used for adjusting the ADC configuration when a channel is added
-  static constexpr uint32_t SQR1_L_MASK{~0xFF0FFFFF};
-  static constexpr uint8_t SQR1_L_OFFSET{20};
+  static constexpr uint32_t SQR1_CHANNEL_COUNT_MASK{~0xFF0FFFFF};
+  static constexpr uint8_t SQR1_CHANNEL_COUNT_OFFSET{20};
 
   volatile uint32_t buffer[CHANNEL_COUNT];
 
