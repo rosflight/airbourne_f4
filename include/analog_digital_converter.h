@@ -50,25 +50,25 @@ public:
   void init(const ADCHardwareStruct *adc_def);
   /**
    * @brief Adds a channel to the list that is scanned.
-   * @details This returns the rank assigned to the channel, which is needed to read it later
+   * @details This returns the index assigned to the channel, which is needed to read it later
    * This method does not check for errors. Do not add more than CHANNEL_COUNT channels,
    * by calling add_channel more than CHANNEL_COUNT times
    * @param channel The index of the channel to be read
-   * @return The rank of the added channel
+   * @return The index of the added channel
    */
   uint8_t add_channel(uint8_t channel);
   // Returns a value between 0 and RAW_READING_MAX. 0 represents 0V, and RAW_READING_MAX
   // represents REFERENCE_VOLTAGE
-  // The parameter, rank, is the return value from add_channel when the channel was added
+  // The parameter, index, is the return value from add_channel when the channel was added
   /**
    * @brief Reads a single channel.
    * @details The reading is between 0 and RAW_READING_MAX. 0 represents 0V, and
    * RAW_READING_MAX represents REFERENCE_VOLTAGE (typically 3.3V).
-   * Takes the rank of the channel as a parameter, which is returned from add_channel
-   * @param rank The rank of the channel to be read.
+   * Takes the index of the channel as a parameter, which is returned from add_channel
+   * @param index The index of the channel to be read.
    * @return
    */
-  uint16_t read(uint8_t rank) const;
+  uint16_t read(uint8_t index) const;
   /**
    * @brief Checks if the adc has been initialized, i.e. init has been called.
    * @return if the adc has been initialized

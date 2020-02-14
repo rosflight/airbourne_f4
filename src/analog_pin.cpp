@@ -36,7 +36,7 @@ void AnalogPin::init(AnalogDigitalConverter *adc, GPIO_TypeDef *basePort, uint16
 {
   this->adc_ = adc;
   this->gpio_.init(basePort, pin, GPIO::ANALOG);
-  this->rank = this->adc_->add_channel(adc_channel);
+  this->index_ = this->adc_->add_channel(adc_channel);
 }
 
 double AnalogPin::read() const
@@ -46,5 +46,5 @@ double AnalogPin::read() const
 
 uint16_t AnalogPin::read_raw() const
 {
-  return adc_->read(rank);
+  return adc_->read(index_);
 }

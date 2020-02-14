@@ -96,19 +96,19 @@ void AnalogDigitalConverter::init_dma()
 
 uint8_t AnalogDigitalConverter::add_channel(uint8_t channel)
 {
-  uint8_t rank = this->get_current_channel_count() + 1;
+  uint8_t index = this->get_current_channel_count() + 1;
   this->current_channels++;
-  ADC_RegularChannelConfig(this->adc_def_->adc, channel, rank, ADC_SampleTime_480Cycles);
+  ADC_RegularChannelConfig(this->adc_def_->adc, channel, index, ADC_SampleTime_480Cycles);
 
   //Increment the number of channels
   this->adc_def_->adc->SQR1 &=(~SQR1_L_MASK);
-  this->adc_def_->adc->SQR1 |=(((rank-1)<<SQR1_L_OFFSET)&SQR1_L_MASK);
+  this->adc_def_->adc->SQR1 |=(((index-1)<<SQR1_L_OFFSET)&SQR1_L_MASK);
 
   this->init_dma(); // reconfigure the DMA with the new memory size
   this->start_dma();
   ADC_Cmd(this->adc_def_->adc, ENABLE);
   ADC_SoftwareStartConv(this->adc_def_->adc);
-  return rank;
+  return index;
 }
 void AnalogDigitalConverter::start_dma()
 {
@@ -118,9 +118,9 @@ bool AnalogDigitalConverter::is_initialized() const
 {
   return this->is_initialized_;
 }
-uint16_t AnalogDigitalConverter::read(uint8_t rank) const
+uint16_t AnalogDigitalConverter::read(uint8_t index) const
 {
-  return (this->buffer[rank-1]& 0xFFFF);
+  return (this->buffer[index-1]& 0xFFFF);
 }
 
 

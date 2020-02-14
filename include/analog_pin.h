@@ -69,7 +69,7 @@ public:
 private:
   GPIO gpio_;
   AnalogDigitalConverter *adc_;
-  uint8_t rank;
+  uint8_t index_;
 };
 
 #endif // ANALOG_H
