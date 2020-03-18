@@ -100,7 +100,7 @@ private:
   uint32_t last_update_ms_;
   bool waiting_for_cb_;
   bool new_data_;
-  bool baro_present_;
+  bool baro_present_{false};
   
   callback_type_t callback_type_;
 

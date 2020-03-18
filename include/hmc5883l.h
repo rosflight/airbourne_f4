@@ -96,5 +96,5 @@ private:
   volatile float data_[3];
   uint32_t last_update_ms_;
   uint32_t next_update_ms_;
-  bool mag_present_;
+  bool mag_present_{false};
 };
