@@ -29,17 +29,16 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-
 #include "rc_sbus.h"
 #include <functional>
 
-RC_SBUS* rc_ptr;
+RC_SBUS *rc_ptr;
 void rx_callback(uint8_t byte)
 {
-    rc_ptr->read_cb(byte);
+  rc_ptr->read_cb(byte);
 }
 
-void RC_SBUS::init(GPIO* inv_pin, UART *uart)
+void RC_SBUS::init(GPIO *inv_pin, UART *uart)
 {
   rc_ptr = this;
   uart_ = uart;
@@ -56,7 +55,7 @@ void RC_SBUS::init(GPIO* inv_pin, UART *uart)
 
 float RC_SBUS::read(uint8_t channel)
 {
-  return (static_cast<float>(raw_[channel]) - 172.0)/1639.0;
+  return (static_cast<float>(raw_[channel]) - 172.0) / 1639.0;
 }
 
 bool RC_SBUS::lost()
@@ -69,16 +68,16 @@ void RC_SBUS::decode_buffer()
   frame_start_ms_ = millis();
 
   // process actual sbus data, use union to decode
-  raw_[0]  = sbus_union_.frame.chan0;
-  raw_[1]  = sbus_union_.frame.chan1;
-  raw_[2]  = sbus_union_.frame.chan2;
-  raw_[3]  = sbus_union_.frame.chan3;
-  raw_[4]  = sbus_union_.frame.chan4;
-  raw_[5]  = sbus_union_.frame.chan5;
-  raw_[6]  = sbus_union_.frame.chan6;
-  raw_[7]  = sbus_union_.frame.chan7;
-  raw_[8]  = sbus_union_.frame.chan8;
-  raw_[9]  = sbus_union_.frame.chan9;
+  raw_[0] = sbus_union_.frame.chan0;
+  raw_[1] = sbus_union_.frame.chan1;
+  raw_[2] = sbus_union_.frame.chan2;
+  raw_[3] = sbus_union_.frame.chan3;
+  raw_[4] = sbus_union_.frame.chan4;
+  raw_[5] = sbus_union_.frame.chan5;
+  raw_[6] = sbus_union_.frame.chan6;
+  raw_[7] = sbus_union_.frame.chan7;
+  raw_[8] = sbus_union_.frame.chan8;
+  raw_[9] = sbus_union_.frame.chan9;
   raw_[10] = sbus_union_.frame.chan10;
   raw_[11] = sbus_union_.frame.chan11;
   raw_[12] = sbus_union_.frame.chan12;
@@ -87,28 +86,28 @@ void RC_SBUS::decode_buffer()
   raw_[15] = sbus_union_.frame.chan15;
 
   // Digital Channel 1
-  if (sbus_union_.frame.digichannels & (1<<0))
+  if (sbus_union_.frame.digichannels & (1 << 0))
     raw_[16] = 1811;
   else
     raw_[16] = 172;
 
   // Digital Channel 2
-  if (sbus_union_.frame.digichannels & (1<<1))
+  if (sbus_union_.frame.digichannels & (1 << 1))
     raw_[17] = 1811;
   else
     raw_[17] = 172;
 
   // Failsafe
   failsafe_status_ = SBUS_SIGNAL_OK;
-//  if (sbus_union_.frame.digichannels & (1<<2))
-//    failsafe_status_ = SBUS_SIGNAL_LOST;
-  if (sbus_union_.frame.digichannels & (1<<3))
+  //  if (sbus_union_.frame.digichannels & (1<<2))
+  //    failsafe_status_ = SBUS_SIGNAL_LOST;
+  if (sbus_union_.frame.digichannels & (1 << 3))
     failsafe_status_ = SBUS_SIGNAL_FAILSAFE;
 }
 
 void RC_SBUS::read_cb(uint8_t byte)
 {
-  if (byte == START_BYTE && prev_byte_ == END_BYTE)
+  if (byte == START_BYTE && is_end_byte(prev_byte_))
   {
     buffer_pos_ = 0;
     frame_started_ = true;
@@ -122,7 +121,7 @@ void RC_SBUS::read_cb(uint8_t byte)
     if (buffer_pos_ == 25)
     {
       // If we have a complete packet, decode
-      if (sbus_union_.frame.endByte == END_BYTE && sbus_union_.frame.startByte == START_BYTE)
+      if (is_end_byte(sbus_union_.frame.endByte) && sbus_union_.frame.startByte == START_BYTE)
         decode_buffer();
       else
         errors_++;
@@ -131,4 +130,3 @@ void RC_SBUS::read_cb(uint8_t byte)
   }
   prev_byte_ = byte;
 }
-
