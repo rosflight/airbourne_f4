@@ -64,8 +64,8 @@ private:
     I2C *i2c_; // The i2c object used for communication
     bool ready_to_ping_; // Whether the sensor is ready to make another measurement
     uint8_t buffer_[2]; // for receiving data from the sensor
-    bool sensor_present_; // Flag of whether we have received data from the sensor
-
+    bool sensor_present_{false}; // Flag of whether we have received data from the sensor
+    bool sensor_initialized_{false}; // Whether the init function has been called yet
 
 public:
     I2CSonar();
@@ -75,6 +75,7 @@ public:
     void update(); // Tries to either start a measurement, or read it from the sensor
     // update will do nothing if it has done something in the last MB1242_UPDATE_WAIT_MILLIS ms
     // Calling it more frequently won't break anything
+    inline bool is_initialized(){return sensor_initialized_;}
 
     // Callbacks. For internal use only, but public so the I2C peripheral can call them
     void cb_start_read(uint8_t result); // callback after the measure command has been sent to the sensor

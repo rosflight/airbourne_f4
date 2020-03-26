@@ -43,11 +43,12 @@ public:
   void read(float *differential_pressure, float *temp);
 
   void read_cb(uint8_t result);
+  inline bool is_initialized(){return i2c_;}
 
 private:
   static const uint8_t ADDR = 0x28;
 
-  I2C* i2c_;
+  I2C *i2c_{nullptr};
   uint8_t buf_[4];
   float diff_press_;
   float temp_;

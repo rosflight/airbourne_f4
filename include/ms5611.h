@@ -87,7 +87,7 @@ private:
   bool start_pres_meas();
   void convert();
 
-  I2C* i2c_;
+  I2C *i2c_{nullptr};
   uint8_t pres_buf_[3];
   uint8_t temp_buf_[3];
   int32_t pres_raw_;
@@ -100,7 +100,7 @@ private:
   uint32_t last_update_ms_;
   bool waiting_for_cb_;
   bool new_data_;
-  bool baro_present_;
+  bool baro_present_{false};
   
   callback_type_t callback_type_;
 
@@ -119,6 +119,7 @@ public:
   void pres_start_cb(uint8_t result);
   void write_zero_cb(uint8_t result);
   void reset_cb(uint8_t result);
+  inline bool is_initialized(){return i2c_;}
 };
 
 
