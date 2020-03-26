@@ -42,12 +42,13 @@ class RC_SBUS : public RC_BASE
 {
 
 private:
-
   enum
   {
     START_BYTE = 0x0F,
-    END_BYTE = 0x00
+    END_MASK = 0x34
   };
+
+  inline bool is_end_byte(uint8_t byte) { return (byte & END_MASK) == byte; }
 
   typedef enum
   {
@@ -56,39 +57,40 @@ private:
     SBUS_SIGNAL_FAILSAFE
   } failsafe_state_t;
 
-  struct dataFrame_s {
-      uint8_t startByte;
-      unsigned int chan0 : 11;
-      unsigned int chan1 : 11;
-      unsigned int chan2 : 11;
-      unsigned int chan3 : 11;
-      unsigned int chan4 : 11;
-      unsigned int chan5 : 11;
-      unsigned int chan6 : 11;
-      unsigned int chan7 : 11;
-      unsigned int chan8 : 11;
-      unsigned int chan9 : 11;
-      unsigned int chan10 : 11;
-      unsigned int chan11 : 11;
-      unsigned int chan12 : 11;
-      unsigned int chan13 : 11;
-      unsigned int chan14 : 11;
-      unsigned int chan15 : 11;
-      uint8_t digichannels;
-      uint8_t endByte;
-  } __attribute__ ((__packed__));
+  struct dataFrame_s
+  {
+    uint8_t startByte;
+    unsigned int chan0 : 11;
+    unsigned int chan1 : 11;
+    unsigned int chan2 : 11;
+    unsigned int chan3 : 11;
+    unsigned int chan4 : 11;
+    unsigned int chan5 : 11;
+    unsigned int chan6 : 11;
+    unsigned int chan7 : 11;
+    unsigned int chan8 : 11;
+    unsigned int chan9 : 11;
+    unsigned int chan10 : 11;
+    unsigned int chan11 : 11;
+    unsigned int chan12 : 11;
+    unsigned int chan13 : 11;
+    unsigned int chan14 : 11;
+    unsigned int chan15 : 11;
+    uint8_t digichannels;
+    uint8_t endByte;
+  } __attribute__((__packed__));
 
   typedef union {
-      uint8_t data[25];
-      struct dataFrame_s frame;
+    uint8_t data[25];
+    struct dataFrame_s frame;
   } SBUS_t;
 
   SBUS_t sbus_union_;
 
   failsafe_state_t failsafe_status_;
 
-  GPIO* inv_pin_;
-  UART* uart_;
+  GPIO *inv_pin_;
+  UART *uart_;
   uint32_t raw_[18];
   uint32_t frame_start_ms_ = 0;
   uint8_t buffer_[25];
@@ -100,13 +102,11 @@ private:
   void decode_buffer();
 
 public:
-
   void init(GPIO *inv_pin, UART *uart);
   void read_cb(uint8_t byte);
   float read(uint8_t channel);
   bool lost();
   inline uint32_t get_errors() { return errors_; }
-
 };
 
 #endif // RC_SBUS_H
