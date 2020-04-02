@@ -131,7 +131,7 @@ void VCP::register_rx_callback(void (*rx_callback_ptr)(uint8_t data) )
 void VCP::unregister_rx_callback()
 {
     receive_CB_ = NULL;
-//    Register_CDC_RxCallback(NULL);
+  //  Register_CDC_RxCallback(NULL);
 }
 
 
