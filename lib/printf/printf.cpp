@@ -33,6 +33,8 @@
 
 #define PRINTF_FLOAT_DECIMALS 3
 
+namespace nanoprintf
+{
 typedef void (*putcf) (void*,char);
 static putcf stdout_putf;
 static void* stdout_putp;
@@ -285,4 +287,5 @@ void tfp_sprintf(char* s, const char *fmt, ...)
     tfp_format(&s,putcp,fmt,va);
     putcp(&s,0);
     va_end(va);
+}
 }

@@ -29,14 +29,15 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "serial.h"
+#include "led.h"
+#include "printf.h"
+#include "revo_f4.h"
 #include "system.h"
 #include "uart.h"
-#include "vcp.h"
 #include "ublox.h"
-#include "revo_f4.h"
-#include "printf.h"
-#include "led.h"
+#include "vcp.h"
+
+#define printf ::nanoprintf::tfp_printf
 
 Serial *serPtr = NULL;
 
@@ -57,33 +58,30 @@ int main()
   UART uart;
   uart.init(&uart_config[UART1], 115200);
 
-
-  init_printf(NULL, _putc);
+  nanoprintf::init_printf(NULL, _putc);
 
   UBLOX gps;
   gps.init(&uart);
 
-  while(!gps.is_initialized())
+  while (!gps.present())
   {
     printf("GPS not initialized");
     delay(200);
-    gps.init(&uart);
+    gps.continue_search();
   }
 
   LED led1;
   led1.init(LED1_GPIO, LED1_PIN);
 
-  delay(5000); //Wait for the UBX to boot up
+  delay(5000); // Wait for the UBX to boot up
 
   while (1)
   {
     // if (gps.new_data())
     {
       UBLOX::NAV_PVT_t raw = gps.read_raw();
-      printf("fix: %s\tt: %d\tlla: %d, %d, %d\tvel: %d, %d, %d\n",
-             fix_names[raw.fixType].c_str(), raw.iTOW,
-             raw.lat, raw.lon, raw.height,
-             raw.velN, raw.velE, raw.velD);
+      printf("fix: %s\tt: %d\tlla: %d, %d, %d\tvel: %d, %d, %d\n", fix_names[raw.fixType].c_str(), raw.iTOW, raw.lat,
+             raw.lon, raw.height, raw.velN, raw.velE, raw.velD);
       led1.toggle();
     }
     delay(1000);
