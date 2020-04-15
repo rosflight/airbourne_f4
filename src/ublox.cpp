@@ -12,7 +12,7 @@
 
 UBLOX *gnss_Ptr;
 
-//A C style callback
+// A C style callback
 void cb(uint8_t byte)
 {
   gnss_Ptr->read_cb(byte);
@@ -20,7 +20,7 @@ void cb(uint8_t byte)
 
 UBLOX::UBLOX() {}
 
-//Look for a GNSS receiver, and if found, change its settings
+// Look for a GNSS receiver, and if found, change its settings
 void UBLOX::init(UART *uart)
 {
   gnss_Ptr = this;
@@ -37,16 +37,10 @@ void UBLOX::init(UART *uart)
   looking_for_nmea_ = true;
   serial_ = uart;
 
-
   serial_->set_mode(BAUD_RATE, UART_MODE);
   serial_->register_rx_callback(cb);
 
-  if (!detect_baudrate()) // TODO entirely remove blocking initialization
-  {
-    start_detect_baudrate_async();
-    return;
-  }
-  finish_init();
+  start_detect_baudrate_async();
 }
 
 void UBLOX::finish_init()
@@ -59,27 +53,27 @@ void UBLOX::finish_init()
   enable_message(CLASS_NAV, NAV_POSECEF, 1);
   enable_message(CLASS_NAV, NAV_VELECEF, 1);
 
-  //Zeroing the data
+  // Zeroing the data
   this->nav_message_ = {};
   is_initialized_ = true;
 }
 
-//Attempt to detect the baudrate by trying a rate, waiting 1 s, and
-//seeing if any messages are recieved.
-//Attempted baudrates and the order in which they are tried are defined in ublox.h, in the array 'baudrates'
-//As a consequence of the changing baudrates, the sensor is treated as
-//disconnected until the procedure finishes
+// Attempt to detect the baudrate by trying a rate, waiting 1 s, and
+// seeing if any messages are recieved.
+// Attempted baudrates and the order in which they are tried are defined in ublox.h, in the array 'baudrates'
+// As a consequence of the changing baudrates, the sensor is treated as
+// disconnected until the procedure finishes
 bool UBLOX::detect_baudrate()
 {
   current_baudrate_ = 0;
-  for (uint32_t i = 0; i < sizeof(baudrates)/sizeof(uint32_t); i++)
+  for (size_t i = 0; i < sizeof(baudrates) / sizeof(uint32_t); i++)
   {
     DBG("Trying %d baudrate\n", baudrates[i]);
     serial_->set_mode(baudrates[i], UART_MODE);
     uint32_t timeout_ms(1000);
     uint32_t start_ms = millis();
     uint32_t now_ms = millis();
-    //TREYDO should got_message_ be set to false here?
+    // TREYDO should got_message_ be set to false here?
     got_message_ = false;
     while (now_ms < start_ms + timeout_ms)
     {
@@ -99,14 +93,14 @@ bool UBLOX::detect_baudrate()
 
 void UBLOX::start_detect_baudrate_async()
 {
-  baudrate_search_index_ = BAUDRATE_SEARCH_COUNT-1; // once incremented, this goes to 0
+  baudrate_search_index_ = BAUDRATE_SEARCH_COUNT - 1; // once incremented, this goes to 0
   increment_detect_baudrate_async();
 }
 
 void UBLOX::increment_detect_baudrate_async()
 {
   searching_baudrate_ = false; // To prevent hits during this function
-  baudrate_search_index_ = (baudrate_search_index_+1) % BAUDRATE_SEARCH_COUNT;
+  baudrate_search_index_ = (baudrate_search_index_ + 1) % BAUDRATE_SEARCH_COUNT;
   current_baudrate_ = baudrates[baudrate_search_index_];
   DBG("Trying %d baudrate\n", current_baudrate_);
   serial_->set_mode(current_baudrate_, UART_MODE);
@@ -116,17 +110,20 @@ void UBLOX::increment_detect_baudrate_async()
 
 void UBLOX::continue_search()
 {
-  if (got_message_)
-    finish_init();
-  else if (millis() > last_baudrate_change_ms_ + BAUDRATE_SEARCH_TIME_MS)
-    increment_detect_baudrate_async();
+  if (!is_initialized_)
+  {
+    if (got_message_)
+      finish_init();
+    else if (millis() > last_baudrate_change_ms_ + BAUDRATE_SEARCH_TIME_MS)
+      increment_detect_baudrate_async();
+  }
 }
 
 bool UBLOX::send_message(uint8_t msg_class, uint8_t msg_id, UBX_message_t &message, uint16_t len)
 {
   // First, calculate the checksum
   uint8_t ck_a, ck_b;
-  //TREYDO pass by reference, with ints?
+  // TREYDO pass by reference, with ints?
   calculate_checksum(msg_class, msg_id, len, message, ck_a, ck_b);
 
   // Send message
@@ -142,9 +139,9 @@ bool UBLOX::send_message(uint8_t msg_class, uint8_t msg_id, UBX_message_t &messa
   return true;
 }
 
-//Set the baudrate and other settings on the GNSS receiver
-//This requires the flight controller to have detected the correct, current baud rate
-//This also changes the flight controller's baud rate to match the GNSS reciever
+// Set the baudrate and other settings on the GNSS receiver
+// This requires the flight controller to have detected the correct, current baud rate
+// This also changes the flight controller's baud rate to match the GNSS reciever
 void UBLOX::set_baudrate(const uint32_t baudrate)
 {
   DBG("Setting baudrate to %d\n", baudrate);
@@ -162,14 +159,14 @@ void UBLOX::set_baudrate(const uint32_t baudrate)
   current_baudrate_ = baudrate;
 }
 
-//Checks if there is a GNSS reciever present, which is determined by checking if
-//it has ever recieved a valid message
+// Checks if there is a GNSS reciever present, which is determined by checking if
+// it has ever recieved a valid message
 bool UBLOX::present()
 {
   return is_initialized_;
 }
 
-//Set the dynamic mode to airborne, with a max acceleration of 4G
+// Set the dynamic mode to airborne, with a max acceleration of 4G
 void UBLOX::set_dynamic_mode()
 {
   memset(&out_message_, 0, sizeof(CFG_NAV5_t));
@@ -179,7 +176,7 @@ void UBLOX::set_dynamic_mode()
   send_message(CLASS_CFG, CFG_PRT, out_message_, sizeof(CFG_NAV5_t));
 }
 
-//Set the frequency of nav messages, defined as the period in ms
+// Set the frequency of nav messages, defined as the period in ms
 void UBLOX::set_nav_rate(uint8_t period_ms)
 {
   memset(&out_message_, 0, sizeof(CFG_RATE_t));
@@ -199,7 +196,6 @@ void UBLOX::enable_message(uint8_t msg_cls, uint8_t msg_id, uint8_t rate)
   DBG("Requesting %x:%x message at %d hz\n", msg_cls, msg_id, rate);
   send_message(CLASS_CFG, CFG_MSG, out_message_, sizeof(CFG_MSG_t));
 }
-
 
 void UBLOX::read_cb(uint8_t byte)
 {
@@ -261,7 +257,7 @@ void UBLOX::read_cb(uint8_t byte)
     {
       // push the byte onto the data buffer
       in_message_.buffer[buffer_head_] = byte;
-      if (buffer_head_ == length_-1)
+      if (buffer_head_ == length_ - 1)
       {
         parse_state_ = GOT_PAYLOAD;
       }
@@ -301,19 +297,19 @@ void UBLOX::read_cb(uint8_t byte)
 
   prev_byte_ = byte;
 }
-//convert a time struct to unix time
-//dumb leap years
-//This function will break in 2100, because it doesn't take into accoutn that 2100 is not a leap year
+// convert a time struct to unix time
+// dumb leap years
+// This function will break in 2100, because it doesn't take into accoutn that 2100 is not a leap year
 uint64_t convert_to_unix(UBLOX::GNSS_TIME_T time)
 {
-  uint32_t day_s = 24*60*60; //seconds per day
-  uint32_t year_s = 365*day_s; //seconds per non-leap day
-  uint32_t elapsed_years = time.year-1970;
-  uint32_t elapsed_leap_days = (elapsed_years+1)/4;
-  if (time.year % 4 == 0) //If currently in a leap year
-    if (time.month>=3) //If past feb 29
+  uint32_t day_s = 24 * 60 * 60; // seconds per day
+  uint32_t year_s = 365 * day_s; // seconds per non-leap day
+  uint32_t elapsed_years = time.year - 1970;
+  uint32_t elapsed_leap_days = (elapsed_years + 1) / 4;
+  if (time.year % 4 == 0) // If currently in a leap year
+    if (time.month >= 3)  // If past feb 29
       elapsed_leap_days++;
-  uint32_t elapsed_days;//Days past in the year
+  uint32_t elapsed_days; // Days past in the year
   switch (time.month)
   {
   case 1:
@@ -323,41 +319,42 @@ uint64_t convert_to_unix(UBLOX::GNSS_TIME_T time)
     elapsed_days = 31;
     break;
   case 3:
-    //Ignore leap days, because it is accounted for above
-    elapsed_days = 31+28;
+    // Ignore leap days, because it is accounted for above
+    elapsed_days = 31 + 28;
     break;
   case 4:
-    elapsed_days = 31+28+31;
+    elapsed_days = 31 + 28 + 31;
     break;
   case 5:
-    elapsed_days = 31+28+31+30;
+    elapsed_days = 31 + 28 + 31 + 30;
     break;
   case 6:
-    elapsed_days = 31+28+31+30+31;
+    elapsed_days = 31 + 28 + 31 + 30 + 31;
     break;
   case 7:
-    elapsed_days = 31+28+31+30+31+30;
+    elapsed_days = 31 + 28 + 31 + 30 + 31 + 30;
     break;
   case 8:
-    elapsed_days = 31+28+31+30+31+30+31;
+    elapsed_days = 31 + 28 + 31 + 30 + 31 + 30 + 31;
     break;
   case 9:
-    elapsed_days = 31+28+31+30+31+30+31+31;
+    elapsed_days = 31 + 28 + 31 + 30 + 31 + 30 + 31 + 31;
     break;
   case 10:
-    elapsed_days = 31+28+31+30+31+30+31+31+30;
+    elapsed_days = 31 + 28 + 31 + 30 + 31 + 30 + 31 + 31 + 30;
     break;
   case 11:
-    elapsed_days = 31+28+31+30+31+30+31+31+30+31;
+    elapsed_days = 31 + 28 + 31 + 30 + 31 + 30 + 31 + 31 + 30 + 31;
     break;
   case 12:
-    elapsed_days = 31+28+31+30+31+30+31+31+30+31+30;
+    elapsed_days = 31 + 28 + 31 + 30 + 31 + 30 + 31 + 31 + 30 + 31 + 30;
     break;
-  default://This should never be reached, because there are 12 month / year
+  default: // This should never be reached, because there are 12 month / year
     elapsed_days = 0;
   }
-  elapsed_days += time.day-1; //Minus 1 because the day is not yet complete
-  return elapsed_years * year_s + (elapsed_days+elapsed_leap_days)*day_s + (time.hour*60+time.min)*60 + time.sec;
+  elapsed_days += time.day - 1; // Minus 1 because the day is not yet complete
+  return elapsed_years * year_s + (elapsed_days + elapsed_leap_days) * day_s + (time.hour * 60 + time.min) * 60
+         + time.sec;
 }
 /* Tells if new data is available
  * Only returns true if new data has been recieved, and if all three sources match time of week.
@@ -366,12 +363,11 @@ uint64_t convert_to_unix(UBLOX::GNSS_TIME_T time)
  */
 bool UBLOX::new_data()
 {
-  return this->new_data_
-         && (this->nav_message_.iTOW == this->pos_ecef_.iTOW)
+  return this->new_data_ && (this->nav_message_.iTOW == this->pos_ecef_.iTOW)
          && (this->nav_message_.iTOW == this->vel_ecef_.iTOW);
 }
 #pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wmissing-field-initializers" //Ignore warning about leaving struct fields blank
+#pragma GCC diagnostic ignored "-Wmissing-field-initializers" // Ignore warning about leaving struct fields blank
 UBLOX::GNSSPVT UBLOX::read()
 {
   GNSSPVT data = {};
@@ -388,7 +384,7 @@ UBLOX::GNSSPVT UBLOX::read()
   data.v_acc = this->nav_message_.vAcc;
   data.rosflight_timestamp = this->last_pvt_timestamp;
 
-  this->new_data_=false;
+  this->new_data_ = false;
 
   return data;
 }
@@ -419,7 +415,7 @@ const UBLOX::NAV_PVT_t &UBLOX::read_raw()
 {
   return this->nav_message_;
 }
-#pragma GCC diagnostic pop //End ignore blank struct initalizers
+#pragma GCC diagnostic pop // End ignore blank struct initalizers
 
 bool UBLOX::decode_message()
 {
@@ -452,7 +448,6 @@ bool UBLOX::decode_message()
       break;
     }
     break;
-
 
   case CLASS_CFG:
     DBG("CFG_");
@@ -497,8 +492,9 @@ bool UBLOX::decode_message()
 
 void UBLOX::convert_data()
 {
-  lla_[0] = static_cast<double>(nav_message_.lat) * 1e-7L;
-  lla_[1] = static_cast<double>(nav_message_.lon) * 1e-7L;
+  double scaling = 1e-7 * 3.14159 / 180.0;
+  lla_[0] = static_cast<double>(nav_message_.lat) * scaling;
+  lla_[1] = static_cast<double>(nav_message_.lon) * scaling;
   lla_[2] = nav_message_.height * 1e-3;
 
   vel_[0] = nav_message_.velN * 1e-3;
@@ -507,8 +503,12 @@ void UBLOX::convert_data()
   time_ = convert_to_unix(nav_message_.time);
 }
 
-void UBLOX::calculate_checksum(const uint8_t msg_cls, const uint8_t msg_id, const uint16_t len,
-                               const UBX_message_t payload, uint8_t &ck_a, uint8_t &ck_b) const
+void UBLOX::calculate_checksum(const uint8_t msg_cls,
+                               const uint8_t msg_id,
+                               const uint16_t len,
+                               const UBX_message_t payload,
+                               uint8_t &ck_a,
+                               uint8_t &ck_b) const
 {
   ck_a = ck_b = 0;
 
@@ -527,11 +527,9 @@ void UBLOX::calculate_checksum(const uint8_t msg_cls, const uint8_t msg_id, cons
   ck_b += ck_a;
 
   // Payload
-  for (int i = 0; i < len; i ++)
+  for (int i = 0; i < len; i++)
   {
     ck_a += payload.buffer[i];
     ck_b += ck_a;
   }
 }
-
-
