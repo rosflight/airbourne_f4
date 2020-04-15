@@ -29,22 +29,21 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "revo_f4.h"
-
 #include "led.h"
-#include "vcp.h"
 #include "printf.h"
+#include "revo_f4.h"
+#include "vcp.h"
 
 VCP* uartPtr = NULL;
 
-static void _putc(void *p, char c)
+static void _putc(void* p, char c)
 {
-    (void)p; // avoid compiler warning about unused variable
-    uartPtr->put_byte(c);
+  (void)p; // avoid compiler warning about unused variable
+  uartPtr->put_byte(c);
 }
 
-int main() {
-
+int main()
+{
   systemInit();
 
   VCP vcp;
@@ -52,7 +51,6 @@ int main() {
   uartPtr = &vcp;
 
   init_printf(NULL, _putc);
-
 
   LED warn;
   warn.init(LED1_GPIO, LED1_PIN);
@@ -64,10 +62,10 @@ int main() {
 
   const int size = 9;
   uint32_t delays[] = {1000, 100, 31, 2000000, 8000, 29238, 1900, 394177, 1923984};
-  uint32_t time[size]; 
+  uint32_t time[size];
   uint32_t supposed[size];
-  
-  while(1)
+
+  while (1)
   {
     warn.toggle();
     info.toggle();
@@ -77,29 +75,29 @@ int main() {
     sum += delays[0];
     supposed[0] = sum;
     time[0] = micros() - start;
-    
+
     delayMicroseconds(delays[1]);
     sum += delays[1];
     supposed[1] = sum;
     time[1] = micros() - start;
-    
+
     delayMicroseconds(delays[2]);
     sum += delays[2];
     supposed[2] = sum;
     time[2] = micros() - start;
-    
+
     delayMicroseconds(delays[3]);
     sum += delays[3];
     supposed[3] = sum;
     time[3] = micros() - start;
-//    for (int i = 0; i < size; i++)
-//    {
-//      delayMicroseconds(delays[i % size]);
-//      sum += delays[i % size];
-//      supposed[i] = sum;
-//      time[i] = micros() - start;
-//    }
-    
+    //    for (int i = 0; i < size; i++)
+    //    {
+    //      delayMicroseconds(delays[i % size]);
+    //      sum += delays[i % size];
+    //      supposed[i] = sum;
+    //      time[i] = micros() - start;
+    //    }
+
     for (int i = 0; i < 4; i++)
     {
       printf("now_us: %lu, delays_us: %lu\n", supposed[i], time[i]);

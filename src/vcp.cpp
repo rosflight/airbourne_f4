@@ -1,6 +1,6 @@
 #include "vcp.h"
 
-#define USB_TIMEOUT  50
+#define USB_TIMEOUT 50
 
 static VCP* vcpPtr = nullptr;
 
@@ -10,7 +10,7 @@ void vcp_rx_callback(uint8_t byte)
     vcpPtr->cb_(byte);
 }
 
-void vcp_ls_callback(void *context, uint16_t ctrlLineState)
+void vcp_ls_callback(void* context, uint16_t ctrlLineState)
 {
   (void)context;
   (void)ctrlLineState;
@@ -18,7 +18,7 @@ void vcp_ls_callback(void *context, uint16_t ctrlLineState)
   {
     volatile int debug = 1;
     (void)debug;
-  }  
+  }
 }
 
 void VCP::init()
@@ -32,23 +32,23 @@ void VCP::init()
   connected_ = false;
   USBD_Init(&USB_OTG_dev, USB_OTG_FS_CORE_ID, &USR_desc, &USBD_CDC_cb, &USR_cb);
   vcpPtr = this;
-  
+
   CDC_SetCtrlLineStateCb(&vcp_ls_callback, NULL);
 }
 
-void VCP::write(const uint8_t*ch, uint8_t len)
+void VCP::write(const uint8_t* ch, uint8_t len)
 {
   uint32_t start = millis();
-  
+
   // Don't send bytes to a disconnected USB
   if (connected() && tx_bytes_free() > 0)
-  {  
+  {
     while (len > 0)
     {
       uint32_t num_bytes_sent = CDC_Send_DATA(ch, len);
       len -= num_bytes_sent;
       ch += num_bytes_sent;
-  
+
       if (millis() > start + USB_TIMEOUT)
         break;
     }
@@ -61,28 +61,25 @@ void VCP::perform_maintenance()
   // detect if we are connected to a computer
   if (rx_bytes_waiting())
     connected_ = true;
-  
+
   // If we were receiving bytes, but now we're not connected
   // reset the VCP
   if (!connected() && connected_)
   {
     USBD_Init(&USB_OTG_dev, USB_OTG_FS_CORE_ID, &USR_desc, &USBD_CDC_cb, &USR_cb);
-    connected_ = false;    
+    connected_ = false;
   }
 }
-
 
 uint32_t VCP::rx_bytes_waiting()
 {
   return CDC_Receive_BytesAvailable();
 }
 
-
 uint32_t VCP::tx_bytes_free()
 {
   return CDC_Send_FreeBytes();
 }
-
 
 uint8_t VCP::read_byte()
 {
@@ -102,7 +99,6 @@ bool VCP::tx_buffer_empty()
   return CDC_Send_FreeBytes() > 0;
 }
 
-
 void VCP::put_byte(uint8_t ch)
 {
   if (connected())
@@ -116,30 +112,27 @@ bool VCP::connected()
 
 bool VCP::flush()
 {
-//  CDC_flush();
+  //  CDC_flush();
   return true;
 }
-void VCP::begin_write(){}
-void VCP::end_write(){}
+void VCP::begin_write() {}
+void VCP::end_write() {}
 
-
-void VCP::register_rx_callback(void (*rx_callback_ptr)(uint8_t data) )
+void VCP::register_rx_callback(void (*rx_callback_ptr)(uint8_t data))
 {
   cb_ = rx_callback_ptr;
-//  Register_CDC_RxCallback(&vcp_rx_callback);
+  //  Register_CDC_RxCallback(&vcp_rx_callback);
 }
 void VCP::unregister_rx_callback()
 {
-    receive_CB_ = NULL;
-//    Register_CDC_RxCallback(NULL);
+  receive_CB_ = NULL;
+  //    Register_CDC_RxCallback(NULL);
 }
-
 
 bool VCP::in_bulk_mode()
 {
   return false;
 }
-
 
 void VCP::send_disconnect_signal()
 {

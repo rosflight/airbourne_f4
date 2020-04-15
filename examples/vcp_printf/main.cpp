@@ -29,7 +29,6 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-
 #include "system.h"
 #include "vcp.h"
 
@@ -50,7 +49,7 @@ int main()
   uartPtr = &vcp;
   vcp.register_rx_callback(&rx_callback);
 
-  while(1)
+  while (1)
   {
     uint8_t hello_string[] = "waddup\n";
     vcp.write(hello_string, 7);

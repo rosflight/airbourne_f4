@@ -29,13 +29,12 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "system.h"
-#include "vcp.h"
-#include "printf.h"
-
 #include "analog_digital_converter.h"
 #include "analog_pin.h"
 #include "battery_monitor.h"
+#include "printf.h"
+#include "system.h"
+#include "vcp.h"
 
 VCP *vcpPtr = NULL;
 
@@ -47,7 +46,6 @@ static void _putc(void *p, char c)
 
 int main()
 {
-
   systemInit();
 
   VCP vcp;
@@ -65,7 +63,7 @@ int main()
   {
     float voltage = monitor.read_voltage();
     float current = monitor.read_current();
-    printf("%f;\t%f\n",voltage, current);
+    printf("%f;\t%f\n", voltage, current);
     delay(500);
   }
 }

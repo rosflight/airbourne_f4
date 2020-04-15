@@ -29,11 +29,11 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "system.h"
-#include "vcp.h"
-#include "printf.h"
 #include "analog_digital_converter.h"
 #include "analog_pin.h"
+#include "printf.h"
+#include "system.h"
+#include "vcp.h"
 
 VCP *vcpPtr = NULL;
 
@@ -45,7 +45,6 @@ static void _putc(void *p, char c)
 
 int main()
 {
-
   systemInit();
 
   VCP vcp;
@@ -68,7 +67,7 @@ int main()
   {
     double voltage = voltage_pin.read();
     double current = current_pin.read();
-    printf("%f;\t%f\n",voltage, current);
+    printf("%f;\t%f\n", voltage, current);
     delay(500);
   }
 }

@@ -29,12 +29,12 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include "revo_f4.h"
 #include "serial.h"
 #include "system.h"
 #include "uart.h"
-#include "vcp.h"
 #include "ublox.h"
-#include "revo_f4.h"
+#include "vcp.h"
 
 Serial* serPtr = NULL;
 
@@ -63,12 +63,11 @@ int main()
   float vel[3];
   uint8_t fix_type;
   uint32_t t_ms;
-  while(1)
+  while (1)
   {
     if (gps.new_data())
     {
       gps.read(lla, vel, &fix_type, &t_ms);
     }
-
   }
 }

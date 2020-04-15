@@ -13,7 +13,7 @@ void UBLOX::init(UART* uart_drv)
 {
   GPSptr = this;
   serial_ = uart_drv;
-  
+
   // Reset message parser
   buffer_head_ = 0;
   parse_state_ = START;
@@ -23,13 +23,13 @@ void UBLOX::init(UART* uart_drv)
   ck_a_ = 0;
   ck_b_ = 0;
   memset(debug_buffer_, 0, sizeof(debug_buffer_));
-  
+
   // Find the right baudrate
   uint32_t timeout_ms = 100;
   looking_for_nmea_ = true;
   serial_->register_rx_callback(read_callback);
   current_baudrate_ = 0;
-  for (size_t i = 0; i < sizeof(baudrates)/sizeof(uint32_t); i++)
+  for (size_t i = 0; i < sizeof(baudrates) / sizeof(uint32_t); i++)
   {
     serial_->set_mode(baudrates[i], UART::MODE_8N1);
     uint32_t start = millis();
@@ -44,11 +44,11 @@ void UBLOX::init(UART* uart_drv)
     if (current_baudrate_ != 0)
       break;
   }
-  
+
   // We didn't find the GPS
   if (!got_message_)
     return;
-  
+
   // Otherwise, Configure the GPS
   set_baudrate(115200);
   set_dynamic_mode();
@@ -63,8 +63,8 @@ bool UBLOX::send_message(uint8_t msg_class, uint8_t msg_id, UBX_message_t& messa
 {
   // First, calculate the checksum
   uint8_t ck_a, ck_b;
-  calculate_checksum(msg_class, msg_id, len, message, ck_a, ck_b);  
-  
+  calculate_checksum(msg_class, msg_id, len, message, ck_a, ck_b);
+
   // Send message
   serial_->put_byte(START_BYTE_1);
   serial_->put_byte(START_BYTE_2);
@@ -75,7 +75,7 @@ bool UBLOX::send_message(uint8_t msg_class, uint8_t msg_id, UBX_message_t& messa
   serial_->write(message.buffer, len);
   serial_->put_byte(ck_a);
   serial_->put_byte(ck_b);
-  
+
   delay(20);
   return true;
 }
@@ -121,11 +121,10 @@ void UBLOX::enable_message(uint8_t msg_cls, uint8_t msg_id, uint8_t rate)
   send_message(CLASS_CFG, CFG_MSG, out_message_, sizeof(CFG_RATE_t));
 }
 
-
 void UBLOX::read_cb(uint8_t byte)
 {
   debug_buffer_[(debug_buffer_head_++) % sizeof(debug_buffer_)] = byte;
-  // Look for a valid NMEA packet (do this at the beginning in case 
+  // Look for a valid NMEA packet (do this at the beginning in case
   // UBX was disabled for some reason) and during autobaud
   // detection
   if (looking_for_nmea_)
@@ -136,7 +135,7 @@ void UBLOX::read_cb(uint8_t byte)
       looking_for_nmea_ = false;
     }
   }
-  
+
   // handle the UBX packet
   switch (parse_state_)
   {
@@ -167,7 +166,7 @@ void UBLOX::read_cb(uint8_t byte)
     parse_state_ = GOT_LENGTH1;
     break;
   case GOT_LENGTH1:
-    length_ |= static_cast<uint16_t>(byte)<< 8;
+    length_ |= static_cast<uint16_t>(byte) << 8;
     parse_state_ = GOT_LENGTH2;
     if (length_ > UBLOX_BUFFER_SIZE)
     {
@@ -200,7 +199,7 @@ void UBLOX::read_cb(uint8_t byte)
     num_errors_++;
     break;
   }
-  
+
   // If we have a complete packet, then try to parse it
   if (parse_state_ == GOT_CK_B)
   {
@@ -215,8 +214,8 @@ void UBLOX::read_cb(uint8_t byte)
       parse_state_ = START;
     }
   }
-  
-  prev_byte_ = byte;  
+
+  prev_byte_ = byte;
 }
 
 void UBLOX::get_pos_ecef(double* pos_ecef, uint32_t* t_ms)
@@ -235,7 +234,7 @@ void UBLOX::get_vel_ecef(float* vel_ecef, uint32_t* t_ms)
   vel_ecef[2] = vel_ecef_message_.ecefVZ;
 }
 
-void UBLOX::read(double* lla, float* vel, uint8_t* fix_type, uint32_t *t_ms)
+void UBLOX::read(double* lla, float* vel, uint8_t* fix_type, uint32_t* t_ms)
 {
   (void)t_ms;
   if (new_data_)
@@ -258,9 +257,9 @@ bool UBLOX::decode_message()
   calculate_checksum(message_class_, message_type_, length_, in_message_, ck_a, ck_b);
   if (ck_a != ck_a_ || ck_b != ck_b_)
     return false;
-  
+
   num_messages_received_++;
-  
+
   // Parse the payload
   switch (message_class_)
   {
@@ -277,7 +276,7 @@ bool UBLOX::decode_message()
       break;
     }
     break;
-    
+
   case CLASS_CFG:
     switch (message_type_)
     {
@@ -293,7 +292,7 @@ bool UBLOX::decode_message()
       break;
     }
     break;
-    
+
   case CLASS_NAV:
     switch (message_type_)
     {
@@ -320,28 +319,33 @@ bool UBLOX::decode_message()
 
 void UBLOX::convert_data()
 {
-  double scaling = 1e-7 * 3.14159/180.0;
+  double scaling = 1e-7 * 3.14159 / 180.0;
   lla_[0] = static_cast<double>(nav_message_.lat) * scaling;
   lla_[1] = static_cast<double>(nav_message_.lon) * scaling;
   lla_[2] = nav_message_.height * 1e-3;
-  
+
   vel_[0] = nav_message_.velN * 1e-3;
   vel_[1] = nav_message_.velE * 1e-3;
   vel_[2] = nav_message_.velD * 1e-3;
 }
 
-void UBLOX::calculate_checksum(const uint8_t msg_cls, const uint8_t msg_id, const uint16_t len, const UBX_message_t payload, uint8_t& ck_a, uint8_t& ck_b) const
+void UBLOX::calculate_checksum(const uint8_t msg_cls,
+                               const uint8_t msg_id,
+                               const uint16_t len,
+                               const UBX_message_t payload,
+                               uint8_t& ck_a,
+                               uint8_t& ck_b) const
 {
   ck_a = ck_b = 0;
-  
+
   // Add in class
   ck_a = ck_a + msg_cls;
   ck_b = ck_b + ck_a;
-  
+
   // Id
   ck_a = ck_a + msg_id;
   ck_b = ck_b + ck_a;
-  
+
   // Length
   ck_a = ck_a + (len & 0xFF);
   ck_b = ck_b + ck_a;
@@ -350,10 +354,9 @@ void UBLOX::calculate_checksum(const uint8_t msg_cls, const uint8_t msg_id, cons
   ck_b = ck_b + ck_a;
 
   // Payload
-  for (int i = 0; i < len; i ++)
+  for (int i = 0; i < len; i++)
   {
     ck_a = ck_a + payload.buffer[i];
     ck_b = ck_b + ck_a;
   }
 }
-

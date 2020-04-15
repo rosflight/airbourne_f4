@@ -30,11 +30,12 @@
  */
 
 #include "M25P16.h"
+
 #include "revo_f4.h"
 
 M25P16::M25P16() {}
 
-void M25P16::init(SPI* _spi)
+void M25P16::init(SPI *_spi)
 {
   // Set up the SPI peripheral
   spi_ = _spi;
@@ -63,9 +64,12 @@ bool M25P16::read_config(uint8_t *data, uint32_t len)
   spi_->enable(cs_);
   uint8_t addr[4] = {READ_DATA, 0, 0, 0};
   spi_->transfer(addr, 4, nullptr);
-  while (spi_->is_busy()) {}
+  while (spi_->is_busy())
+  {
+  }
   spi_->transfer(nullptr, len, data);
-  while (spi_->is_busy());
+  while (spi_->is_busy())
+    ;
   spi_->disable(cs_);
   return true;
 }
@@ -75,7 +79,7 @@ bool M25P16::write_config(const uint8_t *data, const uint32_t len)
   // Calculate the correct number of pages to store the config
   num_pages_for_config_ = len / 256;
   if (len % 256 != 0)
-    num_pages_for_config_ ++; // We need an extra partial page
+    num_pages_for_config_++; // We need an extra partial page
 
   // Enable the write
   spi_->transfer_byte(WRITE_ENABLE, &cs_);
@@ -88,7 +92,9 @@ bool M25P16::write_config(const uint8_t *data, const uint32_t len)
   // Erase Sector (There is really no way around this, we have to erase the entire sector
   uint8_t sector_addr[4] = {SECTOR_ERASE, 0, 0, 0};
   spi_->transfer(sector_addr, 4, NULL, &cs_);
-  while (spi_->is_busy()) {}
+  while (spi_->is_busy())
+  {
+  }
 
   // Wait for Sector Erase to complete
   bool WIP = true;
@@ -97,7 +103,7 @@ bool M25P16::write_config(const uint8_t *data, const uint32_t len)
     status = get_status();
     if ((status & STATUS_WIP_BIT) == 0x00)
       WIP = false;
-  } while(WIP);
+  } while (WIP);
 
   // Program the data
   for (uint32_t i = 0; i < num_pages_for_config_; i++)
@@ -117,11 +123,15 @@ bool M25P16::write_config(const uint8_t *data, const uint32_t len)
     spi_->enable(cs_);
     uint8_t addr[4] = {PAGE_PROGRAM, static_cast<uint8_t>(i >> 8), static_cast<uint8_t>(i & 0xFF), 0};
     spi_->transfer(addr, 4, NULL, NULL);
-    while (spi_->is_busy()) {} // Wait for the address to clear
+    while (spi_->is_busy())
+    {
+    } // Wait for the address to clear
 
     // Transfer the data
-    spi_->write(&data[256*i], page_len);
-    while (spi_->is_busy()) {} // Wait for the page to write
+    spi_->write(&data[256 * i], page_len);
+    while (spi_->is_busy())
+    {
+    } // Wait for the page to write
     spi_->disable(cs_);
 
     // Wait for the page program to happen
@@ -131,7 +141,7 @@ bool M25P16::write_config(const uint8_t *data, const uint32_t len)
       status = get_status();
       if ((status & STATUS_WIP_BIT) == 0x00)
         WIP = false;
-    } while(WIP);
+    } while (WIP);
   }
 
   // Disable the write

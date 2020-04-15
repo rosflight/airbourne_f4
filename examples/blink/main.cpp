@@ -29,8 +29,8 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "revo_f4.h"
 #include "led.h"
+#include "revo_f4.h"
 
 int main()
 {
@@ -42,7 +42,7 @@ int main()
   info.init(LED2_GPIO, LED2_PIN);
 
   warn.off();
-  while(1)
+  while (1)
   {
     delay(200);
     warn.toggle();

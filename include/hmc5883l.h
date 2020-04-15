@@ -31,55 +31,54 @@
 
 #pragma once
 
-#include "system.h"
 #include "i2c.h"
+#include "system.h"
 
-#define HMC58X3_ADDR 			0x1E
-#define HMC58X3_CRA 			0x00
-#define HMC58X3_CRB 			0x01
-#define HMC58X3_MODE 			0x02
-#define HMC58X3_DATA 			0x03
-#define HMC58X3_STATUS 	  0x09
-#define HMC58X3_ID1 			0x0A
-#define HMC58X3_ID2 			0x0B
-#define HMC58X3_ID3 			0x0C
+#define HMC58X3_ADDR 0x1E
+#define HMC58X3_CRA 0x00
+#define HMC58X3_CRB 0x01
+#define HMC58X3_MODE 0x02
+#define HMC58X3_DATA 0x03
+#define HMC58X3_STATUS 0x09
+#define HMC58X3_ID1 0x0A
+#define HMC58X3_ID2 0x0B
+#define HMC58X3_ID3 0x0C
 
-#define HMC58X3_CRA_NO_AVG 		0x00
-#define HMC58X3_CRA_AVG_2_MEAS 	0x20
-#define HMC58X3_CRA_AVG_4_MEAS 	0x40
-#define HMC58X3_CRA_AVG_8_MEAS 	0x60
+#define HMC58X3_CRA_NO_AVG 0x00
+#define HMC58X3_CRA_AVG_2_MEAS 0x20
+#define HMC58X3_CRA_AVG_4_MEAS 0x40
+#define HMC58X3_CRA_AVG_8_MEAS 0x60
 
-#define HMC58X3_CRA_DO_0_75 	0x00
-#define HMC58X3_CRA_DO_1_5 		0x04
-#define HMC58X3_CRA_DO_3 		0x08
-#define HMC58X3_CRA_DO_7_5 		0x0C
-#define HMC58X3_CRA_DO_15 		0x10
-#define HMC58X3_CRA_DO_30 		0x14
-#define HMC58X3_CRA_DO_75 		0x18
+#define HMC58X3_CRA_DO_0_75 0x00
+#define HMC58X3_CRA_DO_1_5 0x04
+#define HMC58X3_CRA_DO_3 0x08
+#define HMC58X3_CRA_DO_7_5 0x0C
+#define HMC58X3_CRA_DO_15 0x10
+#define HMC58X3_CRA_DO_30 0x14
+#define HMC58X3_CRA_DO_75 0x18
 
-#define HMC58X3_CRA_MEAS_MODE_NORMAL 	0x00
-#define HMC58X3_CRA_MEAS_MODE_POS_BIAS 	0x01
-#define HMC58X3_CRA_MEAS_MODE_NEG_BIAS 	0x02
+#define HMC58X3_CRA_MEAS_MODE_NORMAL 0x00
+#define HMC58X3_CRA_MEAS_MODE_POS_BIAS 0x01
+#define HMC58X3_CRA_MEAS_MODE_NEG_BIAS 0x02
 
-#define HMC58X3_CRB_GN_1370 	0x00
-#define HMC58X3_CRB_GN_1090 	0x20
-#define HMC58X3_CRB_GN_820 		0x40
-#define HMC58X3_CRB_GN_660 		0x60
-#define HMC58X3_CRB_GN_440 		0x80
-#define HMC58X3_CRB_GN_390 		0xA0
-#define HMC58X3_CRB_GN_330 		0xC0
-#define HMC58X3_CRB_GN_230 		0xE0
+#define HMC58X3_CRB_GN_1370 0x00
+#define HMC58X3_CRB_GN_1090 0x20
+#define HMC58X3_CRB_GN_820 0x40
+#define HMC58X3_CRB_GN_660 0x60
+#define HMC58X3_CRB_GN_440 0x80
+#define HMC58X3_CRB_GN_390 0xA0
+#define HMC58X3_CRB_GN_330 0xC0
+#define HMC58X3_CRB_GN_230 0xE0
 
-#define HMC58X3_MODE_HS 		0x80
+#define HMC58X3_MODE_HS 0x80
 #define HMC58X3_MODE_CONTINUOUS 0x00
-#define HMC58X3_MODE_SINGLE 	0x01
-#define HMC58X3_MODE_IDLE 		0x02
+#define HMC58X3_MODE_SINGLE 0x01
+#define HMC58X3_MODE_IDLE 0x02
 
-#define HMC58X3_SR_LOCK 		0x02
-#define HMC58X3_SR_RDY 			0x01
+#define HMC58X3_SR_LOCK 0x02
+#define HMC58X3_SR_RDY 0x01
 
 #define HMC58X3_TIMEOUT 30000
-
 
 class HMC5883L
 {
@@ -89,9 +88,10 @@ public:
   bool read(float mag_data[]);
   bool present();
   void cb(uint8_t result);
-  inline bool is_initialized(){return i2c_;}
+  inline bool is_initialized() { return i2c_; }
+
 private:
-  I2C *i2c_{nullptr};
+  I2C* i2c_{nullptr};
   uint8_t i2c_buf_[6];
   volatile float data_[3];
   uint32_t last_update_ms_;

@@ -33,26 +33,25 @@
 #define UART_H
 
 // from serial.h
-#include <functional>
-
+#include "gpio.h"
+#include "serial.h"
 #include "system.h"
 
-#include "serial.h"
-#include "gpio.h"
+#include <functional>
 
 class UART : public Serial
 {
 public:
-
-  typedef enum{
+  typedef enum
+  {
     MODE_8N1,
     MODE_8E2
   } uart_mode_t;
 
   UART();
-  void init(const uart_hardware_struct_t *conf, uint32_t baudrate_, uart_mode_t mode=MODE_8N1);
+  void init(const uart_hardware_struct_t* conf, uint32_t baudrate_, uart_mode_t mode = MODE_8N1);
 
-  void write(const uint8_t*ch, uint8_t len) override;
+  void write(const uint8_t* ch, uint8_t len) override;
   uint32_t rx_bytes_waiting() override;
   uint32_t tx_bytes_free() override;
   uint8_t read_byte() override;
@@ -60,7 +59,7 @@ public:
   bool tx_buffer_empty() override;
   void put_byte(uint8_t ch) override;
   bool flush() override;
-  void register_rx_callback(void (*cb)(uint8_t data) ) override;
+  void register_rx_callback(void (*cb)(uint8_t data)) override;
   void unregister_rx_callback() override;
 
   void DMA_Tx_IRQ_callback();
@@ -73,17 +72,17 @@ private:
   void init_NVIC();
   void startDMA();
 
-  const uart_hardware_struct_t* c_; //contains config information
+  const uart_hardware_struct_t* c_; // contains config information
 
-  uint32_t baudrate_; //the baudrate for the connection
-  uint8_t rx_buffer_[RX_BUFFER_SIZE]; //the buffer for incoming data
-  uint8_t tx_buffer_[TX_BUFFER_SIZE]; //the buffer for outgoing data
+  uint32_t baudrate_;                 // the baudrate for the connection
+  uint8_t rx_buffer_[RX_BUFFER_SIZE]; // the buffer for incoming data
+  uint8_t tx_buffer_[TX_BUFFER_SIZE]; // the buffer for outgoing data
   uint16_t rx_buffer_head_;
   uint16_t rx_buffer_tail_;
   uint16_t tx_buffer_head_;
   uint16_t tx_buffer_tail_;
-  GPIO rx_pin_; //The pin used for incoming data
-  GPIO tx_pin_; //The pin used for outgoing data
+  GPIO rx_pin_; // The pin used for incoming data
+  GPIO tx_pin_; // The pin used for outgoing data
 };
 
 #endif // UART_H

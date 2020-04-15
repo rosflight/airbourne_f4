@@ -30,22 +30,22 @@
  */
 
 /* Includes */
-#include "system.h"
-#include "vcp.h"
+#include "led.h"
 #include "printf.h"
 #include "rc_ppm.h"
-#include "led.h"
+#include "system.h"
+#include "vcp.h"
 
 VCP* uartPtr = NULL;
 
-static void _putc(void *p, char c)
+static void _putc(void* p, char c)
 {
   (void)p; // avoid compiler warning about unused variable
   uartPtr->put_byte(c);
 }
 
-int main() {
-
+int main()
+{
   systemInit();
 
   VCP vcp;
@@ -62,7 +62,7 @@ int main() {
 
   rc.init(&pwm_config[10]);
 
-  while(1)
+  while (1)
   {
     if (rc.lost())
     {
@@ -77,7 +77,7 @@ int main() {
       for (int i = 0; i < 8; i++)
       {
         float val = rc.read(i);
-        printf("%d.%d\t", (int32_t)((1000*val)/1000), ((int32_t)(1000*val)%1000));
+        printf("%d.%d\t", (int32_t)((1000 * val) / 1000), ((int32_t)(1000 * val) % 1000));
       }
       printf("\n");
     }

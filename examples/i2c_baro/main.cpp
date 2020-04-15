@@ -29,23 +29,23 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "system.h"
 #include "i2c.h"
-#include "ms5611.h"
 #include "led.h"
-#include "vcp.h"
+#include "ms5611.h"
 #include "printf.h"
+#include "system.h"
+#include "vcp.h"
 
 VCP* uartPtr = NULL;
 
-static void _putc(void *p, char c)
+static void _putc(void* p, char c)
 {
   (void)p; // avoid compiler warning about unused variable
   uartPtr->put_byte(c);
 }
 
-int main() {
-
+int main()
+{
   systemInit();
 
   VCP vcp;
@@ -68,7 +68,7 @@ int main() {
   baro.init(&i2c1);
 
   float pressure, temperature;
-  while(1)
+  while (1)
   {
     baro.update();
     if (baro.present())
@@ -76,11 +76,8 @@ int main() {
       warn.off();
       info.toggle();
       baro.read(&pressure, &temperature);
-      printf("%d Pa, %d.%d K\n",
-             (int32_t)(pressure),
-             (int32_t)(temperature),
-             (int32_t)(temperature*100)%100);
-      
+      printf("%d Pa, %d.%d K\n", (int32_t)(pressure), (int32_t)(temperature), (int32_t)(temperature * 100) % 100);
+
       delay(10);
     }
     else

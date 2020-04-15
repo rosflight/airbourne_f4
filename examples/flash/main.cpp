@@ -29,22 +29,21 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "revo_f4.h"
-
-#include "spi.h"
 #include "M25P16.h"
 #include "led.h"
-#include "vcp.h"
 #include "printf.h"
+#include "revo_f4.h"
+#include "spi.h"
+#include "vcp.h"
 
 #include <cstdlib>
 
 VCP vcp;
 
-static void _putc(void *p, char c)
+static void _putc(void* p, char c)
 {
-    (void)p; // avoid compiler warning about unused variable
-    vcp.put_byte(c);
+  (void)p; // avoid compiler warning about unused variable
+  vcp.put_byte(c);
 }
 
 typedef struct
@@ -56,8 +55,6 @@ typedef struct
   uint8_t magic_D3 = 0xD3;
   uint8_t crc;
 } config_t;
-
-
 
 int main()
 {
@@ -109,19 +106,16 @@ int main()
   flash.read_config(config_buffer, sizeof(config_t));
 
   // See if it is valid
-  config_t* config_ptr = (config_t*) config_buffer;
+  config_t* config_ptr = (config_t*)config_buffer;
 
   // Calculate crc of new data
   crc = 0;
-  for (uint8_t* p = (uint8_t*) config_ptr; p < (uint8_t*)config_ptr + sizeof(config_file); p++)
+  for (uint8_t* p = (uint8_t*)config_ptr; p < (uint8_t*)config_ptr + sizeof(config_file); p++)
   {
     crc ^= *p;
   }
 
-  if (config_ptr->magic_AC == 0xAC &&
-      config_ptr->magic_BE == 0xBE &&
-      config_ptr->magic_D3 == 0xD3 &&
-      crc == 0)
+  if (config_ptr->magic_AC == 0xAC && config_ptr->magic_BE == 0xBE && config_ptr->magic_D3 == 0xD3 && crc == 0)
   {
     warn.on();
     success = true;
@@ -132,15 +126,14 @@ int main()
     success = false;
   }
 
-  while(1)
+  while (1)
   {
     uint32_t size = sizeof(config_file);
     info.toggle();
     delay(1000);
     if (success)
-      printf("successfully wrote, read and validated %d.%dKB worth of data\n", size/1000, size%1000);
+      printf("successfully wrote, read and validated %d.%dKB worth of data\n", size / 1000, size % 1000);
     else
       printf("failed\n");
   }
 }
-

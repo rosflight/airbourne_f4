@@ -45,5 +45,3 @@ void LED::off()
 {
   write(GPIO::HIGH);
 }
-
-

@@ -29,21 +29,21 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "system.h"
 #include "i2c.h"
+#include "system.h"
 
 class MS4525
 {
 public:
   MS4525();
 
-  bool init(I2C* _i2c);
+  bool init(I2C *_i2c);
   bool present();
   void update();
   void read(float *differential_pressure, float *temp);
 
   void read_cb(uint8_t result);
-  inline bool is_initialized(){return i2c_;}
+  inline bool is_initialized() { return i2c_; }
 
 private:
   static const uint8_t ADDR = 0x28;

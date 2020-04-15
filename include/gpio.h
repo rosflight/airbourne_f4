@@ -36,7 +36,6 @@
 
 class GPIO
 {
-
 public:
   typedef enum
   {
@@ -53,7 +52,7 @@ public:
     PERIPH_IN_OUT,
     ANALOG,
     EXTERNAL_INTERRUPT
-  }gpio_mode_t;
+  } gpio_mode_t;
 
   void init(GPIO_TypeDef* BasePort, uint16_t pin, gpio_mode_t mode);
   void write(gpio_write_t state);
@@ -65,7 +64,6 @@ private:
   uint16_t pin_;
   GPIO_TypeDef* port_;
   gpio_mode_t mode_;
-
 };
 
 #endif // GPIO_H

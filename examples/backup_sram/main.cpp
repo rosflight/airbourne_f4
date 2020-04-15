@@ -29,72 +29,69 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <string>
-#include "system.h"
-#include "pwm.h"
-#include "led.h"
-
-#include "revo_f4.h"
 #include "backup_sram.h"
-#include "vcp.h"
+#include "led.h"
 #include "printf.h"
+#include "pwm.h"
+#include "revo_f4.h"
+#include "system.h"
+#include "vcp.h"
+
+#include <string>
 
 struct BackupData
 {
-    static constexpr uint32_t CHECKSUM_START = 0xA5A5;
+  static constexpr uint32_t CHECKSUM_START = 0xA5A5;
 
-    uint32_t reset_count;
-    uint32_t some_data;
-    uint32_t checksum;
+  uint32_t reset_count;
+  uint32_t some_data;
+  uint32_t checksum;
 
-    BackupData()
+  BackupData() { memset(this, 0, sizeof(BackupData)); }
+
+  uint32_t compute_checksum()
+  {
+    uint32_t crc = CHECKSUM_START;
+    for (size_t offset = 0; offset <= sizeof(BackupData) - sizeof(checksum) - sizeof(crc); offset++)
     {
-        memset(this, 0, sizeof(BackupData));
+      crc ^= *reinterpret_cast<uint32_t*>(reinterpret_cast<uint8_t*>(this) + offset);
     }
-
-    uint32_t compute_checksum()
-    {
-        uint32_t crc = CHECKSUM_START;
-        for (size_t offset = 0; offset <= sizeof(BackupData) - sizeof(checksum) - sizeof(crc); offset++)
-        {
-            crc ^= *reinterpret_cast<uint32_t*>(reinterpret_cast<uint8_t*>(this) + offset);
-        }
-        return crc;
-    }
+    return crc;
+  }
 };
 
 void restart()
 {
-    NVIC_SystemReset();
+  NVIC_SystemReset();
 }
 
 int main()
 {
-    systemInit();
-    VCP vcp;
-    vcp.init();
-    backup_sram_init();
+  systemInit();
+  VCP vcp;
+  vcp.init();
+  backup_sram_init();
 
-    // check for and process backup data if it exists
-    BackupData read_data;
-    backup_sram_read(&read_data, sizeof(read_data));
+  // check for and process backup data if it exists
+  BackupData read_data;
+  backup_sram_read(&read_data, sizeof(read_data));
 
-    uint32_t reset_count = 0;
-    if (read_data.checksum == read_data.compute_checksum())
-        reset_count = read_data.reset_count;
+  uint32_t reset_count = 0;
+  if (read_data.checksum == read_data.compute_checksum())
+    reset_count = read_data.reset_count;
 
-    // clear the backup data so it doesn't get read on normal startup
-    backup_sram_clear(sizeof(BackupData));
+  // clear the backup data so it doesn't get read on normal startup
+  backup_sram_clear(sizeof(BackupData));
 
-    // Pretend we get a hardfault some time in the future; write backup data and reset.
-    // Normally this would be done in the hardfault interrupt handler.
-    delay(300);
+  // Pretend we get a hardfault some time in the future; write backup data and reset.
+  // Normally this would be done in the hardfault interrupt handler.
+  delay(300);
 
-    BackupData write_data;
-    write_data.reset_count = ++reset_count; // increment reset counter
-    write_data.some_data = 0xDEADBEEF;
-    write_data.checksum = write_data.compute_checksum();
-    backup_sram_write(&write_data, sizeof(write_data));
+  BackupData write_data;
+  write_data.reset_count = ++reset_count; // increment reset counter
+  write_data.some_data = 0xDEADBEEF;
+  write_data.checksum = write_data.compute_checksum();
+  backup_sram_write(&write_data, sizeof(write_data));
 
-    restart();
+  restart();
 }

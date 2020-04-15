@@ -32,27 +32,25 @@
 #ifndef MS5611_H
 #define MS5611_H
 
-#include "system.h"
 #include "i2c.h"
-
+#include "system.h"
 
 class MS5611
 {
 private:
-
   enum : uint8_t
   {
-    RESET    = 0x1E, // ADC reset command
+    RESET = 0x1E,    // ADC reset command
     ADC_READ = 0x00, // ADC read command
     ADC_CONV = 0x40, // ADC conversion command
-    ADC_D1   = 0x00, // ADC D1 conversion
-    ADC_D2   = 0x10, // ADC D2 conversion
-    ADC_256  = 0x00, // ADC OSR=256
-    ADC_512  = 0x02, // ADC OSR=512
+    ADC_D1 = 0x00,   // ADC D1 conversion
+    ADC_D2 = 0x10,   // ADC D2 conversion
+    ADC_256 = 0x00,  // ADC OSR=256
+    ADC_512 = 0x02,  // ADC OSR=512
     ADC_1024 = 0x04, // ADC OSR=1024
     ADC_2048 = 0x06, // ADC OSR=2048
     ADC_4096 = 0x08, // ADC OSR=4096
-    PROM_RD  = 0xA0 // Prom read command
+    PROM_RD = 0xA0   // Prom read command
   };
 
   typedef enum
@@ -63,7 +61,7 @@ private:
     READ_PRESS = 3,
   } state_t;
   state_t state_;
-  
+
   typedef enum
   {
     CB_TEMP_READ1,
@@ -101,11 +99,11 @@ private:
   bool waiting_for_cb_;
   bool new_data_;
   bool baro_present_{false};
-  
+
   callback_type_t callback_type_;
 
 public:
-  bool init(I2C* _i2c);
+  bool init(I2C *_i2c);
   void update();
   void read(float *press, float *temp);
   bool present();
@@ -119,8 +117,7 @@ public:
   void pres_start_cb(uint8_t result);
   void write_zero_cb(uint8_t result);
   void reset_cb(uint8_t result);
-  inline bool is_initialized(){return i2c_;}
+  inline bool is_initialized() { return i2c_; }
 };
-
 
 #endif // MS5611_H

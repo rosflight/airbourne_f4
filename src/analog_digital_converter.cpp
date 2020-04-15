@@ -29,7 +29,6 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-
 #include "analog_digital_converter.h"
 
 void AnalogDigitalConverter::init(const ADCHardwareStruct *adc_def)
@@ -39,8 +38,7 @@ void AnalogDigitalConverter::init(const ADCHardwareStruct *adc_def)
 
   ADC_TypeDef *adc = adc_def_->adc;
 
-  for (size_t index =0; index< CHANNEL_COUNT; index++)
-    this->buffer[index]=AnalogDigitalConverter::NO_READING;
+  for (size_t index = 0; index < CHANNEL_COUNT; index++) this->buffer[index] = AnalogDigitalConverter::NO_READING;
 
   ADC_CommonInitTypeDef adc_common_init_struct;
   adc_common_init_struct.ADC_Mode = ADC_Mode_Independent;
@@ -55,8 +53,8 @@ void AnalogDigitalConverter::init(const ADCHardwareStruct *adc_def)
   adc_init_struct.ADC_ScanConvMode = ENABLE;
   adc_init_struct.ADC_ContinuousConvMode = ENABLE;
   adc_init_struct.ADC_DataAlign = ADC_DataAlign_Right;
-  adc_init_struct.ADC_NbrOfConversion = 1; //This can't be less than 1
-  ADC_Init(adc,&adc_init_struct);
+  adc_init_struct.ADC_NbrOfConversion = 1; // This can't be less than 1
+  ADC_Init(adc, &adc_init_struct);
 
   this->init_dma();
   ADC_ContinuousModeCmd(adc, ENABLE);
@@ -100,9 +98,9 @@ uint8_t AnalogDigitalConverter::add_channel(uint8_t channel)
   this->current_channels++;
   ADC_RegularChannelConfig(this->adc_def_->adc, channel, index, ADC_SampleTime_480Cycles);
 
-  //Increment the number of channels
-  this->adc_def_->adc->SQR1 &=(~SQR1_CHANNEL_COUNT_MASK);
-  this->adc_def_->adc->SQR1 |=(((index-1)<<SQR1_CHANNEL_COUNT_OFFSET)&SQR1_CHANNEL_COUNT_MASK);
+  // Increment the number of channels
+  this->adc_def_->adc->SQR1 &= (~SQR1_CHANNEL_COUNT_MASK);
+  this->adc_def_->adc->SQR1 |= (((index - 1) << SQR1_CHANNEL_COUNT_OFFSET) & SQR1_CHANNEL_COUNT_MASK);
 
   this->init_dma(); // reconfigure the DMA with the new memory size
   this->start_dma();
@@ -120,9 +118,8 @@ bool AnalogDigitalConverter::is_initialized() const
 }
 uint16_t AnalogDigitalConverter::read(uint8_t index) const
 {
-  return (this->buffer[index-1]& 0xFFFF);
+  return (this->buffer[index - 1] & 0xFFFF);
 }
-
 
 uint8_t AnalogDigitalConverter::get_current_channel_count() const
 {

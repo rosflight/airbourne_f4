@@ -29,7 +29,6 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-
 #include "rc_ppm.h"
 
 RC_PPM* RC_PPM_Ptr = NULL;
@@ -37,8 +36,7 @@ RC_PPM* RC_PPM_Ptr = NULL;
 void RC_PPM::init(const pwm_hardware_struct_t* conf)
 {
   // Initialize Variables
-  for (int i = 0; i < 8; i++)
-    rc_raw_[i] = 0;
+  for (int i = 0; i < 8; i++) rc_raw_[i] = 0;
   chan_ = 0;
   current_capture_ = 0;
   last_capture_ = 0;
@@ -59,10 +57,10 @@ void RC_PPM::init(const pwm_hardware_struct_t* conf)
 
   // Configure the timer
   TIM_TimeBaseInitTypeDef TIM_init_struct;
-  TIM_init_struct.TIM_Period = 0xFFFF; // It'll get reset by the CC
-  TIM_init_struct.TIM_ClockDivision = TIM_CKD_DIV1; // No clock division
+  TIM_init_struct.TIM_Period = 0xFFFF;                               // It'll get reset by the CC
+  TIM_init_struct.TIM_ClockDivision = TIM_CKD_DIV1;                  // No clock division
   TIM_init_struct.TIM_Prescaler = (SystemCoreClock / (2000000)) - 1; // prescaler (0-indexed), set to 1 MHz
-  TIM_init_struct.TIM_CounterMode = TIM_CounterMode_Up; // count up
+  TIM_init_struct.TIM_CounterMode = TIM_CounterMode_Up;              // count up
   TIM_TimeBaseInit(TIM_, &TIM_init_struct);
 
   // Configure the Input Compare Peripheral
@@ -70,7 +68,7 @@ void RC_PPM::init(const pwm_hardware_struct_t* conf)
   TIM_IC_init_struct.TIM_Channel = TIM_Channel_;
   TIM_IC_init_struct.TIM_ICFilter = 0x00;
   TIM_IC_init_struct.TIM_ICPolarity = TIM_ICPolarity_Rising;
-  TIM_IC_init_struct.TIM_ICPrescaler =  TIM_ICPSC_DIV1;
+  TIM_IC_init_struct.TIM_ICPrescaler = TIM_ICPSC_DIV1;
   TIM_IC_init_struct.TIM_ICSelection = TIM_ICSelection_DirectTI;
   TIM_ICInit(TIM_, &TIM_IC_init_struct);
 
@@ -92,7 +90,7 @@ void RC_PPM::init(const pwm_hardware_struct_t* conf)
 
 float RC_PPM::read(uint8_t channel)
 {
-  return static_cast<float>(rc_raw_[channel] - 1000)/1000.0;
+  return static_cast<float>(rc_raw_[channel] - 1000) / 1000.0;
 }
 
 bool RC_PPM::lost()
@@ -102,7 +100,7 @@ bool RC_PPM::lost()
 
 void RC_PPM::pulse_callback()
 {
-  if(TIM_GetITStatus(TIM_, TIM_IT_))
+  if (TIM_GetITStatus(TIM_, TIM_IT_))
   {
     TIM_ClearITPendingBit(TIM_, TIM_IT_);
     last_pulse_ms_ = millis();
@@ -111,31 +109,30 @@ void RC_PPM::pulse_callback()
     {
     case TIM_Channel_1:
     default:
-        current_capture_ = TIM_GetCapture1(TIM_);
-        break;
+      current_capture_ = TIM_GetCapture1(TIM_);
+      break;
     case TIM_Channel_2:
-        current_capture_ = TIM_GetCapture2(TIM_);
-        break;
+      current_capture_ = TIM_GetCapture2(TIM_);
+      break;
     case TIM_Channel_3:
-        current_capture_ = TIM_GetCapture3(TIM_);
-        break;
+      current_capture_ = TIM_GetCapture3(TIM_);
+      break;
     case TIM_Channel_4:
-        current_capture_ = TIM_GetCapture4(TIM_);
-        break;
-
+      current_capture_ = TIM_GetCapture4(TIM_);
+      break;
     }
     uint16_t diff = current_capture_ - last_capture_;
     last_capture_ = current_capture_;
 
     // We're on a new frame
-    if(diff > 2500)
+    if (diff > 2500)
     {
       chan_ = 0;
     }
     else
     {
       // If it's a valid reading, then save it!
-      if(diff > 750 && diff < 2250 && chan_ < 8)
+      if (diff > 750 && diff < 2250 && chan_ < 8)
       {
         rc_raw_[chan_] = diff;
       }
@@ -151,13 +148,11 @@ void RC_PPM::pulse_callback()
 
 extern "C"
 {
-
-void PPM_RC_IQRHandler(void)
-{
-    if(RC_PPM_Ptr != NULL)
+  void PPM_RC_IQRHandler(void)
+  {
+    if (RC_PPM_Ptr != NULL)
     {
-        RC_PPM_Ptr->pulse_callback();
+      RC_PPM_Ptr->pulse_callback();
     }
-}
-
+  }
 }

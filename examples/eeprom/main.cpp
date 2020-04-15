@@ -29,48 +29,48 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <string>
-#include "revo_f4.h"
-
-#include "spi.h"
-#include "mpu6000.h"
-#include "led.h"
-#include "vcp.h"
-#include "printf.h"
 #include "eeprom.h"
+#include "led.h"
+#include "mpu6000.h"
+#include "printf.h"
+#include "revo_f4.h"
+#include "spi.h"
+#include "vcp.h"
+
+#include <string>
 
 VCP* vcpPtr = NULL;
 
-static void _putc(void *p, char c)
+static void _putc(void* p, char c)
 {
-    (void)p; // avoid compiler warning about unused variable
-    vcpPtr->put_byte(c);
+  (void)p; // avoid compiler warning about unused variable
+  vcpPtr->put_byte(c);
 }
 
-int main() {
-
+int main()
+{
   systemInit();
 
   VCP vcp;
   vcp.init();
   vcpPtr = &vcp;
 
-  struct ExampleStruct{
+  struct ExampleStruct
+  {
     int version;
     std::string name;
     float someOtherValue;
   };
   ExampleStruct data;
 
-  //To write, uncomment this
-  data.version=1;
-  data.someOtherValue=3.14154f;
-  eeprom_write((&data),sizeof(data));
-  
-  //to read, uncomment this
-  eeprom_read(&data,sizeof(data));
+  // To write, uncomment this
+  data.version = 1;
+  data.someOtherValue = 3.14154f;
+  eeprom_write((&data), sizeof(data));
 
+  // to read, uncomment this
+  eeprom_read(&data, sizeof(data));
 
-  printf("version: %d",data.version);
-  printf("someOtherValue: %f",data.someOtherValue);
+  printf("version: %d", data.version);
+  printf("someOtherValue: %f", data.someOtherValue);
 }

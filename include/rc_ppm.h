@@ -48,10 +48,8 @@ private:
   uint16_t TIM_IT_;
   uint16_t TIM_Channel_;
 
-
-
 public:
-  void init(const pwm_hardware_struct_t *conf);
+  void init(const pwm_hardware_struct_t* conf);
 
   float read(uint8_t channel);
   bool lost();

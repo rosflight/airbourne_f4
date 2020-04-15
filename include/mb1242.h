@@ -29,7 +29,6 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-
 /*
  * Driver for the Maxbotix I2CXL-MaxSonar-EZ series sonar.
  * This has been made for and tested with the MB1242 sonar module,
@@ -38,9 +37,9 @@
 #ifndef I2C_SONAR_H
 #define I2C_SONAR_H
 
-#include <cstdint>
-
 #include "i2c.h"
+
+#include <cstdint>
 
 // These 3 constants come from the spec sheet for the sonar
 #define MB1242_DEFAULT_ADDRESS 112
@@ -57,30 +56,29 @@
 class I2CSonar
 {
 private:
-    uint32_t last_update_ms_; // The last time that async_update was called
-    uint32_t last_callback_ms_; // The last time the sensor responded
-    float value_; // the latest reading from the sensor
-    bool new_data_; // Whether or not new data is ready to be returned
-    I2C *i2c_; // The i2c object used for communication
-    bool ready_to_ping_; // Whether the sensor is ready to make another measurement
-    uint8_t buffer_[2]; // for receiving data from the sensor
-    bool sensor_present_{false}; // Flag of whether we have received data from the sensor
-    bool sensor_initialized_{false}; // Whether the init function has been called yet
+  uint32_t last_update_ms_;        // The last time that async_update was called
+  uint32_t last_callback_ms_;      // The last time the sensor responded
+  float value_;                    // the latest reading from the sensor
+  bool new_data_;                  // Whether or not new data is ready to be returned
+  I2C *i2c_;                       // The i2c object used for communication
+  bool ready_to_ping_;             // Whether the sensor is ready to make another measurement
+  uint8_t buffer_[2];              // for receiving data from the sensor
+  bool sensor_present_{false};     // Flag of whether we have received data from the sensor
+  bool sensor_initialized_{false}; // Whether the init function has been called yet
 
 public:
-    I2CSonar();
-    void init(I2C *_i2c);
-    bool present();
-    float read(); // Returns the most recent reading, converted to meters, or 0 if there is none
-    void update(); // Tries to either start a measurement, or read it from the sensor
-    // update will do nothing if it has done something in the last MB1242_UPDATE_WAIT_MILLIS ms
-    // Calling it more frequently won't break anything
-    inline bool is_initialized(){return sensor_initialized_;}
+  I2CSonar();
+  void init(I2C *_i2c);
+  bool present();
+  float read();  // Returns the most recent reading, converted to meters, or 0 if there is none
+  void update(); // Tries to either start a measurement, or read it from the sensor
+  // update will do nothing if it has done something in the last MB1242_UPDATE_WAIT_MILLIS ms
+  // Calling it more frequently won't break anything
+  inline bool is_initialized() { return sensor_initialized_; }
 
-    // Callbacks. For internal use only, but public so the I2C peripheral can call them
-    void cb_start_read(uint8_t result); // callback after the measure command has been sent to the sensor
-    void cb_finished_read(uint8_t result); // callback after reading from the sensor has finished
+  // Callbacks. For internal use only, but public so the I2C peripheral can call them
+  void cb_start_read(uint8_t result);    // callback after the measure command has been sent to the sensor
+  void cb_finished_read(uint8_t result); // callback after reading from the sensor has finished
 };
-
 
 #endif

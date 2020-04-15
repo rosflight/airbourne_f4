@@ -32,9 +32,9 @@
 #ifndef ANALOG_H
 #define ANALOG_H
 
-#include "system.h"
-#include "gpio.h"
 #include "analog_digital_converter.h"
+#include "gpio.h"
+#include "system.h"
 
 /**
  * @brief A class to represent a single pin configured for analog input
