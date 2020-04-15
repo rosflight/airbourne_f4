@@ -441,7 +441,7 @@ public:
   static constexpr UART::uart_mode_t UART_MODE{UART::MODE_8N1};
 
   void init(UART *uart);
-  void continue_search();
+  void check_connection_status();
 
   bool present();
   bool new_data(); // Returns true if new data has been recieved, AND the time of week stamps on all of the data matches
@@ -453,18 +453,12 @@ public:
   void read_cb(uint8_t byte);
   uint32_t num_messages_received() { return num_messages_received_; }
 
-  void ned(float *vel) const;
-  void posECEF(double *pos) const;
-  void velECEF(double *vel) const;
-
   inline uint64_t get_last_pvt_timestamp() { return last_pvt_timestamp; }
 
 private:
-  bool detect_baudrate();
   void start_detect_baudrate_async();
   void increment_detect_baudrate_async();
   void finish_init();
-  void convert_data();
   void enable_message(uint8_t msg_cls, uint8_t msg_id, uint8_t rate);
   void set_baudrate(const uint32_t baudrate);
   void set_dynamic_mode();
@@ -473,10 +467,10 @@ private:
   void calculate_checksum(const uint8_t msg_cls,
                           const uint8_t msg_id,
                           const uint16_t len,
-                          const UBX_message_t payload,
+                          const UBX_message_t &payload,
                           uint8_t &ck_a,
                           uint8_t &ck_b) const;
-  bool send_message(uint8_t msg_class, uint8_t msg_id, UBX_message_t &message, uint16_t len);
+  bool send_ubx_message(uint8_t msg_class, uint8_t msg_id, UBX_message_t &message, uint16_t len);
 
   bool is_initialized_{false};
 
@@ -506,9 +500,6 @@ private:
   uint8_t ck_b_;
   uint32_t num_errors_ = 0;
   volatile uint32_t num_messages_received_ = 0;
-
-  double lla_[3] = {};
-  float vel_[3] = {};
 
   uint64_t last_pvt_timestamp = 0;
   uint64_t time_ = 0;

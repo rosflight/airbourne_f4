@@ -67,7 +67,7 @@ int main()
   {
     printf("GPS not initialized");
     delay(200);
-    gps.continue_search();
+    gps.check_connection_status();
   }
 
   LED led1;

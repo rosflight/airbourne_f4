@@ -2,13 +2,9 @@
 
 #include <time.h>
 
-#define DEG2RAD (3.14159 / 180.0)
 //#include "printf.h"
 //#define DBG(...) printf(__VA_ARGS__)
 #define DBG(...)
-#ifndef M_PI
-#define M_PI 3.14159
-#endif
 
 UBLOX *gnss_Ptr;
 
@@ -60,39 +56,6 @@ void UBLOX::finish_init()
   last_valid_message_ = millis();
 }
 
-// Attempt to detect the baudrate by trying a rate, waiting 1 s, and
-// seeing if any messages are recieved.
-// Attempted baudrates and the order in which they are tried are defined in ublox.h, in the array 'baudrates'
-// As a consequence of the changing baudrates, the sensor is treated as
-// disconnected until the procedure finishes
-bool UBLOX::detect_baudrate()
-{
-  current_baudrate_ = 0;
-  for (size_t i = 0; i < sizeof(baudrates) / sizeof(uint32_t); i++)
-  {
-    DBG("Trying %d baudrate\n", baudrates[i]);
-    serial_->set_mode(baudrates[i], UART_MODE);
-    uint32_t timeout_ms(1000);
-    uint32_t start_ms = millis();
-    uint32_t now_ms = millis();
-    // TREYDO should got_message_ be set to false here?
-    got_message_ = false;
-    while (now_ms < start_ms + timeout_ms)
-    {
-      now_ms = millis();
-      if (got_message_)
-      {
-        DBG("Found UBLOX at %d baud\n", baudrates[i]);
-        current_baudrate_ = baudrates[i];
-        break;
-      }
-    }
-    if (current_baudrate_ != 0)
-      break;
-  }
-  return got_message_;
-}
-
 void UBLOX::start_detect_baudrate_async()
 {
   baudrate_search_index_ = BAUDRATE_SEARCH_COUNT - 1; // once incremented, this goes to 0
@@ -110,7 +73,7 @@ void UBLOX::increment_detect_baudrate_async()
   searching_baudrate_ = true;
 }
 
-void UBLOX::continue_search()
+void UBLOX::check_connection_status()
 {
   if (is_initialized_)
   {
@@ -129,11 +92,10 @@ void UBLOX::continue_search()
   }
 }
 
-bool UBLOX::send_message(uint8_t msg_class, uint8_t msg_id, UBX_message_t &message, uint16_t len)
+bool UBLOX::send_ubx_message(uint8_t msg_class, uint8_t msg_id, UBX_message_t &message, uint16_t len)
 {
   // First, calculate the checksum
   uint8_t ck_a, ck_b;
-  // TREYDO pass by reference, with ints?
   calculate_checksum(msg_class, msg_id, len, message, ck_a, ck_b);
 
   // Send message
@@ -163,7 +125,7 @@ void UBLOX::set_baudrate(const uint32_t baudrate)
   out_message_.CFG_PRT.outProtoMask = CFG_PRT_t::OUT_UBX | CFG_PRT_t::OUT_NMEA;
   out_message_.CFG_PRT.mode = CFG_PRT_t::CHARLEN_8BIT | CFG_PRT_t::PARITY_NONE | CFG_PRT_t::STOP_BITS_1;
   out_message_.CFG_PRT.flags = 0;
-  send_message(CLASS_CFG, CFG_PRT, out_message_, sizeof(CFG_PRT_t));
+  send_ubx_message(CLASS_CFG, CFG_PRT, out_message_, sizeof(CFG_PRT_t));
   delayMicroseconds(10000);
   serial_->set_mode(baudrate, UART::MODE_8N1);
   current_baudrate_ = baudrate;
@@ -183,7 +145,7 @@ void UBLOX::set_dynamic_mode()
   out_message_.CFG_NAV5.mask = CFG_NAV5_t::MASK_DYN;
   out_message_.CFG_NAV5.dynModel = CFG_NAV5_t::DYNMODE_AIRBORNE_4G;
   DBG("Setting dynamic mode\n");
-  send_message(CLASS_CFG, CFG_PRT, out_message_, sizeof(CFG_NAV5_t));
+  send_ubx_message(CLASS_CFG, CFG_PRT, out_message_, sizeof(CFG_NAV5_t));
 }
 
 // Set the frequency of nav messages, defined as the period in ms
@@ -194,9 +156,10 @@ void UBLOX::set_nav_rate(uint8_t period_ms)
   out_message_.CFG_RATE.navRate = 1;
   out_message_.CFG_RATE.timeRef = CFG_RATE_t::TIME_REF_GPS;
   DBG("Setting nav rate to %d\n", period_ms);
-  send_message(CLASS_CFG, CFG_RATE, out_message_, sizeof(CFG_RATE_t));
+  send_ubx_message(CLASS_CFG, CFG_RATE, out_message_, sizeof(CFG_RATE_t));
 }
 
+// Enable a specific message from the receiver
 void UBLOX::enable_message(uint8_t msg_cls, uint8_t msg_id, uint8_t rate)
 {
   memset(&out_message_, 0, sizeof(CFG_MSG_t));
@@ -204,7 +167,7 @@ void UBLOX::enable_message(uint8_t msg_cls, uint8_t msg_id, uint8_t rate)
   out_message_.CFG_MSG.msgID = msg_id;
   out_message_.CFG_MSG.rate = rate;
   DBG("Requesting %x:%x message at %d hz\n", msg_cls, msg_id, rate);
-  send_message(CLASS_CFG, CFG_MSG, out_message_, sizeof(CFG_MSG_t));
+  send_ubx_message(CLASS_CFG, CFG_MSG, out_message_, sizeof(CFG_MSG_t));
 }
 
 void UBLOX::read_cb(uint8_t byte)
@@ -243,7 +206,6 @@ void UBLOX::read_cb(uint8_t byte)
     message_class_ = byte;
     parse_state_ = GOT_CLASS;
     break;
-
   case GOT_CLASS:
     message_type_ = byte;
     parse_state_ = GOT_MSG_ID;
@@ -309,10 +271,11 @@ void UBLOX::read_cb(uint8_t byte)
 
   prev_byte_ = byte;
 }
+
 // convert a time struct to unix time
 // dumb leap years
-// This function will break in 2100, because it doesn't take into accoutn that 2100 is not a leap year
-uint64_t convert_to_unix(UBLOX::GNSS_TIME_T time)
+// This function will break in 2100, because it doesn't take into account that 2100 is not a leap year
+uint64_t convert_to_unix_time(const UBLOX::GNSS_TIME_T &time)
 {
   uint32_t day_s = 24 * 60 * 60; // seconds per day
   uint32_t year_s = 365 * day_s; // seconds per non-leap day
@@ -384,7 +347,7 @@ UBLOX::GNSSPVT UBLOX::read()
 {
   GNSSPVT data = {};
   data.time_of_week = this->nav_message_.iTOW;
-  data.time = convert_to_unix(this->nav_message_.time);
+  data.time = convert_to_unix_time(this->nav_message_.time);
   data.nanos = this->nav_message_.time.nano;
   data.lat = this->nav_message_.lat;
   data.lon = this->nav_message_.lon;
@@ -398,7 +361,7 @@ UBLOX::GNSSPVT UBLOX::read()
 
   this->new_data_ = false;
 
-  return data;
+  return data; // copy elision effectively returns this as a reference without scope issues
 }
 
 UBLOX::GNSSPosECEF UBLOX::read_pos_ecef()
@@ -409,7 +372,7 @@ UBLOX::GNSSPosECEF UBLOX::read_pos_ecef()
   pos.z = this->pos_ecef_.ecefZ;
   pos.time_of_week = this->pos_ecef_.iTOW;
   pos.p_acc = this->pos_ecef_.pAcc;
-  return pos;
+  return pos; // copy elision effectively returns this as a reference without scope issues
 }
 
 UBLOX::GNSSVelECEF UBLOX::read_vel_ecef()
@@ -420,7 +383,7 @@ UBLOX::GNSSVelECEF UBLOX::read_vel_ecef()
   vel.vz = this->vel_ecef_.ecefVZ;
   vel.time_of_week = this->vel_ecef_.iTOW;
   vel.s_acc = this->vel_ecef_.sAcc;
-  return vel;
+  return vel; // copy elision effectively returns this as a reference without scope issues
 }
 
 const UBLOX::NAV_PVT_t &UBLOX::read_raw()
@@ -502,23 +465,10 @@ bool UBLOX::decode_message()
   return true;
 }
 
-void UBLOX::convert_data()
-{
-  double scaling = 1e-7 * 3.14159 / 180.0;
-  lla_[0] = static_cast<double>(nav_message_.lat) * scaling;
-  lla_[1] = static_cast<double>(nav_message_.lon) * scaling;
-  lla_[2] = nav_message_.height * 1e-3;
-
-  vel_[0] = nav_message_.velN * 1e-3;
-  vel_[1] = nav_message_.velE * 1e-3;
-  vel_[2] = nav_message_.velD * 1e-3;
-  time_ = convert_to_unix(nav_message_.time);
-}
-
 void UBLOX::calculate_checksum(const uint8_t msg_cls,
                                const uint8_t msg_id,
                                const uint16_t len,
-                               const UBX_message_t payload,
+                               const UBX_message_t &payload,
                                uint8_t &ck_a,
                                uint8_t &ck_b) const
 {
