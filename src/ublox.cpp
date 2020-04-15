@@ -56,6 +56,8 @@ void UBLOX::finish_init()
   // Zeroing the data
   this->nav_message_ = {};
   is_initialized_ = true;
+
+  last_valid_message_ = millis();
 }
 
 // Attempt to detect the baudrate by trying a rate, waiting 1 s, and
@@ -110,7 +112,15 @@ void UBLOX::increment_detect_baudrate_async()
 
 void UBLOX::continue_search()
 {
-  if (!is_initialized_)
+  if (is_initialized_)
+  {
+    if (millis() > last_valid_message_ + TIMEOUT_MS)
+    {
+      is_initialized_ = false;
+      start_detect_baudrate_async();
+    }
+  }
+  else
   {
     if (got_message_)
       finish_init();
@@ -285,6 +295,8 @@ void UBLOX::read_cb(uint8_t byte)
       parse_state_ = START;
       if (message_class_ == CLASS_NAV && message_type_ == NAV_PVT)
         last_pvt_timestamp = time_recieved;
+      if (new_data())
+        last_valid_message_ = millis();
     }
     else
     {
