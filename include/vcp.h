@@ -1,21 +1,20 @@
 #ifndef VCP_CLASS_H
 #define VCP_CLASS_H
 
-#include "revo_f4.h"
-
-#include "serial.h"
 #include "gpio.h"
+#include "revo_f4.h"
+#include "serial.h"
 
-extern "C" {
+extern "C"
+{
 #include "stm32f4xx_conf.h"
-#include "usbd_cdc_core.h"
 #include "usb_conf.h"
-#include "usbd_desc.h"
+#include "usbd_cdc_core.h"
 #include "usbd_cdc_vcp.h"
-#include "usbd_usr.h"
+#include "usbd_desc.h"
 #include "usbd_ioreq.h"
+#include "usbd_usr.h"
 }
-
 
 class VCP : public Serial
 {
@@ -41,7 +40,6 @@ public:
   bool reset_ = false;
 
 private:
-  
   void perform_maintenance();
 
   void send_disconnect_signal();
@@ -55,4 +53,4 @@ private:
   GPIO vbus_sens_;
 };
 
-#endif 
+#endif

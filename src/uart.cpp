@@ -34,28 +34,25 @@
 UART* UART1Ptr = NULL;
 UART* UART3Ptr = NULL;
 
-UART::UART()
-{}
-
+UART::UART() {}
 
 void UART::init(const uart_hardware_struct_t* conf, uint32_t baudrate, uart_mode_t mode)
 {
   receive_CB_ = nullptr;
-  c_ = conf;//Save the configuration
+  c_ = conf; // Save the configuration
 
-  //initialize pins
+  // initialize pins
   rx_pin_.init(c_->GPIO, c_->Rx_Pin, GPIO::PERIPH_IN_OUT);
   tx_pin_.init(c_->GPIO, c_->Tx_Pin, GPIO::PERIPH_OUT);
   GPIO_PinAFConfig(c_->GPIO, c_->Rx_PinSource, c_->GPIO_AF);
   GPIO_PinAFConfig(c_->GPIO, c_->Tx_PinSource, c_->GPIO_AF);
 
-
-  //Save the pointer, for callbacks
+  // Save the pointer, for callbacks
   if (c_->dev == USART1)
   {
     UART1Ptr = this;
   }
-  if(c_->dev == USART3)
+  if (c_->dev == USART3)
   {
     UART3Ptr = this;
   }
@@ -68,7 +65,7 @@ void UART::init(const uart_hardware_struct_t* conf, uint32_t baudrate, uart_mode
 void UART::init_UART(uint32_t baudrate, uart_mode_t mode)
 {
   // Configure the device
-  USART_Cmd(c_->dev, DISABLE);//Disable the usart device for configuration
+  USART_Cmd(c_->dev, DISABLE); // Disable the usart device for configuration
 
   USART_InitTypeDef USART_InitStruct;
   USART_InitStruct.USART_BaudRate = baudrate;
@@ -89,13 +86,13 @@ void UART::init_UART(uint32_t baudrate, uart_mode_t mode)
   }
 
   USART_InitStruct.USART_HardwareFlowControl = USART_HardwareFlowControl_None;
-  USART_InitStruct.USART_Mode = USART_Mode_Rx | USART_Mode_Tx;//Set to both receive and send
+  USART_InitStruct.USART_Mode = USART_Mode_Rx | USART_Mode_Tx; // Set to both receive and send
   USART_Init(c_->dev, &USART_InitStruct);
-  //USART_OverSampling8Cmd(c_->dev, ENABLE);//Please don't break anything
+  // USART_OverSampling8Cmd(c_->dev, ENABLE);//Please don't break anything
 
   // Throw interrupts on byte receive
-  USART_ITConfig(c_->dev, USART_IT_RXNE, ENABLE);//enable interupts on receive
-  USART_Cmd(c_->dev, ENABLE);//reenable the usart
+  USART_ITConfig(c_->dev, USART_IT_RXNE, ENABLE); // enable interupts on receive
+  USART_Cmd(c_->dev, ENABLE);                     // reenable the usart
 }
 
 void UART::init_DMA()
@@ -103,9 +100,9 @@ void UART::init_DMA()
   DMA_InitTypeDef DMA_InitStructure;
 
   // Common DMA Configuration
-  DMA_InitStructure.DMA_FIFOMode = DMA_FIFOMode_Disable ;
-  DMA_InitStructure.DMA_FIFOThreshold = DMA_FIFOThreshold_1QuarterFull ;
-  DMA_InitStructure.DMA_MemoryBurst = DMA_MemoryBurst_Single ;
+  DMA_InitStructure.DMA_FIFOMode = DMA_FIFOMode_Disable;
+  DMA_InitStructure.DMA_FIFOThreshold = DMA_FIFOThreshold_1QuarterFull;
+  DMA_InitStructure.DMA_MemoryBurst = DMA_MemoryBurst_Single;
   DMA_InitStructure.DMA_MemoryDataSize = DMA_MemoryDataSize_Byte;
 
   DMA_InitStructure.DMA_MemoryInc = DMA_MemoryInc_Enable;
@@ -156,7 +153,6 @@ void UART::init_DMA()
   memset(tx_buffer_, 0, TX_BUFFER_SIZE);
 }
 
-
 void UART::init_NVIC()
 {
   // Configure the Interrupt
@@ -174,11 +170,10 @@ void UART::init_NVIC()
   NVIC_Init(&NVIC_InitStruct);
 }
 
-
-void UART::write(const uint8_t *ch, uint8_t len)
+void UART::write(const uint8_t* ch, uint8_t len)
 {
   // Put Data on the tx_buffer
-  for (int i = 0; i < len ; i++)
+  for (int i = 0; i < len; i++)
   {
     tx_buffer_[tx_buffer_head_] = ch[i];
     tx_buffer_head_ = (tx_buffer_head_ + 1) % TX_BUFFER_SIZE;
@@ -187,15 +182,14 @@ void UART::write(const uint8_t *ch, uint8_t len)
   {
     startDMA();
   }
-//  this->flush();//testing
+  //  this->flush();//testing
 }
-
 
 void UART::startDMA()
 {
   // Set the start of the transmission to the oldest data
   c_->Tx_DMA_Stream->M0AR = reinterpret_cast<uint32_t>(&tx_buffer_[tx_buffer_tail_]);
-  if(tx_buffer_head_ > tx_buffer_tail_)
+  if (tx_buffer_head_ > tx_buffer_tail_)
   {
     // Set the length of the transmission to the data on the buffer
     // if contiguous, this is easy
@@ -218,11 +212,11 @@ uint8_t UART::read_byte()
   uint8_t byte = 0;
   // pull the next byte off the array
   // (the head counts down, because CNTR counts down)
-  if(rx_buffer_head_ != rx_buffer_tail_)
+  if (rx_buffer_head_ != rx_buffer_tail_)
   {
     // read a new byte and decrement the tail
     byte = rx_buffer_[RX_BUFFER_SIZE - rx_buffer_tail_];
-    if(--rx_buffer_tail_ == 0)
+    if (--rx_buffer_tail_ == 0)
     {
       // wrap to the top if at the bottom
       rx_buffer_tail_ = RX_BUFFER_SIZE;
@@ -230,7 +224,6 @@ uint8_t UART::read_byte()
   }
   return byte;
 }
-
 
 void UART::put_byte(uint8_t ch)
 {
@@ -284,7 +277,8 @@ bool UART::tx_buffer_empty()
 bool UART::flush()
 {
   uint32_t timeout = 100000;
-  while (!tx_buffer_empty() && --timeout);
+  while (!tx_buffer_empty() && --timeout)
+    ;
   if (timeout)
     return true;
   else
@@ -296,15 +290,15 @@ void UART::DMA_Rx_IRQ_callback()
   // DMA took care of putting the data on the buffer
   // Just call the callback until we have no more data
   // Update the head position from the DMA
-  rx_buffer_head_ =  DMA_GetCurrDataCounter(c_->Rx_DMA_Stream);
-  if(receive_CB_ != nullptr)
+  rx_buffer_head_ = DMA_GetCurrDataCounter(c_->Rx_DMA_Stream);
+  if (receive_CB_ != nullptr)
   {
-    while(rx_buffer_head_ != rx_buffer_tail_)
+    while (rx_buffer_head_ != rx_buffer_tail_)
     {
       // read a new byte and decrement the tail
       uint8_t byte = rx_buffer_[RX_BUFFER_SIZE - rx_buffer_tail_];
       receive_CB_(byte);
-      if(--rx_buffer_tail_ == 0)
+      if (--rx_buffer_tail_ == 0)
       {
         // wrap to the top if at the bottom
         rx_buffer_tail_ = RX_BUFFER_SIZE;
@@ -316,13 +310,13 @@ void UART::DMA_Rx_IRQ_callback()
 void UART::DMA_Tx_IRQ_callback()
 {
   // If there is more data to be sent
-  if(tx_buffer_head_ != tx_buffer_tail_)
+  if (tx_buffer_head_ != tx_buffer_tail_)
   {
     startDMA();
   }
 }
 
-void UART::register_rx_callback(void (*cb)(uint8_t data) )
+void UART::register_rx_callback(void (*cb)(uint8_t data))
 {
   receive_CB_ = cb;
 }
@@ -334,52 +328,44 @@ void UART::unregister_rx_callback()
 
 extern "C"
 {
+  void USART1_IRQHandler(void) { UART1Ptr->DMA_Rx_IRQ_callback(); }
+  void USART3_IRQHandler(void) { UART3Ptr->DMA_Rx_IRQ_callback(); }
 
-void USART1_IRQHandler (void)
-{
-  UART1Ptr->DMA_Rx_IRQ_callback();
-}
-void USART3_IRQHandler (void)
-{
-  UART3Ptr->DMA_Rx_IRQ_callback();
-}
-
-void DMA2_Stream5_IRQHandler(void)
-{
-  if (DMA_GetITStatus(DMA2_Stream5, DMA_IT_TCIF5))
+  void DMA2_Stream5_IRQHandler(void)
   {
-    DMA_ClearITPendingBit(DMA2_Stream5, DMA_IT_TCIF5);
-    UART1Ptr->DMA_Rx_IRQ_callback();
+    if (DMA_GetITStatus(DMA2_Stream5, DMA_IT_TCIF5))
+    {
+      DMA_ClearITPendingBit(DMA2_Stream5, DMA_IT_TCIF5);
+      UART1Ptr->DMA_Rx_IRQ_callback();
+    }
   }
-}
 
-void DMA2_Stream7_IRQHandler(void)
-{
-  if (DMA_GetITStatus(DMA2_Stream7, DMA_IT_TCIF7))
+  void DMA2_Stream7_IRQHandler(void)
   {
-    DMA_ClearITPendingBit(DMA2_Stream7, DMA_IT_TCIF7);
-    DMA_Cmd(DMA2_Stream7, DISABLE);
-    UART1Ptr->DMA_Tx_IRQ_callback();
+    if (DMA_GetITStatus(DMA2_Stream7, DMA_IT_TCIF7))
+    {
+      DMA_ClearITPendingBit(DMA2_Stream7, DMA_IT_TCIF7);
+      DMA_Cmd(DMA2_Stream7, DISABLE);
+      UART1Ptr->DMA_Tx_IRQ_callback();
+    }
   }
-}
 
-void DMA1_Stream1_IRQHandler(void)
-{
-  if (DMA_GetITStatus(DMA1_Stream1, DMA_IT_TCIF1))
+  void DMA1_Stream1_IRQHandler(void)
   {
-    DMA_ClearITPendingBit(DMA1_Stream1, DMA_IT_TCIF1);
-    UART3Ptr->DMA_Rx_IRQ_callback();
+    if (DMA_GetITStatus(DMA1_Stream1, DMA_IT_TCIF1))
+    {
+      DMA_ClearITPendingBit(DMA1_Stream1, DMA_IT_TCIF1);
+      UART3Ptr->DMA_Rx_IRQ_callback();
+    }
   }
-}
 
-void DMA1_Stream3_IRQHandler(void)
-{
-  if (DMA_GetITStatus(DMA1_Stream3, DMA_IT_TCIF3))
+  void DMA1_Stream3_IRQHandler(void)
   {
-    DMA_ClearITPendingBit(DMA1_Stream3, DMA_IT_TCIF3);
-    DMA_Cmd(DMA1_Stream3, DISABLE);
-    UART3Ptr->DMA_Tx_IRQ_callback();
+    if (DMA_GetITStatus(DMA1_Stream3, DMA_IT_TCIF3))
+    {
+      DMA_ClearITPendingBit(DMA1_Stream3, DMA_IT_TCIF3);
+      DMA_Cmd(DMA1_Stream3, DISABLE);
+      UART3Ptr->DMA_Tx_IRQ_callback();
+    }
   }
-}
-
 }

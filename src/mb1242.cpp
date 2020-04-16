@@ -50,7 +50,7 @@ I2CSonar::I2CSonar()
   sonarPtr = this;
 }
 
-void I2CSonar::init(I2C *_i2c)
+void I2CSonar::init(I2C* _i2c)
 {
   i2c_ = _i2c;
   new_data_ = false;
@@ -84,9 +84,9 @@ bool I2CSonar::present()
 // Feel free to call it more often, though.
 void I2CSonar::update()
 {
-  if(!sensor_initialized_)
+  if (!sensor_initialized_)
     return;
-  uint64_t now=millis();
+  uint64_t now = millis();
   if (now > (last_update_ms_ + MB1242_UPDATE_WAIT_MILLIS))
   {
     last_update_ms_ = now;
@@ -97,26 +97,26 @@ void I2CSonar::update()
   }
 }
 
-//Returns the most recent reading
-//It is during this method that the reading is converted to meters, as well
-//If there has not yet been a successful reading, returns 0
+// Returns the most recent reading
+// It is during this method that the reading is converted to meters, as well
+// If there has not yet been a successful reading, returns 0
 float I2CSonar::read()
 {
   if (new_data_)
   {
-    uint16_t centimeters = buffer_[0] << 8 | buffer_[1];//Convert to a single number
+    uint16_t centimeters = buffer_[0] << 8 | buffer_[1]; // Convert to a single number
 #ifdef MB1242_RAW
-    value=(float)centimeters * 0.01;
+    value = (float)centimeters * 0.01;
 #else
-    //Calibration from BreezySTM32 by Simon D. Levy
-    value_=(1.071 * static_cast<float>(centimeters) + 3.103) / 100.0;
+    // Calibration from BreezySTM32 by Simon D. Levy
+    value_ = (1.071 * static_cast<float>(centimeters) + 3.103) / 100.0;
 #endif
-    new_data_=false;
+    new_data_ = false;
   }
   return value_;
 }
 
-//callback after the measure command has been sent to the sensor
+// callback after the measure command has been sent to the sensor
 void I2CSonar::cb_start_read(uint8_t result)
 {
   if (result == I2C::RESULT_SUCCESS)
@@ -127,7 +127,7 @@ void I2CSonar::cb_start_read(uint8_t result)
   }
 }
 
-//callback after reading from the sensor has finished
+// callback after reading from the sensor has finished
 void I2CSonar::cb_finished_read(uint8_t result)
 {
   if (result == I2C::RESULT_SUCCESS)

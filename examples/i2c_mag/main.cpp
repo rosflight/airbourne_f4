@@ -29,23 +29,23 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "system.h"
-#include "i2c.h"
 #include "hmc5883l.h"
+#include "i2c.h"
 #include "led.h"
-#include "vcp.h"
 #include "printf.h"
+#include "system.h"
+#include "vcp.h"
 
 VCP* uartPtr = NULL;
 
-static void _putc(void *p, char c)
+static void _putc(void* p, char c)
 {
-    (void)p; // avoid compiler warning about unused variable
-    uartPtr->put_byte(c);
+  (void)p; // avoid compiler warning about unused variable
+  uartPtr->put_byte(c);
 }
 
-int main() {
-
+int main()
+{
   systemInit();
 
   VCP vcp;
@@ -65,11 +65,10 @@ int main() {
   i2c1.init(&i2c_config[EXTERNAL_I2C]);
   HMC5883L mag;
 
-
   mag.init(&i2c1);
 
   float mag_data[3] = {0., 0., 0.};
-  while(1) 
+  while (1)
   {
     mag.update();
     if (mag.present())
@@ -77,15 +76,17 @@ int main() {
       warn.off();
       info.toggle();
       mag.read(mag_data);
+      // clang-format off
       printf("%d, %d, %d\n",
              (int32_t)(mag_data[0]),
              (int32_t)(mag_data[1]),
              (int32_t)(mag_data[2]));
+      // clang-format on
     }
-    else 
+    else
     {
       warn.on();
-      printf("error\n");     
+      printf("error\n");
     }
     delay(10);
   }

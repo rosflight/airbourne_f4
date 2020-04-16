@@ -29,9 +29,9 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "system.h"
-#include "spi.h"
 #include "gpio.h"
+#include "spi.h"
+#include "system.h"
 
 class M25P16
 {
@@ -43,7 +43,8 @@ private:
   uint32_t config_size_;
   uint32_t num_pages_for_config_;
 
-  enum {
+  enum
+  {
     WRITE_ENABLE = 0x06,
     WRITE_DISABLE = 0x04,
     READ_IDENTIFICATION = 0x9F,
@@ -69,10 +70,9 @@ private:
 
 public:
   M25P16();
-  void init(SPI *_spi);
+  void init(SPI* _spi);
   bool read_config(uint8_t* data, uint32_t len);
-  bool write_config(const uint8_t *data, const uint32_t len);
+  bool write_config(const uint8_t* data, const uint32_t len);
   void write_page(uint8_t* data);
   void read(uint8_t* data, uint8_t len);
- 
 };

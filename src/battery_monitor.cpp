@@ -29,10 +29,12 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-
 #include "battery_monitor.h"
 
-void BatteryMonitor::init(const BatteryMonitorHardwareStruct &def, AnalogDigitalConverter *adc, float voltage_multiplier, float current_multiplier)
+void BatteryMonitor::init(const BatteryMonitorHardwareStruct &def,
+                          AnalogDigitalConverter *adc,
+                          float voltage_multiplier,
+                          float current_multiplier)
 {
   voltage_pin_.init(adc, def.voltage_gpio, def.voltage_pin, def.voltage_adc_channel);
   current_pin_.init(adc, def.current_gpio, def.current_pin, def.current_adc_channel);
@@ -50,7 +52,7 @@ float BatteryMonitor::read_current() const
 
 void BatteryMonitor::set_voltage_multiplier(double multiplier)
 {
-  this->voltage_multiplier_  = multiplier;
+  this->voltage_multiplier_ = multiplier;
 }
 
 void BatteryMonitor::set_current_multiplier(double multiplier)

@@ -29,22 +29,22 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "system.h"
 #include "i2c.h"
 #include "led.h"
-#include "vcp.h"
 #include "printf.h"
+#include "system.h"
+#include "vcp.h"
 
 VCP* uartPtr = NULL;
 
-static void _putc(void *p, char c)
+static void _putc(void* p, char c)
 {
   (void)p; // avoid compiler warning about unused variable
   uartPtr->put_byte(c);
 }
 
-int main() {
-
+int main()
+{
   systemInit();
 
   VCP vcp;
@@ -65,7 +65,7 @@ int main() {
   }
   warn.off();
 
-  while(1)
+  while (1)
   {
     info.toggle();
     for (int i = 0; i < NUM_I2C; i++)
@@ -74,14 +74,14 @@ int main() {
       for (int j = 0; j < 128; j++)
       {
         uint8_t data = 0;
-        int8_t result  = i2c[i].write(j, 0xFF, data);
-        while(result < 0)
+        int8_t result = i2c[i].write(j, 0xFF, data);
+        while (result < 0)
         {
-          result  = i2c[i].write(j, 0xFF, data);
+          result = i2c[i].write(j, 0xFF, data);
         }
         if (result > 0)
         {
-          printf("I2C%d: found device at 0x%X\n", i+1, j);
+          printf("I2C%d: found device at 0x%X\n", i + 1, j);
         }
         delay(5);
       }

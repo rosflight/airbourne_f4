@@ -29,10 +29,9 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-
+#include "revo_f4.h"
 #include "system.h"
 #include "uart.h"
-#include "revo_f4.h"
 
 UART* uartPtr = NULL;
 
@@ -49,21 +48,20 @@ int main()
   uart.init(&uart_config[UART3], 115200);
   uartPtr = &uart;
 
-  uart.register_rx_callback(rx_callback);  // Uncomment to test callback version
+  uart.register_rx_callback(rx_callback); // Uncomment to test callback version
 
   int i = 0;
-  while(1)
+  while (1)
   {
     uint8_t hello_string[9] = "testing\n";
-    //uart.write(hello_string, 8); // Uncomment to test Tx
+    // uart.write(hello_string, 8); // Uncomment to test Tx
     delay(100);
 
     // Polling version (uncomment to test)
-//    while (uart.rx_bytes_waiting())
-//    {
-//      uint8_t byte = uart.read_byte();
-//      uartPtr->put_byte(byte);
-//    }
-
+    //    while (uart.rx_bytes_waiting())
+    //    {
+    //      uint8_t byte = uart.read_byte();
+    //      uartPtr->put_byte(byte);
+    //    }
   }
 }

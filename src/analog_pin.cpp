@@ -29,7 +29,6 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-
 #include "analog_pin.h"
 
 void AnalogPin::init(AnalogDigitalConverter *adc, GPIO_TypeDef *basePort, uint16_t pin, uint8_t adc_channel)

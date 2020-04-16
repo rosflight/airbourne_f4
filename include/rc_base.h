@@ -32,13 +32,11 @@
 #ifndef RC_H
 #define RC_H
 
-#include "revo_f4.h"
-
 #include "gpio.h"
+#include "revo_f4.h"
 
 class RC_BASE
 {
-
 public:
   virtual float read(uint8_t channel) = 0;
   virtual bool lost() = 0;

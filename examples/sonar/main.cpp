@@ -29,44 +29,42 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <string>
-#include "revo_f4.h"
-
-#include "spi.h"
 #include "i2c.h"
-#include "mpu6000.h"
 #include "mb1242.h"
-#include "vcp.h"
+#include "mpu6000.h"
 #include "printf.h"
+#include "revo_f4.h"
+#include "spi.h"
+#include "vcp.h"
+
+#include <string>
 
 VCP* uartPtr = NULL;
 
-static void _putc(void *p, char c)
+static void _putc(void* p, char c)
 {
   (void)p; // avoid compiler warning about unused variable
   uartPtr->put_byte(c);
 }
 
-
-int main() {
-  
+int main()
+{
   systemInit();
-  
+
   VCP vcp;
   vcp.init();
   uartPtr = &vcp;
-  
-//  init_printf(NULL, _putc);
-  
+
+  //  init_printf(NULL, _putc);
+
   I2C i2c1;
   i2c1.init(&i2c_config[EXTERNAL_I2C]);
   I2CSonar sonar;
   sonar.init(&i2c1);
-  
-  
+
   volatile float dist;
   uint32_t next_print_ms = millis();
-  while(true)
+  while (true)
   {
     sonar.update();
     if (millis() > next_print_ms)
@@ -74,14 +72,13 @@ int main() {
       if (sonar.present())
       {
         dist = sonar.read();
-//        printf("sonar read %.3f\n", dist);
+        //        printf("sonar read %.3f\n", dist);
       }
       else
       {
-//        printf("sonar unavailable\n");
+        //        printf("sonar unavailable\n");
       }
       next_print_ms += 20;
     }
   }
-  
 }

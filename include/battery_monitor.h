@@ -29,7 +29,6 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-
 #ifndef BATTERYMONITOR_H
 #define BATTERYMONITOR_H
 
@@ -55,7 +54,10 @@ public:
    * @param current_multiplier The current multiplier. Set to 0 for no current sense.
    * See set_current_multiplier
    */
-  void init(const BatteryMonitorHardwareStruct &def, AnalogDigitalConverter *adc, float voltage_multiplier=0, float current_multiplier=0);
+  void init(const BatteryMonitorHardwareStruct &def,
+            AnalogDigitalConverter *adc,
+            float voltage_multiplier = 0,
+            float current_multiplier = 0);
   /**
    * @brief Read the current battery voltage
    * @return The current battery voltage, or 0 if voltage sense is not available
@@ -101,6 +103,7 @@ public:
    * @return If the current multiplier is non-zero.
    */
   bool has_current_sense() const;
+
 private:
   AnalogPin voltage_pin_;
   AnalogPin current_pin_;

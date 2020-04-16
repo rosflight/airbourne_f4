@@ -34,7 +34,8 @@
 
 #include "revo_f4.h"
 
-class PWM_OUT {
+class PWM_OUT
+{
 public:
   PWM_OUT();
 
@@ -55,4 +56,4 @@ private:
   uint16_t pin_;
 };
 
-#endif //DRV_PWM_H
+#endif // DRV_PWM_H

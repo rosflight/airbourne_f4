@@ -29,20 +29,19 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include "printf.h"
+#include "rc_sbus.h"
+#include "revo_f4.h"
 #include "system.h"
 #include "uart.h"
-#include "rc_sbus.h"
 #include "vcp.h"
-#include "printf.h"
-
-#include "revo_f4.h"
 
 VCP* uartPtr = NULL;
 
-static void _putc(void *p, char c)
+static void _putc(void* p, char c)
 {
-    (void)p; // avoid compiler warning about unused variable
-    uartPtr->put_byte(c);
+  (void)p; // avoid compiler warning about unused variable
+  uartPtr->put_byte(c);
 }
 
 int main()
@@ -57,22 +56,19 @@ int main()
   uartPtr = &vcp;
   init_printf(NULL, _putc);
 
-
   uart.init(&uart_config[0], 100000, UART::MODE_8E2);
   inv_pin.init(SBUS_INV_GPIO, SBUS_INV_PIN, GPIO::OUTPUT);
   rc.init(&inv_pin, &uart);
 
-
   float rc_raw[16];
-  while(1)
+  while (1)
   {
-    for(int i = 0; i < 8; i++)
+    for (int i = 0; i < 8; i++)
     {
       rc_raw[i] = rc.read(i);
-      printf("%d, ", (uint32_t)(rc_raw[i]*1000));
+      printf("%d, ", (uint32_t)(rc_raw[i] * 1000));
     }
     printf("\n");
     delay(20);
   }
-
 }

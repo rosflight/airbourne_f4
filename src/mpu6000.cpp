@@ -70,14 +70,12 @@ void MPU6000::init(SPI* spi_drv)
   write(MPU_RA_GYRO_CONFIG, MPU_BITS_FS_2000DPS);
   write(MPU_RA_INT_ENABLE, 0x01);
 
-
-
   for (int i = 0; i < 100; i++)
-  // Read the IMU
-  raw[0] = MPU_RA_TEMP_OUT_H | 0x80;
+    // Read the IMU
+    raw[0] = MPU_RA_TEMP_OUT_H | 0x80;
   spi->transfer(raw, 3, raw, &cs_);
   delay(20);
-//  while (spi->is_busy()) {}
+  //  while (spi->is_busy()) {}
 
   // Set up the EXTI pin
   exti_.init(GPIOC, GPIO_Pin_4, GPIO::INPUT);
@@ -98,10 +96,9 @@ void MPU6000::init(SPI* spi_drv)
   NVIC_InitStruct.NVIC_IRQChannelCmd = ENABLE;
   NVIC_Init(&NVIC_InitStruct);
 
-
   // set the accel and gyro scale parameters
   accel_scale_ = (4.0 * 9.80665f) / (static_cast<float>(0x7FFF));
-  gyro_scale_= (2000.0 * 3.14159f/180.0f) / (static_cast<float>(0x7FFF));
+  gyro_scale_ = (2000.0 * 3.14159f / 180.0f) / (static_cast<float>(0x7FFF));
 }
 
 void MPU6000::data_transfer_callback()
@@ -111,11 +108,11 @@ void MPU6000::data_transfer_callback()
   acc_[1] = static_cast<float>(static_cast<int16_t>((raw[3] << 8) | raw[4])) * accel_scale_;
   acc_[2] = static_cast<float>(static_cast<int16_t>((raw[5] << 8) | raw[6])) * accel_scale_;
 
-  temp_  = static_cast<float>(static_cast<int16_t>((raw[7] << 8) | raw[8])) / 340.0f + 36.53f;
+  temp_ = static_cast<float>(static_cast<int16_t>((raw[7] << 8) | raw[8])) / 340.0f + 36.53f;
 
-  gyro_[0]  = static_cast<float>(static_cast<int16_t>((raw[9]  << 8) | raw[10])) * gyro_scale_;
-  gyro_[1]  = static_cast<float>(static_cast<int16_t>((raw[11] << 8) | raw[12])) * gyro_scale_;
-  gyro_[2]  = static_cast<float>(static_cast<int16_t>((raw[13] << 8) | raw[14])) * gyro_scale_;
+  gyro_[0] = static_cast<float>(static_cast<int16_t>((raw[9] << 8) | raw[10])) * gyro_scale_;
+  gyro_[1] = static_cast<float>(static_cast<int16_t>((raw[11] << 8) | raw[12])) * gyro_scale_;
+  gyro_[2] = static_cast<float>(static_cast<int16_t>((raw[13] << 8) | raw[14])) * gyro_scale_;
 }
 
 void MPU6000::read(float* accel_data, float* gyro_data, float* temp_data, uint64_t* time_us)
@@ -137,24 +134,22 @@ void MPU6000::exti_cb()
   spi->transfer(raw, 15, raw, &cs_, &data_transfer_cb);
 }
 
-bool MPU6000::new_data() 
+bool MPU6000::new_data()
+{
+  if (new_data_)
   {
-    if (new_data_)
-    {
-      new_data_ = false;
-      return true;
-    }
-    else
-      return false;
+    new_data_ = false;
+    return true;
   }
+  else
+    return false;
+}
 
 extern "C"
 {
-
-void EXTI4_IRQHandler(void)
-{
-  EXTI_ClearITPendingBit(EXTI_Line4);
-  IMU_Ptr->exti_cb();
-}
-
+  void EXTI4_IRQHandler(void)
+  {
+    EXTI_ClearITPendingBit(EXTI_Line4);
+    IMU_Ptr->exti_cb();
+  }
 }
