@@ -92,8 +92,11 @@ int main()
     if (millis() > last_print_ms + 50)
     {
       last_print_ms = millis();
-      printf("%d.%dPa, %d.%dC\n", (int32_t)(diff_press), (int32_t)(diff_press * 1000) % 1000, (int32_t)(temp),
-             (int32_t)(temp * 1000) % 1000);
+      // clang-format off
+      printf("%d.%dPa, %d.%dC\n",
+               (int32_t)(diff_press), (int32_t)(diff_press*1000)%1000,
+               (int32_t)(temp), (int32_t)(temp*1000)%1000);
+      // clang-format on
     }
   }
 }

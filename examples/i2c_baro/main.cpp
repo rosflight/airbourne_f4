@@ -76,7 +76,12 @@ int main()
       warn.off();
       info.toggle();
       baro.read(&pressure, &temperature);
-      printf("%d Pa, %d.%d K\n", (int32_t)(pressure), (int32_t)(temperature), (int32_t)(temperature * 100) % 100);
+      // clang-format off
+      printf("%d Pa, %d.%d K\n",
+             (int32_t)(pressure),
+             (int32_t)(temperature),
+             (int32_t)(temperature*100)%100);
+      // clang-format on
 
       delay(10);
     }

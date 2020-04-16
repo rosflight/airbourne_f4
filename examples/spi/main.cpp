@@ -80,9 +80,17 @@ int main()
     else
     {
       warn.off();
-      printf("%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\n", (int32_t)(acc[0] * 1000.0), (int32_t)(acc[1] * 1000.0),
-             (int32_t)(acc[2] * 1000.0), (int32_t)(gyro[0] * 1000.0), (int32_t)(gyro[1] * 1000.0),
-             (int32_t)(gyro[2] * 1000.0), (int32_t)(temp * 1000.0), time_us);
+      // clang-format off
+      printf("%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\n",
+             (int32_t) (acc[0]*1000.0),
+             (int32_t) (acc[1]*1000.0),
+             (int32_t) (acc[2]*1000.0),
+             (int32_t) (gyro[0]*1000.0),
+             (int32_t) (gyro[1]*1000.0),
+             (int32_t) (gyro[2]*1000.0),
+             (int32_t) (temp*1000.0),
+             time_us);
+      // clang-format on
     }
     delay(10);
   }

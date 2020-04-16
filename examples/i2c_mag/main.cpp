@@ -76,7 +76,12 @@ int main()
       warn.off();
       info.toggle();
       mag.read(mag_data);
-      printf("%d, %d, %d\n", (int32_t)(mag_data[0]), (int32_t)(mag_data[1]), (int32_t)(mag_data[2]));
+      // clang-format off
+      printf("%d, %d, %d\n",
+             (int32_t)(mag_data[0]),
+             (int32_t)(mag_data[1]),
+             (int32_t)(mag_data[2]));
+      // clang-format on
     }
     else
     {
