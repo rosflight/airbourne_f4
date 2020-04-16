@@ -32,7 +32,7 @@
 #include "system.h"
 #include "vcp.h"
 
-VCP *uartPtr = NULL;
+VCP* uartPtr = NULL;
 
 void rx_callback(uint8_t byte)
 {

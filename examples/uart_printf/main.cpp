@@ -33,7 +33,7 @@
 #include "system.h"
 #include "uart.h"
 
-UART *uartPtr = NULL;
+UART* uartPtr = NULL;
 
 void rx_callback(uint8_t byte)
 {
