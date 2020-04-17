@@ -77,13 +77,10 @@ int main()
 
   while (1)
   {
-    // if (gnss.new_data())
-    {
-      UBLOX::NAV_PVT_t raw = gnss.read_raw();
-      printf("fix: %s\tt: %d\tlla: %d, %d, %d\tvel: %d, %d, %d\n", fix_names[raw.fixType].c_str(), raw.iTOW, raw.lat,
-             raw.lon, raw.height, raw.velN, raw.velE, raw.velD);
-      led1.toggle();
-    }
+    UBLOX::NAV_PVT_t raw = gnss.read_raw();
+    printf("fix: %s\tt: %d\tlla: %d, %d, %d\tvel: %d, %d, %d\n", fix_names[raw.fixType].c_str(), raw.iTOW, raw.lat,
+           raw.lon, raw.height, raw.velN, raw.velE, raw.velD);
+    led1.toggle();
     delay(1000);
   }
 }
