@@ -2,10 +2,6 @@
 
 #include <time.h>
 
-//#include "printf.h"
-//#define DBG(...) printf(__VA_ARGS__)
-#define DBG(...)
-
 UBLOX *gnss_Ptr;
 
 // A C style callback
@@ -67,7 +63,6 @@ void UBLOX::increment_detect_baudrate_async()
   searching_baudrate_ = false; // To prevent hits during this function
   baudrate_search_index_ = (baudrate_search_index_ + 1) % BAUDRATE_SEARCH_COUNT;
   current_baudrate_ = baudrates[baudrate_search_index_];
-  DBG("Trying %d baudrate\n", current_baudrate_);
   serial_->set_mode(current_baudrate_, UART_MODE);
   last_baudrate_change_ms_ = millis();
   searching_baudrate_ = true;
@@ -116,7 +111,6 @@ bool UBLOX::send_ubx_message(uint8_t msg_class, uint8_t msg_id, UBX_message_t &m
 // This also changes the flight controller's baud rate to match the GNSS reciever
 void UBLOX::set_baudrate(const uint32_t baudrate)
 {
-  DBG("Setting baudrate to %d\n", baudrate);
   // Now that we have the right baudrate, let's configure the thing
   memset(&out_message_, 0, sizeof(CFG_PRT_t));
   out_message_.CFG_PRT.portID = CFG_PRT_t::PORT_UART1;
@@ -144,7 +138,6 @@ void UBLOX::set_dynamic_mode()
   memset(&out_message_, 0, sizeof(CFG_NAV5_t));
   out_message_.CFG_NAV5.mask = CFG_NAV5_t::MASK_DYN;
   out_message_.CFG_NAV5.dynModel = CFG_NAV5_t::DYNMODE_AIRBORNE_4G;
-  DBG("Setting dynamic mode\n");
   send_ubx_message(CLASS_CFG, CFG_PRT, out_message_, sizeof(CFG_NAV5_t));
 }
 
@@ -155,7 +148,6 @@ void UBLOX::set_nav_rate(uint8_t period_ms)
   out_message_.CFG_RATE.measRate = period_ms;
   out_message_.CFG_RATE.navRate = 1;
   out_message_.CFG_RATE.timeRef = CFG_RATE_t::TIME_REF_GPS;
-  DBG("Setting nav rate to %d\n", period_ms);
   send_ubx_message(CLASS_CFG, CFG_RATE, out_message_, sizeof(CFG_RATE_t));
 }
 
@@ -166,7 +158,6 @@ void UBLOX::enable_message(uint8_t msg_cls, uint8_t msg_id, uint8_t rate)
   out_message_.CFG_MSG.msgClass = msg_cls;
   out_message_.CFG_MSG.msgID = msg_id;
   out_message_.CFG_MSG.rate = rate;
-  DBG("Requesting %x:%x message at %d hz\n", msg_cls, msg_id, rate);
   send_ubx_message(CLASS_CFG, CFG_MSG, out_message_, sizeof(CFG_MSG_t));
 }
 
@@ -264,7 +255,6 @@ void UBLOX::read_cb(uint8_t byte)
     {
       // indicate error if it didn't work
       num_errors_++;
-      DBG("failed to parse message\n");
       parse_state_ = START;
     }
   }
@@ -401,65 +391,52 @@ bool UBLOX::decode_message()
     return false;
 
   num_messages_received_++;
-  DBG("recieved message %d: ", num_messages_received_);
 
   // Parse the payload
   switch (message_class_)
   {
   case CLASS_ACK:
-    DBG("ACK_");
     switch (message_type_)
     {
     case ACK_ACK:
       got_ack_ = true;
-      DBG("ACK\n");
       break;
     case ACK_NACK:
       got_nack_ = true;
-      DBG("NACK\n");
       break;
     default:
-      DBG("%d\n", message_type_);
       break;
     }
     break;
 
   case CLASS_CFG:
-    DBG("CFG_");
     switch (message_type_)
     {
     default:
-      DBG("%d\n", message_type_);
       break;
     }
     break;
 
   case CLASS_NAV:
-    DBG("NAV_");
     switch (message_type_)
     {
     case NAV_PVT:
       new_data_ = true;
       nav_message_ = in_message_.NAV_PVT;
-      DBG("PVT\n");
       break;
     case NAV_POSECEF:
       new_data_ = true;
       pos_ecef_ = in_message_.NAV_POSECEF;
-      DBG("POSECEF\n");
       break;
     case NAV_VELECEF:
       new_data_ = true;
       vel_ecef_ = in_message_.NAV_VELECEF;
-      DBG("NAVELECEF\n");
       break;
     default:
-      DBG("%d\n", message_type_);
       break;
     }
     break;
   default:
-    DBG("%d_%d\n", message_class_, message_type_);
     break;
   }
   return true;
