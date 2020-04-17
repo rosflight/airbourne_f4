@@ -1,6 +1,7 @@
 #ifndef BACKUP_SRAM_H
 #define BACKUP_SRAM_H
 
+#include <cstddef>
 #include <stdint.h>
 
 void backup_sram_init();
