@@ -120,7 +120,10 @@ void UBLOX::set_baudrate(const uint32_t baudrate)
   out_message_.CFG_PRT.mode = CFG_PRT_t::CHARLEN_8BIT | CFG_PRT_t::PARITY_NONE | CFG_PRT_t::STOP_BITS_1;
   out_message_.CFG_PRT.flags = 0;
   send_ubx_message(CLASS_CFG, CFG_PRT, out_message_, sizeof(CFG_PRT_t));
-  delayMicroseconds(10000);
+  while (!serial_->tx_buffer_empty()) // make sure the message is sent before changing the baud rate
+  {
+    delayMicroseconds(100);
+  }
   serial_->set_mode(baudrate, UART::MODE_8N1);
   current_baudrate_ = baudrate;
 }
