@@ -60,14 +60,14 @@ int main()
 
   nanoprintf::init_printf(NULL, _putc);
 
-  UBLOX gps;
-  gps.init(&uart);
+  UBLOX gnss;
+  gnss.init(&uart);
 
-  while (!gps.present())
+  while (!gnss.present())
   {
-    printf("GPS not initialized");
+    printf("GNSS not initialized");
     delay(200);
-    gps.check_connection_status();
+    gnss.check_connection_status();
   }
 
   LED led1;
@@ -77,9 +77,9 @@ int main()
 
   while (1)
   {
-    // if (gps.new_data())
+    // if (gnss.new_data())
     {
-      UBLOX::NAV_PVT_t raw = gps.read_raw();
+      UBLOX::NAV_PVT_t raw = gnss.read_raw();
       printf("fix: %s\tt: %d\tlla: %d, %d, %d\tvel: %d, %d, %d\n", fix_names[raw.fixType].c_str(), raw.iTOW, raw.lat,
              raw.lon, raw.height, raw.velN, raw.velE, raw.velD);
       led1.toggle();

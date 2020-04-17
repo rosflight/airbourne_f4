@@ -26,7 +26,7 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-TARGET = gps
+TARGET = gnss
 
 BOARD ?= REVO
 
@@ -38,7 +38,6 @@ SERIAL_DEVICE ?= /dev/ttyUSB0
 # GNU ARM Embedded Toolchain
 #################################
 CC=arm-none-eabi-gcc
-#CXX=echo
 CXX=arm-none-eabi-g++
 LD=arm-none-eabi-ld
 AR=arm-none-eabi-ar
