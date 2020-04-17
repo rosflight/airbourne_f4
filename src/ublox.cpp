@@ -265,64 +265,18 @@ void UBLOX::read_cb(uint8_t byte)
   prev_byte_ = byte;
 }
 
-// convert a time struct to unix time
-// dumb leap years
-// This function will break in 2100, because it doesn't take into account that 2100 is not a leap year
 uint64_t convert_to_unix_time(const UBLOX::GNSS_TIME_T &time)
 {
-  uint32_t day_s = 24 * 60 * 60; // seconds per day
-  uint32_t year_s = 365 * day_s; // seconds per non-leap day
-  uint32_t elapsed_years = time.year - 1970;
-  uint32_t elapsed_leap_days = (elapsed_years + 1) / 4;
-  if (time.year % 4 == 0) // If currently in a leap year
-    if (time.month >= 3)  // If past feb 29
-      elapsed_leap_days++;
-  uint32_t elapsed_days; // Days past in the year
-  switch (time.month)
-  {
-  case 1:
-    elapsed_days = 0;
-    break;
-  case 2:
-    elapsed_days = 31;
-    break;
-  case 3:
-    // Ignore leap days, because it is accounted for above
-    elapsed_days = 31 + 28;
-    break;
-  case 4:
-    elapsed_days = 31 + 28 + 31;
-    break;
-  case 5:
-    elapsed_days = 31 + 28 + 31 + 30;
-    break;
-  case 6:
-    elapsed_days = 31 + 28 + 31 + 30 + 31;
-    break;
-  case 7:
-    elapsed_days = 31 + 28 + 31 + 30 + 31 + 30;
-    break;
-  case 8:
-    elapsed_days = 31 + 28 + 31 + 30 + 31 + 30 + 31;
-    break;
-  case 9:
-    elapsed_days = 31 + 28 + 31 + 30 + 31 + 30 + 31 + 31;
-    break;
-  case 10:
-    elapsed_days = 31 + 28 + 31 + 30 + 31 + 30 + 31 + 31 + 30;
-    break;
-  case 11:
-    elapsed_days = 31 + 28 + 31 + 30 + 31 + 30 + 31 + 31 + 30 + 31;
-    break;
-  case 12:
-    elapsed_days = 31 + 28 + 31 + 30 + 31 + 30 + 31 + 31 + 30 + 31 + 30;
-    break;
-  default: // This should never be reached, because there are 12 month / year
-    elapsed_days = 0;
-  }
-  elapsed_days += time.day - 1; // Minus 1 because the day is not yet complete
-  return elapsed_years * year_s + (elapsed_days + elapsed_leap_days) * day_s + (time.hour * 60 + time.min) * 60
-         + time.sec;
+  tm c_time{time.sec,
+            time.min,
+            time.hour,
+            time.day,
+            time.month - 1,   // UBX uses 1-indexed months, but c++ uses 0 indexed
+            time.year - 1900, // UBX uses years AD, c++ uses years since 1900
+            0,                // ignored
+            0,                // also ignored
+            false};
+  return mktime(&c_time);
 }
 /* Tells if new data is available
  * Only returns true if new data has been recieved, and if all three sources match time of week.
