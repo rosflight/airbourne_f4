@@ -29,18 +29,22 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include "led.h"
+#include "printf.h"
 #include "revo_f4.h"
-#include "serial.h"
 #include "system.h"
 #include "uart.h"
 #include "ublox.h"
 #include "vcp.h"
 
-Serial* serPtr = NULL;
+#define printf ::nanoprintf::tfp_printf
 
-void rx_callback(uint8_t byte)
+Serial *serPtr = NULL;
+
+static void _putc(void *p, char c)
 {
-  serPtr->put_byte(byte);
+  (void)p; // avoid compiler warning about unused variable
+  serPtr->put_byte(c);
 }
 
 int main()
@@ -52,22 +56,31 @@ int main()
   serPtr = &vcp;
 
   UART uart;
-  uart.init(&uart_config[UART3], 115200);
+  uart.init(&uart_config[UART1], 115200);
 
-  vcp.register_rx_callback(rx_callback);
+  nanoprintf::init_printf(NULL, _putc);
 
-  UBLOX gps;
-  gps.init(&uart);
+  UBLOX gnss;
+  gnss.init(&uart);
 
-  double lla[3];
-  float vel[3];
-  uint8_t fix_type;
-  uint32_t t_ms;
+  while (!gnss.present())
+  {
+    printf("GNSS not initialized");
+    delay(200);
+    gnss.check_connection_status();
+  }
+
+  LED led1;
+  led1.init(LED1_GPIO, LED1_PIN);
+
+  delay(5000); // Wait for the UBX to boot up
+
   while (1)
   {
-    if (gps.new_data())
-    {
-      gps.read(lla, vel, &fix_type, &t_ms);
-    }
+    UBLOX::NAV_PVT_t raw = gnss.read_raw();
+    printf("fix: %s\tt: %d\tlla: %d, %d, %d\tvel: %d, %d, %d\n", fix_names[raw.fixType].c_str(), raw.iTOW, raw.lat,
+           raw.lon, raw.height, raw.velN, raw.velE, raw.velD);
+    led1.toggle();
+    delay(1000);
   }
 }

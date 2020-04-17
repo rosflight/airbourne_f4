@@ -33,9 +33,19 @@
 
 #define PRINTF_FLOAT_DECIMALS 3
 
+namespace nanoprintf
+{
 typedef void (*putcf) (void*,char);
 static putcf stdout_putf;
 static void* stdout_putp;
+
+static double abs(double a)
+{
+  if (a < 0)
+    return -a;
+  else
+    return a;
+}
 
 static void uli2a(unsigned long int num, unsigned int base, int uc,char * bf)
 {
@@ -118,7 +128,7 @@ static char a2i(char ch, char** src,int base,int* nump)
     return ch;
 }
 
-static void f2a(float num, int decimals, char * bf)
+static void f2a(float num, int whitespace, int decimals, char * bf)
 {
     int mult = 1;
     for (int i = 0; i < decimals; i++)
@@ -127,6 +137,15 @@ static void f2a(float num, int decimals, char * bf)
     }
     int i = (int)num;
     int dec = (int)(num * mult) % mult;
+
+    if (i < 0)
+      mult /= 10;
+    while(abs(i) < mult)
+    {
+      *bf++ = ' ';
+      mult /= 10;
+    }
+
     
     // write integer part
     i2a(i, bf);
@@ -138,16 +157,16 @@ static void f2a(float num, int decimals, char * bf)
     *bf++ = '.';
     
     // pad with zeros
-    for (int i = mult/10; i >= 1;  i /= 10)
-    {
-        if ( dec < i)
-            *bf++ = '0';
-        else
-            break;
-    }
-    
+//    for (int i = mult/10; i >= 1;  i /= 10)
+    //    {
+    //        if ( dec < i)
+    //            *bf++ = '0';
+    //        else
+    //            break;
+    //    }
+
     // write decimal part
-    i2a(dec, bf);
+    i2a(abs(dec), bf);
 }
 
 static void putchw(void* putp,putcf putf,int n, char z, char* bf)
@@ -198,7 +217,7 @@ void tfp_format(void* putp, putcf putf, const char *fmt, va_list va)
             case 0:
                 goto abort;
             case 'f': {
-                f2a(va_arg(va, double), f, bf);
+                f2a(va_arg(va, double), w, f, bf);
                 putchw(putp,putf,w,lz,bf);
                 break;
             }
@@ -268,4 +287,5 @@ void tfp_sprintf(char* s, const char *fmt, ...)
     tfp_format(&s,putcp,fmt,va);
     putcp(&s,0);
     va_end(va);
+}
 }

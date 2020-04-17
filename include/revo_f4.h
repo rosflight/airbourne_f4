@@ -62,12 +62,15 @@
 #define UART2 1
 #define UART3 2
 const uart_hardware_struct_t uart_config[NUM_UART] = {
-    {USART1, GPIOA, GPIO_Pin_10, GPIO_Pin_9, GPIO_PinSource10, GPIO_PinSource9, GPIO_AF_USART1, USART1_IRQn,
-     DMA2_Stream5_IRQn, DMA2_Stream7_IRQn, DMA2_Stream5, DMA2_Stream7, DMA_Channel_4, DMA_IT_TCIF5, DMA_IT_TCIF7},
-    {USART2, GPIOA, GPIO_Pin_10, GPIO_Pin_9, GPIO_PinSource10, GPIO_PinSource9, GPIO_AF_USART2, USART2_IRQn,
-     DMA1_Stream5_IRQn, DMA1_Stream6_IRQn, DMA1_Stream5, DMA1_Stream6, DMA_Channel_5, DMA_IT_TCIF5, DMA_IT_TCIF6},
-    {USART3, GPIOB, GPIO_Pin_11, GPIO_Pin_10, GPIO_PinSource11, GPIO_PinSource10, GPIO_AF_USART3, USART3_IRQn,
-     DMA1_Stream1_IRQn, DMA1_Stream3_IRQn, DMA1_Stream1, DMA1_Stream3, DMA_Channel_4, DMA_IT_TCIF1, DMA_IT_TCIF3},
+    {USART1, GPIOA, GPIO_Pin_10, GPIO_Pin_9, GPIO_PinSource10, GPIO_PinSource9,
+   GPIO_AF_USART1, USART1_IRQn, DMA2_Stream5_IRQn, DMA2_Stream7_IRQn, DMA2_Stream5, //main port?
+   DMA2_Stream7, DMA_Channel_4, DMA_IT_TCIF5, DMA_IT_TCIF7},
+  {USART2, GPIOA, GPIO_Pin_10, GPIO_Pin_9, GPIO_PinSource10, GPIO_PinSource9,
+   GPIO_AF_USART2, USART2_IRQn, DMA1_Stream5_IRQn, DMA1_Stream6_IRQn, DMA1_Stream5, //Flex-IO port?
+   DMA1_Stream6, DMA_Channel_5, DMA_IT_TCIF5, DMA_IT_TCIF6},
+  {USART3, GPIOB, GPIO_Pin_11, GPIO_Pin_10, GPIO_PinSource11, GPIO_PinSource10,
+   GPIO_AF_USART3, USART3_IRQn, DMA1_Stream1_IRQn, DMA1_Stream3_IRQn, DMA1_Stream1, //Flexi port?
+   DMA1_Stream3, DMA_Channel_4, DMA_IT_TCIF1, DMA_IT_TCIF3},
 };
 
 #define SBUS_UART 0

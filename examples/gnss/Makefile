@@ -26,7 +26,7 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-TARGET = gps
+TARGET = gnss
 
 BOARD ?= REVO
 
@@ -165,7 +165,7 @@ TARGET_BIN=$(BIN_DIR)/$(TARGET).bin
 ifeq ($(DEBUG), GDB)
 $(info ************  BUILDING DEBUG SYMBOLS ************)
 DEBUG_FLAGS = -ggdb3
-OPTIMIZE = -O0
+OPTIMIZE = -Og
 else
 $(info ************  BUILDING RELEASE ************)
 DEBUG_FLAGS = -g0
@@ -182,7 +182,7 @@ endif
 #  -Wredundant-decls -Wshadow -Wstrict-overflow=5 -Wswitch-default -Wundef -Wunused -Wvariadic-macros \
 #  -Wctor-dtor-privacy -Wnoexcept -Wold-style-cast -Woverloaded-virtual -Wsign-promo -Wstrict-null-sentinel
 FILE_SIZE_FLAGS += -ffunction-sections -fdata-sections -fno-exceptions
-CXX_FILE_SIZE_FLAGS = $(C_FILE_SIZE_FLAGS) -fno-rtti
+CXX_FILE_SIZE_FLAGS = $(FILE_SIZE_FLAGS) -fno-rtti
 
 MCFLAGS=-mcpu=cortex-m4 -mthumb -march=armv7e-m -mfloat-abi=hard -mfpu=fpv4-sp-d16 -fsingle-precision-constant -Wdouble-promotion
 DEFS=-DSTM32F40_41xxx -D__CORTEX_M4 -D__FPU_PRESENT -DWORDS_STACK_SIZE=200 -DUSE_STDPERIPH_DRIVER -DTARGET_$(BOARD) -DHSE_VALUE=8000000
