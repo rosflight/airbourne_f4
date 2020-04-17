@@ -406,7 +406,7 @@ public:
   {
     uint32_t time_of_week;
     uint64_t time;
-    uint64_t nanos;
+    int32_t nanos; // There is a chance for this to be negative
     int32_t lat;
     int32_t lon;
     int32_t height;
@@ -453,7 +453,7 @@ public:
   void read_cb(uint8_t byte);
   uint32_t num_messages_received() { return num_messages_received_; }
 
-  inline uint64_t get_last_pvt_timestamp() { return last_pvt_timestamp; }
+  inline uint64_t get_last_pvt_timestamp() { return last_pvt_timestamp_; }
 
 private:
   void start_detect_baudrate_async();
@@ -501,7 +501,7 @@ private:
   uint32_t num_errors_ = 0;
   volatile uint32_t num_messages_received_ = 0;
 
-  uint64_t last_pvt_timestamp = 0;
+  uint64_t last_pvt_timestamp_ = 0;
   uint64_t time_ = 0;
 
   bool looking_for_nmea_ = true;

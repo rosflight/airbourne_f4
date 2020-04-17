@@ -250,7 +250,7 @@ void UBLOX::read_cb(uint8_t byte)
     {
       parse_state_ = START;
       if (message_class_ == CLASS_NAV && message_type_ == NAV_PVT)
-        last_pvt_timestamp = time_recieved;
+        last_pvt_timestamp_ = time_recieved;
       if (new_data())
         last_valid_message_ = millis();
     }
@@ -334,48 +334,27 @@ bool UBLOX::new_data()
   return this->new_data_ && (this->nav_message_.iTOW == this->pos_ecef_.iTOW)
          && (this->nav_message_.iTOW == this->vel_ecef_.iTOW);
 }
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wmissing-field-initializers" // Ignore warning about leaving struct fields blank
 UBLOX::GNSSPVT UBLOX::read()
 {
-  GNSSPVT data = {};
-  data.time_of_week = this->nav_message_.iTOW;
-  data.time = convert_to_unix_time(this->nav_message_.time);
-  data.nanos = this->nav_message_.time.nano;
-  data.lat = this->nav_message_.lat;
-  data.lon = this->nav_message_.lon;
-  data.height = this->nav_message_.height;
-  data.vel_n = this->nav_message_.velN;
-  data.vel_e = this->nav_message_.velE;
-  data.vel_d = this->nav_message_.velD;
-  data.h_acc = this->nav_message_.hAcc;
-  data.v_acc = this->nav_message_.vAcc;
-  data.rosflight_timestamp = this->last_pvt_timestamp;
-
+  GNSSPVT data = {nav_message_.iTOW,      convert_to_unix_time(this->nav_message_.time),
+                  nav_message_.time.nano, nav_message_.lat,
+                  nav_message_.lon,       nav_message_.height,
+                  nav_message_.velN,      nav_message_.velE,
+                  nav_message_.velD,      nav_message_.hAcc,
+                  nav_message_.vAcc,      last_pvt_timestamp_};
   this->new_data_ = false;
-
-  return data; // copy elision effectively returns this as a reference without scope issues
+  return data;
 }
 
 UBLOX::GNSSPosECEF UBLOX::read_pos_ecef()
 {
-  GNSSPosECEF pos = {};
-  pos.x = this->pos_ecef_.ecefX;
-  pos.y = this->pos_ecef_.ecefY;
-  pos.z = this->pos_ecef_.ecefZ;
-  pos.time_of_week = this->pos_ecef_.iTOW;
-  pos.p_acc = this->pos_ecef_.pAcc;
+  GNSSPosECEF pos = {pos_ecef_.iTOW, pos_ecef_.ecefX, pos_ecef_.ecefY, pos_ecef_.ecefZ, pos_ecef_.pAcc};
   return pos; // copy elision effectively returns this as a reference without scope issues
 }
 
 UBLOX::GNSSVelECEF UBLOX::read_vel_ecef()
 {
-  UBLOX::GNSSVelECEF vel = {};
-  vel.vx = this->vel_ecef_.ecefVX;
-  vel.vy = this->vel_ecef_.ecefVY;
-  vel.vz = this->vel_ecef_.ecefVZ;
-  vel.time_of_week = this->vel_ecef_.iTOW;
-  vel.s_acc = this->vel_ecef_.sAcc;
+  UBLOX::GNSSVelECEF vel = {vel_ecef_.iTOW, vel_ecef_.ecefVX, vel_ecef_.ecefVY, vel_ecef_.ecefVZ, vel_ecef_.sAcc};
   return vel; // copy elision effectively returns this as a reference without scope issues
 }
 
@@ -383,7 +362,6 @@ const UBLOX::NAV_PVT_t &UBLOX::read_raw()
 {
   return this->nav_message_;
 }
-#pragma GCC diagnostic pop // End ignore blank struct initalizers
 
 bool UBLOX::decode_message()
 {
