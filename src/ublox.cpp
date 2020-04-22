@@ -290,12 +290,19 @@ bool UBLOX::new_data()
 }
 UBLOX::GNSSPVT UBLOX::read()
 {
-  GNSSPVT data = {nav_message_.iTOW,      convert_to_unix_time(this->nav_message_.time),
-                  nav_message_.time.nano, nav_message_.lat,
-                  nav_message_.lon,       nav_message_.height,
-                  nav_message_.velN,      nav_message_.velE,
-                  nav_message_.velD,      nav_message_.hAcc,
-                  nav_message_.vAcc,      last_pvt_timestamp_};
+  GNSSPVT data = {nav_message_.iTOW,
+                  static_cast<FixType>(nav_message_.fixType),
+                  convert_to_unix_time(this->nav_message_.time),
+                  nav_message_.time.nano,
+                  nav_message_.lat,
+                  nav_message_.lon,
+                  nav_message_.height,
+                  nav_message_.velN,
+                  nav_message_.velE,
+                  nav_message_.velD,
+                  nav_message_.hAcc,
+                  nav_message_.vAcc,
+                  last_pvt_timestamp_};
   this->new_data_ = false;
   return data;
 }
