@@ -450,7 +450,7 @@ public:
   GNSSPVT read();
   GNSSPosECEF read_pos_ecef();
   GNSSVelECEF read_vel_ecef();
-  const NAV_PVT_t &read_raw();
+  const NAV_PVT_t &read_full();
   void read_ecef(int32_t *pos_ecef, int32_t *vel_ecef, uint32_t &p_acc_ecef, uint32_t &s_acc_ecef);
   void read_cb(uint8_t byte);
   uint32_t num_messages_received() { return num_messages_received_; }
