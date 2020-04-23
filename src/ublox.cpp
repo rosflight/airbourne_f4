@@ -319,7 +319,7 @@ UBLOX::GNSSVelECEF UBLOX::read_vel_ecef()
   return vel; // copy elision effectively returns this as a reference without scope issues
 }
 
-const UBLOX::NAV_PVT_t &UBLOX::read_raw()
+const UBLOX::NAV_PVT_t &UBLOX::read_full()
 {
   return this->nav_message_;
 }
