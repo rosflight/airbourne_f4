@@ -16,7 +16,7 @@ class UBLOX
 public:
   UBLOX();
   // The majority of the enums and structs below were auto generated from the documentation
-  enum // Fix types
+  enum FixType // Fix types
   {
     FIX_TYPE_NO_FIX = 0x00,
     FIX_TYPE_DEAD_RECKONING = 0x01,
@@ -405,6 +405,7 @@ public:
   struct GNSSPVT
   {
     uint32_t time_of_week;
+    FixType fix_type;
     uint64_t time;
     int32_t nanos; // There is a chance for this to be negative
     int32_t lat;
@@ -444,7 +445,8 @@ public:
   void check_connection_status();
 
   bool present();
-  bool new_data(); // Returns true if new data has been recieved, AND the time of week stamps on all of the data matches
+  bool new_data(); // Returns true if new data has been recieved, AND the time of week stamps on all of the data
+                   // matches
   GNSSPVT read();
   GNSSPosECEF read_pos_ecef();
   GNSSVelECEF read_vel_ecef();
