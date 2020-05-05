@@ -70,6 +70,8 @@ void UBLOX::increment_detect_baudrate_async()
 
 void UBLOX::check_connection_status()
 {
+  if(serial_ == nullptr) // i.e. init() has not been called
+    return;
   if (is_initialized_)
   {
     if (millis() > last_valid_message_ + TIMEOUT_MS)
