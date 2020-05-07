@@ -31,8 +31,9 @@
 
 #include "uart.h"
 
-UART* UART1Ptr = NULL;
-UART* UART3Ptr = NULL;
+UART* UART1Ptr = nullptr;
+UART* UART3Ptr = nullptr;
+UART* UART6Ptr = nullptr;
 
 UART::UART() {}
 
@@ -55,6 +56,10 @@ void UART::init(const uart_hardware_struct_t* conf, uint32_t baudrate, uart_mode
   if (c_->dev == USART3)
   {
     UART3Ptr = this;
+  }
+  if (c_->dev == USART6)
+  {
+    UART6Ptr = this;
   }
 
   init_UART(baudrate, mode);
@@ -331,7 +336,7 @@ extern "C"
   void USART1_IRQHandler(void) { UART1Ptr->DMA_Rx_IRQ_callback(); }
   void USART3_IRQHandler(void) { UART3Ptr->DMA_Rx_IRQ_callback(); }
 
-  void DMA2_Stream5_IRQHandler(void)
+  void DMA2_Stream5_IRQHandler(void) // UART1 Rx
   {
     if (DMA_GetITStatus(DMA2_Stream5, DMA_IT_TCIF5))
     {
@@ -340,7 +345,7 @@ extern "C"
     }
   }
 
-  void DMA2_Stream7_IRQHandler(void)
+  void DMA2_Stream7_IRQHandler(void) // UART1 Tx
   {
     if (DMA_GetITStatus(DMA2_Stream7, DMA_IT_TCIF7))
     {
@@ -350,7 +355,7 @@ extern "C"
     }
   }
 
-  void DMA1_Stream1_IRQHandler(void)
+  void DMA1_Stream1_IRQHandler(void) // UART3 Rx
   {
     if (DMA_GetITStatus(DMA1_Stream1, DMA_IT_TCIF1))
     {
@@ -359,13 +364,32 @@ extern "C"
     }
   }
 
-  void DMA1_Stream3_IRQHandler(void)
+  void DMA1_Stream3_IRQHandler(void) // UART3 Tx
   {
     if (DMA_GetITStatus(DMA1_Stream3, DMA_IT_TCIF3))
     {
       DMA_ClearITPendingBit(DMA1_Stream3, DMA_IT_TCIF3);
       DMA_Cmd(DMA1_Stream3, DISABLE);
       UART3Ptr->DMA_Tx_IRQ_callback();
+    }
+  }
+
+  void DMA2_Stream1_IRQHandler(void) // UART6 Rx
+  {
+    if (DMA_GetITStatus(DMA2_Stream1, DMA_IT_TCIF1))
+    {
+      DMA_ClearITPendingBit(DMA2_Stream1, DMA_IT_TCIF1);
+      UART6Ptr->DMA_Rx_IRQ_callback();
+    }
+  }
+
+  void DMA2_Stream6_IRQHandler(void) // UART6 Tx
+  {
+    if (DMA_GetITStatus(DMA2_Stream6, DMA_IT_TCIF6))
+    {
+      DMA_ClearITPendingBit(DMA1_Stream6, DMA_IT_TCIF6);
+      DMA_Cmd(DMA2_Stream6, DISABLE);
+      UART6Ptr->DMA_Tx_IRQ_callback();
     }
   }
 }
