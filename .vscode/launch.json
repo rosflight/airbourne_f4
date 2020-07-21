@@ -1,0 +1,25 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "STM32F405",
+            "type": "cortex-debug",
+            "request": "launch",
+            "servertype": "openocd",
+            "cwd": "${workspaceRoot}",
+            // "executable": "${workspaceRoot}/build/examples/i2c_sniff/i2c_sniff.elf",
+            "executable": "${workspaceRoot}/examples/i2c_mag/obj/i2c_mag.elf",
+            "device": "STM32F405",
+            "svdFile": "${workspaceRoot}/.vscode/STM32F4_svd_V1.2/STM32F405.svd",
+            "configFiles": [
+                "interface/stlink-v2.cfg",
+                "target/stm32f4x.cfg"
+            ],
+            "runToMain": true,
+            "preLaunchTask": "makefile"
+        }
+    ]
+}

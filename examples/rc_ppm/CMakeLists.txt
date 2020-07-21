@@ -1,6 +1,5 @@
 
 ###############################################################################
-#
 # Copyright (c) 2020 - James Jackson
 # All rights reserved.
 
@@ -26,23 +25,4 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-add_subdirectory(analog)
-add_subdirectory(battery_monitor)
-add_subdirectory(flash)
-add_subdirectory(i2c_airspeed)
-add_subdirectory(i2c_mag)
-add_subdirectory(i2c_sniff)
-add_subdirectory(rc_ppm)
-add_subdirectory(sonar)
-add_subdirectory(time)
-add_subdirectory(vcp_printf)
-add_subdirectory(backup_sram)
-add_subdirectory(blink)
-add_subdirectory(eeprom)
-add_subdirectory(gps)
-add_subdirectory(i2c_baro)
-add_subdirectory(i2c_multi)
-add_subdirectory(pwm)
-add_subdirectory(rc_sbus)
-add_subdirectory(spi)
-add_subdirectory(uart_printf)
+add_example(rc_ppm main.cpp)

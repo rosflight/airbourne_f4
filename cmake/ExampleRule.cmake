@@ -25,12 +25,21 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-set(STARTUP_SCRIPT ${CMAKE_CURRENT_LIST_DIR}/../lib/startup/stm32f405.s)
+set(LIB_DIR ${CMAKE_CURRENT_LIST_DIR}/../lib)
+set(STARTUP_SCRIPT ${LIB_DIR}/startup/stm32f405.s)
+
+set(INT_FILES
+    ${LIB_DIR}/STM32_USB_OTG_Driver/src/usb_dcd_int.c
+    ${LIB_DIR}/vcp/stm32f4xx_it.c
+)
 
 set(OBJ_COPY arm-none-eabi-objcopy)
 
 function(add_example name)
-    add_executable(${name}.elf ${ARGN} ${STARTUP_SCRIPT})
+    add_executable(${name}.elf
+        ${ARGN}
+        ${INT_FILES}
+        ${STARTUP_SCRIPT})
     target_link_libraries(${name}.elf airbourne_core printf)
 
     # The bin and hex targets get built every time

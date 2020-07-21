@@ -29,13 +29,12 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-
 #include "system.h"
 #include "vcp.h"
 
-VCP* uartPtr = NULL;
+VCP *uartPtr = NULL;
 
-void rx_callback(uint8_t byte)
+void rx_callback2(uint8_t byte)
 {
   uartPtr->put_byte(byte);
   uartPtr->flush();
@@ -48,12 +47,16 @@ int main()
   VCP vcp;
   vcp.init();
   uartPtr = &vcp;
-  vcp.register_rx_callback(&rx_callback);
+  vcp.register_rx_callback(&rx_callback2);
 
-  while(1)
+  while (1)
   {
     uint8_t hello_string[] = "waddup\n";
     vcp.write(hello_string, 7);
+    while (vcp.rx_bytes_waiting())
+    {
+      vcp.put_byte(vcp.read_byte());
+    }
     delay(200);
   }
 }

@@ -24,13 +24,75 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+# include_directories(../include
+#     STM32_USB_Device_Library/Class/cdc/inc
+#     STM32_USB_Device_Library/Core/inc
+#     STM32_USB_OTG_Driver/inc/
+#     vcp
+#     StdPeriphLib PUBLIC
+#     STM32F4xx_StdPeriph_Driver/inc
+#     CMSIS/CM4/CoreSupport
+#     CMSIS/CM4/DeviceSupport/ST/STM32F4xx
+#     CMSIS/CM4/DeviceSupport/ST/STM32F4xx/Include
+#     STM32F4xx_StdPeriph_Driver/inc/
+#     printf
+# )
+
+# add_library(lib STATIC
+#     CMSIS/CM4/DeviceSupport/ST/STM32F4xx/stm32f4xx_gpio.c
+#     CMSIS/CM4/DeviceSupport/ST/STM32F4xx/stm32f4xx_rcc.c
+#     STM32F4xx_StdPeriph_Driver/src/stm32f4xx_gpio.c
+#     STM32F4xx_StdPeriph_Driver/src/stm32f4xx_wwdg.c
+#     STM32F4xx_StdPeriph_Driver/src/stm32f4xx_hash_sha1.c
+#     STM32F4xx_StdPeriph_Driver/src/stm32f4xx_exti.c
+#     STM32F4xx_StdPeriph_Driver/src/stm32f4xx_hash.c
+#     STM32F4xx_StdPeriph_Driver/src/stm32f4xx_cryp_tdes.c
+#     STM32F4xx_StdPeriph_Driver/src/stm32f4xx_dma.c
+#     STM32F4xx_StdPeriph_Driver/src/stm32f4xx_dbgmcu.c
+#     STM32F4xx_StdPeriph_Driver/src/stm32f4xx_dac.c
+#     STM32F4xx_StdPeriph_Driver/src/stm32f4xx_rtc.c
+#     STM32F4xx_StdPeriph_Driver/src/stm32f4xx_pwr.c
+#     STM32F4xx_StdPeriph_Driver/src/stm32f4xx_i2c.c
+#     STM32F4xx_StdPeriph_Driver/src/stm32f4xx_sdio.c
+#     STM32F4xx_StdPeriph_Driver/src/stm32f4xx_rcc.c
+#     STM32F4xx_StdPeriph_Driver/src/stm32f4xx_iwdg.c
+#     STM32F4xx_StdPeriph_Driver/src/stm32f4xx_flash.c
+#     STM32F4xx_StdPeriph_Driver/src/misc.c
+#     STM32F4xx_StdPeriph_Driver/src/stm32f4xx_syscfg.c
+#     STM32F4xx_StdPeriph_Driver/src/stm32f4xx_cryp_des.c
+#     STM32F4xx_StdPeriph_Driver/src/stm32f4xx_usart.c
+#     STM32F4xx_StdPeriph_Driver/src/stm32f4xx_dcmi.c
+#     STM32F4xx_StdPeriph_Driver/src/stm32f4xx_hash_md5.c
+#     STM32F4xx_StdPeriph_Driver/src/stm32f4xx_cryp_aes.c
+#     STM32F4xx_StdPeriph_Driver/src/stm32f4xx_cryp.c
+#     STM32F4xx_StdPeriph_Driver/src/stm32f4xx_rng.c
+#     STM32F4xx_StdPeriph_Driver/src/stm32f4xx_tim.c
+#     STM32F4xx_StdPeriph_Driver/src/stm32f4xx_adc.c
+#     STM32F4xx_StdPeriph_Driver/src/stm32f4xx_spi.c
+#     STM32_USB_Device_Library/Core/src/usbd_req.c
+#     STM32_USB_Device_Library/Core/src/usbd_core.c
+#     STM32_USB_Device_Library/Core/src/usbd_ioreq.c
+#     STM32_USB_OTG_Driver/src/usb_dcd_int.c
+#     STM32_USB_OTG_Driver/src/usb_core.c
+#     STM32_USB_OTG_Driver/src/usb_dcd.c
+#     STM32_USB_Device_Library/Class/cdc/src/usbd_cdc_core.c
+#     vcp/usb_bsp.c
+#     vcp/usbd_usr.c
+#     vcp/stm32f4xx_it.c
+#     vcp/usbd_desc.c
+#     vcp/usbd_cdc_vcp.c)
+# set_target_properties(lib PROPERTIES LINK_LANGUAGE C)
+
+
 add_library(CMSIS CMSIS/CM4/DeviceSupport/ST/STM32F4xx/stm32f4xx_gpio.c
                   CMSIS/CM4/DeviceSupport/ST/STM32F4xx/stm32f4xx_rcc.c)
 target_include_directories(CMSIS PUBLIC
     CMSIS/CM4/CoreSupport
     CMSIS/CM4/DeviceSupport/ST/STM32F4xx
     CMSIS/CM4/DeviceSupport/ST/STM32F4xx/Include
-    STM32F4xx_StdPeriph_Driver/inc/)
+    STM32F4xx_StdPeriph_Driver/inc/
+)
+# # set_target_properties(CMSIS PROPERTIES LINK_LANGUAGE C)
 
 add_library(StdPeriphLib
     STM32F4xx_StdPeriph_Driver/src/stm32f4xx_gpio.c
@@ -63,7 +125,9 @@ add_library(StdPeriphLib
     STM32F4xx_StdPeriph_Driver/src/stm32f4xx_spi.c)
 target_link_libraries(StdPeriphLib CMSIS)
 target_include_directories(StdPeriphLib PUBLIC
-STM32F4xx_StdPeriph_Driver/inc)
+    STM32F4xx_StdPeriph_Driver/inc
+)
+# # set_target_properties(StdPeriphLib PROPERTIES LINK_LANGUAGE C)
 
 add_library(usb
     STM32_USB_Device_Library/Core/src/usbd_req.c
@@ -75,7 +139,6 @@ add_library(usb
     STM32_USB_Device_Library/Class/cdc/src/usbd_cdc_core.c
     vcp/usb_bsp.c
     vcp/usbd_usr.c
-    vcp/stm32f4xx_it.c
     vcp/usbd_desc.c
     vcp/usbd_cdc_vcp.c)
 target_include_directories(usb PUBLIC
@@ -85,6 +148,8 @@ target_include_directories(usb PUBLIC
     vcp
     ../include)
 target_link_libraries(usb CMSIS StdPeriphLib)
+# # set_target_properties(usb PROPERTIES LINK_LANGUAGE C)
 
 add_library(printf printf/printf.cpp)
 target_include_directories(printf PUBLIC printf)
+# # set_target_properties(usb PROPERTIES LINK_LANGUAGE CXX)
